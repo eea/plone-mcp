@@ -1,6 +1,6 @@
 # Readme for AI Assistant Agents
 
-Important!!! This whole file contains help for AI Assistant Agents and should not be deleted.
+This whole file contains help for AI Assistant Agents and should not be deleted.
 
 ## Project Overview
 
@@ -17,6 +17,7 @@ This project is a Model Context Protocol (MCP) server designed to integrate MCP 
 
 - Tests are to be run whenever substantial changes are done to the code. Use `make test`.
 - The formatting target should be executed before committing code. Use `make format`.
+- Important!!! Never to a `git commit` unless the user explicitly asked for that operation to be performed.
 
 @./README.md
 @./TESTING.md
