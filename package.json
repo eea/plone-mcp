@@ -17,12 +17,12 @@
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "inspector:built": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:unit": "jest tests/unit",
-    "test:ci": "jest --coverage --ci --watchAll=false",
-    "test:unit-only": "jest tests/unit --coverage",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest tests/unit",
+    "test:ci": "vitest run --coverage --ci --watchAll=false",
+    "test:unit-only": "vitest tests/unit --coverage",
     "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\""
   },
   "keywords": [
@@ -44,17 +44,17 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.0",
     "@types/mdast": "^4.0.4",
     "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^4.0.8",
     "copyfiles": "^2.4.1",
-    "jest": "^29.5.0",
+    "jsdom": "^27.2.0",
     "nock": "^13.5.0",
     "prettier": "^3.6.2",
     "supertest": "^6.3.0",
-    "ts-jest": "^29.1.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.8"
   },
   "packageManager": "pnpm@9.14.1"
 }

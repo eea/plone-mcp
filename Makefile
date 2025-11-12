@@ -7,4 +7,4 @@ format: ## Format code using Prettier.
 	pnpm run format
 
 test: ## Run all tests.
-	pnpm test
+	CI=true pnpm test
