@@ -5,37 +5,8 @@ import {
   ResourceTemplate,
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  TextContent,
-  CallToolResult,
-} from "@modelcontextprotocol/sdk/types.js";
-import { PloneClient, PloneContent, ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, optionalNonEmpty, isValidUrl, ConfigSchema, Config, resolveConfig } from "./plone-client.js";
-import {
-  PloneConfigureSchema,
-  PloneGetContentSchema,
-  PloneCreateContentSchema,
-  PloneUpdateContentSchema,
-  PloneDeleteContentSchema,
-  PloneSearchSchema,
-  PloneGetWorkflowInfoSchema,
-  PloneTransitionWorkflowSchema,
-  PloneGetVocabulariesSchema,
-  PloneAddBlockSchema,
-  PloneUpdateBlockSchema,
-  PloneRemoveBlockSchema,
-  PloneCreateBlocksLayoutSchema,
-  PloneGetBlockSchemasSchema,
-  PloneToolHandlers,
-  wrapError,
-  generateBlockId,
-  validateImageURL,
-  processBlock,
-  getBlockExample,
-} from "./handlers.js";
-import { BlockRegistry, blockRegistry } from "./block-registry.js";
-
+import { PloneToolHandlers } from "./handlers.js";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
 import { z } from "zod";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -91,14 +62,7 @@ export class PloneMCPServer {
     });
   }
 
-  private wrapError(operation: string, error: unknown): Error {
-    if (error instanceof z.ZodError) {
-      return new Error(`[${operation}] Invalid parameters: ${error.message}`);
-    }
-    return new Error(
-      `[${operation}] ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
+
 
   // =============================================================================
   // TOOL REGISTRATION
@@ -126,7 +90,7 @@ export class PloneMCPServer {
         title: "Configure Plone Connection",
         description:
           "Establishes and authenticates the connection to a Plone CMS. **Must be called once per session** before other tools can be used. Configuration can be provided via arguments or environment variables (PLONE_BASE_URL, PLONE_USERNAME, PLONE_PASSWORD, PLONE_TOKEN). Arguments take precedence over environment variables. To use environment variables only, call with an empty object: plone_configure({}). Example with arguments: plone_configure({baseUrl: 'https://demo.plone.org', username: 'admin', password: 'secret'}).",
-        inputSchema: PloneConfigureSchema.shape,
+        inputSchema: this.handlers.PloneConfigureSchema.shape,
       },
       async (args) => this.handlers.handleConfigure(args),
     );
@@ -138,7 +102,7 @@ export class PloneMCPServer {
           title: "Get Plone Content",
           description:
             "Retrieves the full JSON data for a single content item from Plone using its path. Example: plone_get_content({path: '/news/latest-update'})",
-          inputSchema: PloneGetContentSchema.shape,
+          inputSchema: this.handlers.PloneGetContentSchema.shape,
         },
         async (args) => this.handlers.handleGetContent(args),
       );
@@ -151,7 +115,7 @@ export class PloneMCPServer {
           title: "Create Plone Content",
           description:
             "Creates a new content item (e.g., a page or news article) in Plone. To add complex block-based content, first prepare the structure with `plone_create_blocks_layout`, then call this tool. Example: plone_create_content({parentPath: '/', type: 'Document', title: 'My Page', description: 'A sample page'})",
-          inputSchema: PloneCreateContentSchema.shape,
+          inputSchema: this.handlers.PloneCreateContentSchema.shape,
         },
         async (args) => this.handlers.handleCreateContent(args),
       );
@@ -164,7 +128,7 @@ export class PloneMCPServer {
           title: "Update Plone Content",
           description:
             "Modifies an existing content item in Plone. Can update metadata (like title) and/or replace the entire block structure. Use `plone_create_blocks_layout` to prepare complex block updates. Example: plone_update_content({path: '/my-page', title: 'Updated Title'})",
-          inputSchema: PloneUpdateContentSchema.shape,
+          inputSchema: this.handlers.PloneUpdateContentSchema.shape,
         },
         async (args) => this.handlers.handleUpdateContent(args),
       );
@@ -177,7 +141,7 @@ export class PloneMCPServer {
           title: "Delete Plone Content",
           description:
             "Permanently deletes a content item from Plone using its path. Example: plone_delete_content({path: '/old-content'})",
-          inputSchema: PloneDeleteContentSchema.shape,
+          inputSchema: this.handlers.PloneDeleteContentSchema.shape,
         },
         async (args) => this.handlers.handleDeleteContent(args),
       );
@@ -191,7 +155,7 @@ export class PloneMCPServer {
           title: "Search Plone Content",
           description:
             "Performs a detailed search for content items, allowing filters by text, content type, path, and workflow state. Example: plone_search({query: 'annual report', portal_type: ['Document'], review_state: ['published']})",
-          inputSchema: PloneSearchSchema.shape,
+          inputSchema: this.handlers.PloneSearchSchema.shape,
         },
         async (args) => this.handlers.handleSearch(args),
       );
@@ -230,7 +194,7 @@ export class PloneMCPServer {
           title: "Get Vocabulary Values",
           description:
             "Fetches the allowed values for a specific field, such as a list of categories or tags. Useful for finding valid inputs for content fields. Example: plone_get_vocabularies({vocabulary: 'plone.app.vocabularies.Keywords'})",
-          inputSchema: PloneGetVocabulariesSchema.shape,
+          inputSchema: this.handlers.PloneGetVocabulariesSchema.shape,
         },
         async (args) => this.handlers.handleGetVocabularies(args),
       );
@@ -244,7 +208,7 @@ export class PloneMCPServer {
           title: "Get Workflow Information",
           description:
             "Shows the current workflow state (e.g., 'Published', 'Private') and available transitions for a content item. Example: plone_get_workflow_info({path: '/my-document'})",
-          inputSchema: PloneGetWorkflowInfoSchema.shape,
+          inputSchema: this.handlers.PloneGetWorkflowInfoSchema.shape,
         },
         async (args) => this.handlers.handleGetWorkflowInfo(args),
       );
@@ -257,7 +221,7 @@ export class PloneMCPServer {
           title: "Execute Workflow Transition",
           description:
             "Changes the workflow state of a content item by executing a specific transition, like 'publish' or 'submit'. Example: plone_transition_workflow({path: '/my-document', transition: 'publish'})",
-          inputSchema: PloneTransitionWorkflowSchema.shape,
+          inputSchema: this.handlers.PloneTransitionWorkflowSchema.shape,
         },
         async (args) => this.handlers.handleTransitionWorkflow(args),
       );
@@ -271,7 +235,7 @@ export class PloneMCPServer {
           title: "Get Block Schemas",
           description:
             "Lists all available Volto block types (e.g., 'slate', 'teaser', 'button') and their required data schemas. **Essential for understanding how to construct blocks.** Example: plone_get_block_schemas({blockType: 'teaser'})",
-          inputSchema: PloneGetBlockSchemasSchema.shape,
+          inputSchema: this.handlers.PloneGetBlockSchemasSchema.shape,
         },
         async (args) => this.handlers.handleGetBlockSchemas(args),
       );
@@ -284,7 +248,7 @@ export class PloneMCPServer {
           title: "Prepare Blocks Layout",
           description:
             "Prepares a complete block structure in memory (valid for 60 seconds). This structure is then used by the **next immediate call** to `plone_create_content` or `plone_update_content`. Use `plone_get_block_schemas` to learn what data each block type needs. The text displayed by the Title block is automatically managed by Plone, DO NOT add it in the block's data. Example: plone_create_blocks_layout({blocks: [{type: 'title'},{type: 'slate', data: {text: 'Hello World'}}]})",
-          inputSchema: PloneCreateBlocksLayoutSchema.shape,
+          inputSchema: this.handlers.PloneCreateBlocksLayoutSchema.shape,
         },
         async (args) => this.handlers.handleCreateBlocksLayout(args),
       );
@@ -297,7 +261,7 @@ export class PloneMCPServer {
           title: "Add Single Block",
           description:
             "Adds a single new block to an existing content item without replacing other blocks. Specify the block type, data, and optional position. Example: plone_add_single_block({path: '/my-page', blockType: 'text', blockData: {text: 'New paragraph'}})",
-          inputSchema: PloneAddBlockSchema.shape,
+          inputSchema: this.handlers.PloneAddBlockSchema.shape,
         },
         async (args) => this.handlers.handleAddBlock(args),
       );
@@ -310,7 +274,7 @@ export class PloneMCPServer {
           title: "Update Single Block",
           description:
             "Modifies the data of a single, existing block within a content item, identified by its block ID. Example: plone_update_single_block({path: '/my-page', blockId: 'abc123', blockData: {text: 'Updated text'}})",
-          inputSchema: PloneUpdateBlockSchema.shape,
+          inputSchema: this.handlers.PloneUpdateBlockSchema.shape,
         },
         async (args) => this.handlers.handleUpdateBlock(args),
       );
@@ -323,7 +287,7 @@ export class PloneMCPServer {
           title: "Remove Single Block",
           description:
             "Deletes a single block from a content item, identified by its block ID. Example: plone_remove_single_block({path: '/my-page', blockId: 'abc123'})",
-          inputSchema: PloneRemoveBlockSchema.shape,
+          inputSchema: this.handlers.PloneRemoveBlockSchema.shape,
         },
         async (args) => this.handlers.handleRemoveBlock(args),
       );

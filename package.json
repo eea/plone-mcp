@@ -23,7 +23,8 @@
     "test:unit": "vitest tests/unit",
     "test:unit-only": "vitest tests/unit --coverage",
     "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint \"{src,tests}/**/*.ts\""
   },
   "keywords": [
     "mcp",
@@ -45,12 +46,19 @@
     "zod": "^3.22.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
     "@vitest/coverage-v8": "^4.0.8",
     "copyfiles": "^2.4.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^16.5.0",
     "jsdom": "^27.2.0",
     "nock": "^13.5.0",
+    "path": "^0.12.7",
     "prettier": "^3.6.2",
     "supertest": "^6.3.0",
     "tsx": "^4.0.0",

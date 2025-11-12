@@ -9,7 +9,6 @@ import {
   isValidUrl,
   PloneClient,
   PloneContent,
-  Config,
 } from "./plone-client.js";
 import { blockRegistry } from "./block-registry.js";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types.js";
@@ -392,6 +391,22 @@ export class PloneToolHandlers {
     timestamp: number;
   } | null = null;
   private readonly PREPARED_BLOCKS_TTL = 60000; // 60 seconds TTL
+
+  // Expose schemas as properties
+  public readonly PloneConfigureSchema = PloneConfigureSchema;
+  public readonly PloneGetContentSchema = PloneGetContentSchema;
+  public readonly PloneCreateContentSchema = PloneCreateContentSchema;
+  public readonly PloneUpdateContentSchema = PloneUpdateContentSchema;
+  public readonly PloneDeleteContentSchema = PloneDeleteContentSchema;
+  public readonly PloneSearchSchema = PloneSearchSchema;
+  public readonly PloneGetWorkflowInfoSchema = PloneGetWorkflowInfoSchema;
+  public readonly PloneTransitionWorkflowSchema = PloneTransitionWorkflowSchema;
+  public readonly PloneGetVocabulariesSchema = PloneGetVocabulariesSchema;
+  public readonly PloneAddBlockSchema = PloneAddBlockSchema;
+  public readonly PloneUpdateBlockSchema = PloneUpdateBlockSchema;
+  public readonly PloneRemoveBlockSchema = PloneRemoveBlockSchema;
+  public readonly PloneCreateBlocksLayoutSchema = PloneCreateBlocksLayoutSchema;
+  public readonly PloneGetBlockSchemasSchema = PloneGetBlockSchemasSchema;
 
   constructor(client: PloneClient | null) {
     this.client = client;
