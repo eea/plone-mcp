@@ -428,7 +428,7 @@ const PloneGetBlockSchemasSchema = z.object({
 // SECTION 4: MAIN MCP SERVER CLASS
 // =============================================================================
 
-class PloneMCPServer {
+export class PloneMCPServer {
   private server: McpServer;
   private client: PloneClient | null = null;
   private preparedBlocks: {
