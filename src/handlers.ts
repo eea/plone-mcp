@@ -11,7 +11,10 @@ import {
   PloneContent,
 } from "./plone-client.js";
 import { blockRegistry } from "./block-registry.js";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolResult,
+  TextContent,
+} from "@modelcontextprotocol/sdk/types.js";
 import { markdownParse } from "./markdown-parser.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -906,10 +909,7 @@ export class PloneToolHandlers {
         }
 
         const blockId = generateBlockId();
-        const processedBlock = processBlock(
-          blockSpec.type,
-          blockSpec.data,
-        );
+        const processedBlock = processBlock(blockSpec.type, blockSpec.data);
 
         processedBlocks[blockId] = processedBlock;
         blockIds.push(blockId);

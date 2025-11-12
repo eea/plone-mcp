@@ -12,7 +12,7 @@ const mockMcpServerModule = vi.hoisted(() => {
   const mockServerOnError = vi.fn();
   const mockServerClose = vi.fn();
 
-  const MockMcpServer = vi.fn(function() {
+  const MockMcpServer = vi.fn(function () {
     this.registerTool = mockRegisterTool;
     this.registerResource = mockRegisterResource;
     this.registerPrompt = mockRegisterPrompt;
@@ -24,7 +24,7 @@ const mockMcpServerModule = vi.hoisted(() => {
   });
 
   // Mock ResourceTemplate
-  const MockResourceTemplate = vi.fn(function(template: string, options: any) {
+  const MockResourceTemplate = vi.fn(function (template: string, options: any) {
     // We don't need to mock its internal behavior for these tests,
     // just ensure it can be instantiated.
     this.template = template;
@@ -132,4 +132,3 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     expect(registeredTools).toHaveLength(2);
   });
 });
-

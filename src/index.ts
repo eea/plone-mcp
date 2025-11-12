@@ -6,18 +6,13 @@ import {
 } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { PloneToolHandlers } from "./handlers.js";
-import { fileURLToPath } from "url";
 import { z } from "zod";
 
-const __filename = fileURLToPath(import.meta.url);
 const ENV_ENABLED_TOOLS = "ENABLED_TOOLS";
 
 // =============================================================================
 // SECTION 1: CONFIGURATION & TYPES
 // =============================================================================
-
-
-
 
 // =============================================================================
 // SECTION 4: MAIN MCP SERVER CLASS
@@ -62,19 +57,18 @@ export class PloneMCPServer {
     });
   }
 
-
-
   // =============================================================================
   // TOOL REGISTRATION
   // =============================================================================
 
   private setupToolHandlers(): void {
     const enabledToolsEnv = process.env[ENV_ENABLED_TOOLS];
-    const enabledTools = enabledToolsEnv === ""
-      ? [] // If empty string, no tools are explicitly enabled (except plone_configure)
-      : enabledToolsEnv
-        ? enabledToolsEnv.split(",").map((tool) => tool.trim())
-        : null; // If null/undefined, all tools are enabled
+    const enabledTools =
+      enabledToolsEnv === ""
+        ? [] // If empty string, no tools are explicitly enabled (except plone_configure)
+        : enabledToolsEnv
+          ? enabledToolsEnv.split(",").map((tool) => tool.trim())
+          : null; // If null/undefined, all tools are enabled
 
     const isToolEnabled = (toolName: string): boolean => {
       if (enabledTools === null) {
@@ -293,7 +287,6 @@ export class PloneMCPServer {
       );
     }
   }
-
 
   // =============================================================================
   // RESOURCES SETUP

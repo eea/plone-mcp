@@ -16,4 +16,3 @@ afterAll(() => {
 afterEach(() => {
   nock.cleanAll();
 });
-
