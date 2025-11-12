@@ -9,11 +9,8 @@ export default {
   ],
   transform: {
     '^.+\\.ts$': ['ts-jest', {
-      tsconfig: './tsconfig.json',
-      useESM: true,
-      compilerOptions: {
-        module: 'NodeNext'
-      }
+      tsconfig: './tsconfig.test.json',
+      useESM: true
     }]
   },
   collectCoverageFrom: [
