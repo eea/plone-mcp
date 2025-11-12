@@ -1,29 +1,52 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PloneMCPServer } from "../../src/index"; // Adjust path as needed
 import nock from "nock";
+import { vi } from "vitest";
 
-// Mock the McpServer to observe tool registrations
-jest.mock("@modelcontextprotocol/sdk/server/mcp.js", () => {
-  const originalModule = jest.requireActual(
-    "@modelcontextprotocol/sdk/server/mcp.js",
-  );
+// Define the mock functions and the mock constructor within the vi.mock factory
+// and export them so they can be imported and asserted against in the tests.
+const mockMcpServerModule = vi.hoisted(() => {
+  const mockRegisterTool = vi.fn();
+  const mockRegisterResource = vi.fn();
+  const mockRegisterPrompt = vi.fn();
+  const mockConnect = vi.fn();
+  const mockServerOnError = vi.fn();
+  const mockServerClose = vi.fn();
+
+  const MockMcpServer = vi.fn(function() {
+    this.registerTool = mockRegisterTool;
+    this.registerResource = mockRegisterResource;
+    this.registerPrompt = mockRegisterPrompt;
+    this.connect = mockConnect;
+    this.server = {
+      onerror: mockServerOnError,
+      close: mockServerClose,
+    };
+  });
+
+  // Mock ResourceTemplate
+  const MockResourceTemplate = vi.fn(function(template: string, options: any) {
+    // We don't need to mock its internal behavior for these tests,
+    // just ensure it can be instantiated.
+    this.template = template;
+    this.options = options;
+  });
+
   return {
-    ...originalModule,
-    McpServer: jest.fn().mockImplementation(() => ({
-      ...originalModule.McpServer.prototype, // Include original prototype methods if needed
-      registerTool: jest.fn(),
-      registerResource: jest.fn(),
-      registerPrompt: jest.fn(),
-      connect: jest.fn(),
-      server: {
-        onerror: jest.fn(),
-        close: jest.fn(),
-      },
-    })),
+    McpServer: MockMcpServer,
+    ResourceTemplate: MockResourceTemplate, // Export ResourceTemplate
+    mockRegisterTool,
+    mockRegisterResource,
+    mockRegisterPrompt,
+    mockConnect,
+    mockServerOnError,
+    mockServerClose,
   };
 });
 
-const mockMcpServer = McpServer as jest.MockedClass<typeof McpServer>;
+vi.mock("@modelcontextprotocol/sdk/server/mcp.js", () => mockMcpServerModule);
+
+// Now, import the mock functions from the hoisted mock
+const { mockRegisterTool } = mockMcpServerModule;
 
 describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -48,8 +71,7 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
   beforeEach(() => {
     originalEnv = process.env;
     process.env = { ...originalEnv }; // Clone original env to modify
-    mockMcpServer.mockClear(); // Clear mock calls before each test
-    (mockMcpServer.mock.results[0]?.value?.registerTool as jest.Mock).mockClear(); // Clear registerTool mock calls
+    vi.clearAllMocks(); // Clear all vi.fn() mocks
     nock.cleanAll(); // Clean all nock mocks
   });
 
@@ -62,9 +84,8 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     process.env.ENABLED_TOOLS = "";
     new PloneMCPServer();
 
-    const registeredTools = (
-      mockMcpServer.mock.results[0]?.value?.registerTool as jest.Mock
-    ).mock.calls.map((call) => call[0]);
+    // Access the mock calls directly from the prototype's vi.fn()
+    const registeredTools = mockRegisterTool.mock.calls.map((call) => call[0]);
 
     expect(registeredTools).toEqual(["plone_configure"]);
   });
@@ -73,9 +94,7 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     process.env.ENABLED_TOOLS = "unknown_tool_1,unknown_tool_2";
     new PloneMCPServer();
 
-    const registeredTools = (
-      mockMcpServer.mock.results[0]?.value?.registerTool as jest.Mock
-    ).mock.calls.map((call) => call[0]);
+    const registeredTools = mockRegisterTool.mock.calls.map((call) => call[0]);
 
     expect(registeredTools).toEqual(["plone_configure"]);
   });
@@ -84,9 +103,7 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     delete process.env.ENABLED_TOOLS; // Ensure it's not set
     new PloneMCPServer();
 
-    const registeredTools = (
-      mockMcpServer.mock.results[0]?.value?.registerTool as jest.Mock
-    ).mock.calls.map((call) => call[0]);
+    const registeredTools = mockRegisterTool.mock.calls.map((call) => call[0]);
 
     expect(registeredTools).toEqual(["plone_configure", ...allToolNames]);
     expect(registeredTools).toHaveLength(allToolNames.length + 1); // All tools + plone_configure
@@ -97,9 +114,7 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     process.env.ENABLED_TOOLS = enabledSubset.join(",");
     new PloneMCPServer();
 
-    const registeredTools = (
-      mockMcpServer.mock.results[0]?.value?.registerTool as jest.Mock
-    ).mock.calls.map((call) => call[0]);
+    const registeredTools = mockRegisterTool.mock.calls.map((call) => call[0]);
 
     expect(registeredTools).toEqual(["plone_configure", ...enabledSubset]);
     expect(registeredTools).toHaveLength(enabledSubset.length + 1);
@@ -110,12 +125,11 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     process.env.ENABLED_TOOLS = enabledSubset.join(",");
     new PloneMCPServer();
 
-    const registeredTools = (
-      mockMcpServer.mock.results[0]?.value?.registerTool as jest.Mock
-    ).mock.calls.map((call) => call[0]);
+    const registeredTools = mockRegisterTool.mock.calls.map((call) => call[0]);
 
     // plone_configure should only appear once, even if explicitly enabled
     expect(registeredTools).toEqual(["plone_configure", "plone_get_content"]);
     expect(registeredTools).toHaveLength(2);
   });
 });
+

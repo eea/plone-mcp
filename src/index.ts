@@ -487,9 +487,11 @@ export class PloneMCPServer {
 
   private setupToolHandlers(): void {
     const enabledToolsEnv = process.env[ENV_ENABLED_TOOLS];
-    const enabledTools = enabledToolsEnv
-      ? enabledToolsEnv.split(",").map((tool) => tool.trim())
-      : null; // If null, all tools are enabled
+    const enabledTools = enabledToolsEnv === ""
+      ? [] // If empty string, no tools are explicitly enabled (except plone_configure)
+      : enabledToolsEnv
+        ? enabledToolsEnv.split(",").map((tool) => tool.trim())
+        : null; // If null/undefined, all tools are enabled
 
     const isToolEnabled = (toolName: string): boolean => {
       if (enabledTools === null) {
