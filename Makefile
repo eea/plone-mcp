@@ -1,4 +1,4 @@
-.PHONY: all format test
+.PHONY: all format test type-check docker-build docker-run docker-clean
 
 all: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -11,3 +11,12 @@ test: ## Run all tests.
 
 type-check: ## Run TypeScript type checking
 	pnpm run type-check
+
+docker-build: ## Build the Docker image.
+	docker build -t plone-mcp .
+
+docker-run: ## Run the Docker container.
+	docker run --rm -it plone-mcp
+
+docker-clean: ## Remove the Docker image.
+	docker rmi plone-mcp
