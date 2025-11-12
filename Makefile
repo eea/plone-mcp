@@ -8,3 +8,6 @@ format: ## Format code using Prettier.
 
 test: ## Run all tests.
 	CI=true pnpm test
+
+type-check: ## Run TypeScript type checking
+	pnpm run type-check

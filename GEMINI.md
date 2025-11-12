@@ -16,8 +16,17 @@ This project is a Model Context Protocol (MCP) server designed to integrate MCP 
 ## Important Reminders
 
 - Tests are to be run whenever substantial changes are done to the code. Use `make test`.
+- **Critical**: tests should be run using `make test`, not `pnpm run test`
+- TypeScript type errors are important, use `make type-check` and try to fix them.
 - The formatting target should be executed before committing code. Use `make format`.
 - Important!!! Never to a `git commit` unless the user explicitly asked for that operation to be performed.
 
 @./README.md
 @./TESTING.md
+
+## Makefile Targets
+
+- `all`: Show this help.
+- `format`: Format code using Prettier.
+- `test`: Run all tests.
+- `type-check`: Run TypeScript type checking

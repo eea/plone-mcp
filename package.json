@@ -21,9 +21,9 @@
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest tests/unit",
-    "test:ci": "vitest run --coverage --ci --watchAll=false",
     "test:unit-only": "vitest tests/unit --coverage",
-    "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\""
+    "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "mcp",
@@ -36,6 +36,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.6.0",
+    "isomorphic-fetch": "^3.0.0",
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-supersub": "^1.0.0",
