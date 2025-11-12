@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "NodeNext",
+    "isolatedModules": true,
     "outDir": "./dist-test",
     "rootDir": "./src"
   },
