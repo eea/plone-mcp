@@ -156,11 +156,6 @@ export const PloneGetNavigationTreeSchema = z.object({
     .optional()
     .default(2)
     .describe("How deep to traverse in the navigation tree"),
-  expand_all_items: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe("Include all items or just navigation items"),
 });
 
 export const PloneTransitionWorkflowSchema = z.object({
@@ -1118,8 +1113,7 @@ export class PloneToolHandlers {
 
   public async handleGetNavigationTree(args: unknown): Promise<CallToolResult> {
     try {
-      const { root_path, depth, expand_all_items } =
-        PloneGetNavigationTreeSchema.parse(args);
+      const { root_path, depth } = PloneGetNavigationTreeSchema.parse(args);
       const client = this.requireClient();
 
       // Use root path if provided, otherwise use site root

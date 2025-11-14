@@ -11,7 +11,6 @@ This document contains specifications for tools that are described in the MCP Se
 **Parameters:**
 - `root_path` (string, optional): Starting point for navigation tree (defaults to portal root)
 - `depth` (integer, optional, default=2): How deep to traverse
-- `expand_all_items` (boolean, optional, default=false): Include all items or just navigation items
 
 **Example Usage:**
 ```
@@ -20,7 +19,6 @@ get_navigation_tree({root_path: '/documentation', depth: 3})
 
 **Plone REST API Implementation:**
 - `GET /@navigation` with `expand.navigation.depth` parameter
-- Alternative: `GET /@navigationtree` for full tree
 - Returns: Hierarchical structure with `@id`, `title`, `description`, `items[]` nested
 
 ## 2. get_breadcrumbs
@@ -95,7 +93,6 @@ search_by_metadata({subjects: ['tutorial', 'documentation'], creators: ['admin']
 
 **Parameters:**
 - `path` (string, required): Path to content item
-- `include_versions` (boolean, optional, default=true): Include full version details
 
 **Example Usage:**
 ```
@@ -138,8 +135,8 @@ list_folder_contents({path: '/documentation', fullobjects: false, sort_on: 'titl
 
 **Parameters:**
 - `path` (string, required): Path to content item
-- `limit` (integer, optional): Maximum comments to return
-- `offset` (integer, optional): Offset for pagination
+- `limit` (integer, optional): Maximum comments to return (maps to `b_size`)
+- `offset` (integer, optional): Offset for pagination (maps to `b_start`)
 
 **Example Usage:**
 ```
@@ -148,7 +145,7 @@ get_content_comments({path: '/front-page', limit: 25})
 
 **Plone REST API Implementation:**
 - `GET /<path>/@comments`
-- Supports batching for large comment threads
+- Supports batching with `b_size` and `b_start` for large comment threads
 - Returns: `items[]` with comment objects containing `@id`, `comment_id`, `author_name`, `text`, `creation_date`, `in_reply_to`
 
 ## 8. refine_search
@@ -219,8 +216,7 @@ search_by_location({root_path: '/products', depth: 2, portal_type: ['Document', 
 ```
 
 **Plone REST API Implementation:**
-- `GET /@search` with `path.query` and `path.depth` parameters
-- Path operations: `absolutePath`, `path`, `relativePath`
+- `POST /@querystring-search` with a `query` parameter that includes `path` (using operators like `plone.app.querystring.operation.string.path`, `absolutePath`, `relativePath`) and a `depth` value (e.g., `v: '/my-content-object::2'`)
 - Returns: All content matching path constraints
 
 ## 11. scan_content_titles
