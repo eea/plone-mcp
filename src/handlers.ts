@@ -146,6 +146,23 @@ export const PloneGetWorkflowInfoSchema = z.object({
   path: z.string().describe("Path to the content"),
 });
 
+export const PloneGetNavigationTreeSchema = z.object({
+  root_path: z
+    .string()
+    .optional()
+    .describe("Starting point for navigation tree (defaults to portal root)"),
+  depth: z
+    .number()
+    .optional()
+    .default(2)
+    .describe("How deep to traverse in the navigation tree"),
+  expand_all_items: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Include all items or just navigation items"),
+});
+
 export const PloneTransitionWorkflowSchema = z.object({
   path: z.string().describe("Path to the content"),
   transition: z.string().describe("Workflow transition to execute"),
@@ -403,6 +420,7 @@ export class PloneToolHandlers {
   public readonly PloneDeleteContentSchema = PloneDeleteContentSchema;
   public readonly PloneSearchSchema = PloneSearchSchema;
   public readonly PloneGetWorkflowInfoSchema = PloneGetWorkflowInfoSchema;
+  public readonly PloneGetNavigationTreeSchema = PloneGetNavigationTreeSchema;
   public readonly PloneTransitionWorkflowSchema = PloneTransitionWorkflowSchema;
   public readonly PloneGetVocabulariesSchema = PloneGetVocabulariesSchema;
   public readonly PloneAddBlockSchema = PloneAddBlockSchema;
@@ -1095,6 +1113,37 @@ export class PloneToolHandlers {
       };
     } catch (error) {
       throw wrapError("RemoveBlock", error);
+    }
+  }
+
+  public async handleGetNavigationTree(args: unknown): Promise<CallToolResult> {
+    try {
+      const { root_path, depth, expand_all_items } =
+        PloneGetNavigationTreeSchema.parse(args);
+      const client = this.requireClient();
+
+      // Use root path if provided, otherwise use site root
+      const pathToUse = root_path || "/";
+
+      // Build query parameters for navigation
+      const params: Record<string, any> = {};
+      if (depth !== undefined) {
+        params.depth = depth;
+      }
+
+      // Use the @navigation endpoint
+      const navigation = await client.get(`${pathToUse}/@navigation`, params);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(navigation, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw wrapError("GetNavigationTree", error);
     }
   }
 }

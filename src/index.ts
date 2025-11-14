@@ -221,6 +221,20 @@ export class PloneMCPServer {
       );
     }
 
+    // Navigation tools
+    if (isToolEnabled("plone_get_navigation_tree")) {
+      this.server.registerTool(
+        "plone_get_navigation_tree",
+        {
+          title: "Get Navigation Tree",
+          description:
+            "Get hierarchical navigation tree from any point in the site. Essential for understanding content organization and relationships. Example: plone_get_navigation_tree({root_path: '/documentation', depth: 3})",
+          inputSchema: this.handlers.PloneGetNavigationTreeSchema.shape,
+        },
+        async (args) => this.handlers.handleGetNavigationTree(args),
+      );
+    }
+
     // Block management tools
     if (isToolEnabled("plone_get_block_schemas")) {
       this.server.registerTool(

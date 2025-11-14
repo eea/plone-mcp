@@ -61,6 +61,7 @@ describe("PloneMCPServer Tool Registration with ENABLED_TOOLS", () => {
     "plone_get_vocabularies",
     "plone_get_workflow_info",
     "plone_transition_workflow",
+    "plone_get_navigation_tree",
     "plone_get_block_schemas",
     "plone_create_blocks_layout",
     "plone_add_single_block",
