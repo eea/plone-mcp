@@ -164,6 +164,8 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
+    const result = await ploneConfigure({});
+
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${process.env.PLONE_BASE_URL}`,
     );

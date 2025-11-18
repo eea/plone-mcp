@@ -46,7 +46,7 @@ describe("plone_get_site_info", () => {
         "user-agent": /.*/,
         "accept-encoding": /.*/,
       },
-    }).get("/++api++/").reply(500, "Server Error");
+    }).get("/++api++").reply(500, "Server Error");
 
     await expect(ploneGetSiteInfo({})).rejects.toThrow(
       "[GetSiteInfo] Request failed with status code 500",

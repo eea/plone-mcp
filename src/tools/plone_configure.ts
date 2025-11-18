@@ -42,19 +42,19 @@ export const metadata: ToolMetadata = {
 export default async function ploneConfigure(
   args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
+  let client: PloneClient | null = null;
   try {
-    const config = args;
-    ploneHandlersSingleton.client = new PloneClient(config); // Update the client instance
-
-    // Test the connection
-    await ploneHandlersSingleton.client.get("/");
+    client = new PloneClient(args);
+    await client.get("/");
+    ploneHandlersSingleton.client = client;
 
     const textContent: TextContent = {
       type: "text",
-      text: `Successfully configured connection to Plone site: ${config.baseUrl}`,
+      text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
     };
     return { content: [textContent] };
   } catch (error) {
+    ploneHandlersSingleton.client = null;
     throw wrapError("Configure", error);
   }
 }

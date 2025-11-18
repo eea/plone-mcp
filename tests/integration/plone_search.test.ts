@@ -44,9 +44,9 @@ describe("plone_search", () => {
     mockServer.mockSearch(
       {
         SearchableText: filters.query,
-        "portal_type[]": filters.portal_type,
+        portal_type: filters.portal_type,
         path: filters.path,
-        "review_state[]": filters.review_state,
+        review_state: filters.review_state,
         sort_on: filters.sort_on,
         sort_order: filters.sort_order,
         b_size: filters.b_size,

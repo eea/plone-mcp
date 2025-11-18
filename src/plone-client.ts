@@ -91,13 +91,18 @@ export interface PloneContent {
 export class PloneClient {
   private axios: AxiosInstance;
   public config: Config & { baseUrl: string };
+  public readonly baseUrl: string;
+  public readonly token?: string;
 
   constructor(config: Config) {
     this.config = resolveConfig(config);
-    const baseUrl = this.config.baseUrl.replace(/\/$/, "");
+    const normalizedBaseUrl = this.config.baseUrl.replace(/\/$/, "");
+    this.config = { ...this.config, baseUrl: normalizedBaseUrl };
+    this.baseUrl = normalizedBaseUrl;
+    this.token = this.config.token;
 
     this.axios = axios.create({
-      baseURL: `${baseUrl}/++api++`,
+      baseURL: `${this.baseUrl}/++api++`,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -105,9 +110,9 @@ export class PloneClient {
     });
 
     // Set up authentication
-    if (this.config.token) {
+    if (this.token) {
       this.axios.defaults.headers.common["Authorization"] =
-        `Bearer ${this.config.token}`;
+        `Bearer ${this.token}`;
     } else if (this.config.username && this.config.password) {
       this.axios.defaults.auth = {
         username: this.config.username,

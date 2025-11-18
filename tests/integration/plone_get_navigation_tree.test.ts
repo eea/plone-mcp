@@ -80,6 +80,7 @@ describe("plone_get_navigation_tree", () => {
       },
     })
       .get(`/++api++${customPath}/@navigation`)
+      .query({ depth: 2 })
       .reply(500, "Server Error");
 
     const args = { root_path: customPath };

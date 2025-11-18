@@ -17,40 +17,78 @@ export class PloneMockServer {
     this.baseUrl = baseUrl;
   }
 
+  private normalizePath(path: string): string {
+    if (!path || path === "/") {
+      return "";
+    }
+    return path.startsWith("/") ? path : `/${path}`;
+  }
+
   mockSiteRoot(
     response = { "@type": "Plone Site", id: "plone", title: "Test Site" },
   ) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get("/").reply(200, response);
+    return nock
+      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get("/++api++")
+      .reply(200, response);
   }
 
   mockContentGet(path: string, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get(`/++api++${path}`)
+    const normalizedPath = this.normalizePath(path);
+    return nock
+      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get(`/++api++${normalizedPath}`)
       .reply(200, response);
   }
 
   mockContentCreate(path: string, requestMatcher: any, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .post(`/++api++${path}`, requestMatcher)
+    const normalizedPath = this.normalizePath(path);
+    return nock
+      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .post(`/++api++${normalizedPath}`, requestMatcher)
       .reply(201, response);
   }
 
   mockContentUpdate(path: string, requestMatcher: any, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .patch(`/++api++${path}`, requestMatcher)
+    const normalizedPath = this.normalizePath(path);
+    return nock
+      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .patch(`/++api++${normalizedPath}`, requestMatcher)
       .reply(200, response);
   }
 
   mockContentDelete(path: string) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .delete(`/++api++${path}`).reply(204);
+    const normalizedPath = this.normalizePath(path);
+    return nock
+      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .delete(`/++api++${normalizedPath}`)
+      .reply(204);
   }
 
   mockSearch(query: any, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    const serializedQuery: Record<string, any> = {};
+
+    Object.entries(query).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        const targetKey = key.endsWith("[]") ? key : `${key}[]`;
+        serializedQuery[targetKey] =
+          value.length === 1 ? value[0] : value;
+        return;
+      }
+
+      if (typeof value === "number") {
+        serializedQuery[key] = value.toString();
+        return;
+      }
+
+      serializedQuery[key] = value;
+    });
+
+    return nock
+      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .get("/++api++/@search")
-      .query(query).reply(200, response);
+      .query(serializedQuery)
+      .reply(200, response);
   }
 
   mockWorkflow(path: string, response: any) {
@@ -58,9 +96,25 @@ export class PloneMockServer {
       .get(`/++api++${path}/@workflow`).reply(200, response);
   }
 
-  mockWorkflowTransition(path: string, transition: string, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .post(`/++api++${path}/@workflow/${transition}`).reply(200, response);
+  mockWorkflowTransition(
+    path: string,
+    transition: string,
+    response: any,
+    bodyMatcher?: nock.RequestBodyMatcher,
+  ) {
+    const scope = nock.default(this.baseUrl, {
+      reqheaders: this.defaultReqHeaders,
+    }); // Use nock.default
+
+    if (bodyMatcher !== undefined) {
+      return scope
+        .post(`/++api++${path}/@workflow/${transition}`, bodyMatcher)
+        .reply(200, response);
+    }
+
+    return scope
+      .post(`/++api++${path}/@workflow/${transition}`)
+      .reply(200, response);
   }
 
   mockTypes(response: any) {

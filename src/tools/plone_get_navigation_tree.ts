@@ -35,17 +35,22 @@ export default async function ploneGetNavigationTree(
     const { root_path, depth } = args;
     const client = ploneHandlersSingleton.getClient();
 
-    // Use root path if provided, otherwise use site root
-    const pathToUse = root_path || "/";
+    const normalizedRootPath =
+      typeof root_path === "string"
+        ? client.normalizePath(root_path)
+        : "";
+
+    const navigationPath = normalizedRootPath
+      ? `${normalizedRootPath}/@navigation`
+      : "/@navigation";
 
     // Build query parameters for navigation
-    const params: Record<string, any> = {};
-    if (depth !== undefined) {
-      params.depth = depth;
-    }
+    const params: Record<string, any> = {
+      depth: typeof depth === "number" ? depth : 2,
+    };
 
     // Use the @navigation endpoint
-    const navigation = await client.get(`${pathToUse}/@navigation`, params);
+    const navigation = await client.get(navigationPath, params);
 
     return {
       content: [

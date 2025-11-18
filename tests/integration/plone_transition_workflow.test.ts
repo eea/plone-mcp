@@ -36,16 +36,15 @@ describe("plone_transition_workflow", () => {
 
   it("should execute a workflow transition with a comment", async () => {
     const comment = "Publishing for review";
-    mockServer
-      .mockWorkflowTransition(testPath, transitionName, sampleWorkflowInfo);
-
-    // This part should be Nock.default().post(...) or a mockServer helper
-    Nock.default(testBaseUrl)
-      .post(`/++api++${testPath}/@workflow/${transitionName}`, {
+    mockServer.mockWorkflowTransition(
+      testPath,
+      transitionName,
+      sampleWorkflowInfo,
+      {
         transition: transitionName,
-        comment: comment,
-      })
-      .reply(200, sampleWorkflowInfo); // Add reply
+        comment,
+      },
+    );
 
     const args = { path: testPath, transition: transitionName, comment: comment };
     await ploneTransitionWorkflow(args);

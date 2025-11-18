@@ -69,8 +69,8 @@ export default async function ploneSearch(
     if (review_state) params.review_state = review_state;
     if (sort_on) params.sort_on = sort_on;
     if (sort_order) params.sort_order = sort_order;
-    if (b_size) params.b_size = b_size;
-    if (b_start) params.b_start = b_start;
+    if (typeof b_size !== "undefined") params.b_size = b_size;
+    if (typeof b_start !== "undefined") params.b_start = b_start;
 
     const results = await client.get("/@search", params);
 
