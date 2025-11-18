@@ -1,0 +1,121 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import nock from "nock";
+import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
+import ploneRemoveSingleBlock from "../../src/tools/plone_remove_single_block";
+import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { PloneClient } from "../../src/plone-client";
+
+describe("plone_remove_single_block", () => {
+  let mockServer: PloneMockServer;
+  const testBaseUrl = "http://localhost:8080/Plone";
+  const testPath = "/my-page";
+  const blockToRemoveId = "block-to-remove";
+  const remainingBlockId = "block-remaining";
+
+  const mockContentWithBlock = {
+    ...sampleDocument,
+    "@id": `${testBaseUrl}/++api++${testPath}`,
+    id: "my-page",
+    blocks: {
+      [blockToRemoveId]: { "@type": "text", plaintext: "Block to remove" },
+      [remainingBlockId]: { "@type": "text", plaintext: "Remaining block" },
+    },
+    blocks_layout: {
+      items: [blockToRemoveId, remainingBlockId],
+    },
+  };
+
+  const mockContentAfterRemoval = {
+    ...sampleDocument,
+    "@id": `${testBaseUrl}/++api++${testPath}`,
+    id: "my-page",
+    blocks: {
+      [remainingBlockId]: { "@type": "text", plaintext: "Remaining block" },
+    },
+    blocks_layout: {
+      items: [remainingBlockId],
+    },
+  };
+
+  const defaultReqHeaders = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+
+  beforeEach(() => {
+    mockServer = new PloneMockServer(testBaseUrl);
+    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+  });
+
+  afterEach(() => {
+    nock.cleanAll();
+  });
+
+  it("should successfully remove a block", async () => {
+    mockServer.mockContentGet(testPath).reply(200, mockContentWithBlock);
+    mockServer.mockContentUpdate(
+      testPath,
+      (body: any) => {
+        expect(body.blocks).not.toHaveProperty(blockToRemoveId);
+        expect(body.blocks_layout.items).not.toContain(blockToRemoveId);
+        expect(body.blocks_layout.items).toContain(remainingBlockId);
+        return true;
+      },
+      mockContentAfterRemoval,
+    );
+
+    const args = { path: testPath, blockId: blockToRemoveId };
+    const result = await ploneRemoveSingleBlock(args);
+
+    expect(JSON.parse(result.content[0].text)).toEqual(mockContentAfterRemoval);
+    expect(nock.isDone()).toBe(true);
+  });
+
+  it("should throw an error if attempting to remove a non-existent block", async () => {
+    mockServer.mockContentGet(testPath).reply(200, mockContentWithBlock);
+    // No mock for patch, as it should not be called
+
+    const nonExistentBlockId = "non-existent-block";
+    const args = { path: testPath, blockId: nonExistentBlockId };
+
+    await expect(ploneRemoveSingleBlock(args)).rejects.toThrow(
+      `Block with ID '${nonExistentBlockId}' not found. Available block IDs: ${blockToRemoveId}, ${remainingBlockId}`,
+    );
+    expect(nock.pendingMocks()).toHaveLength(0); // No patch request should have been made
+  });
+
+  it("should throw an error if content retrieval fails", async () => {
+    nock(testBaseUrl, { reqheaders: defaultReqHeaders })
+      .get(`/++api++${testPath}`)
+      .reply(404, "Not Found");
+
+    const args = { path: testPath, blockId: blockToRemoveId };
+    await expect(ploneRemoveSingleBlock(args)).rejects.toThrow(
+      `[RemoveBlock] Request failed with status code 404`,
+    );
+    expect(nock.isDone()).toBe(true);
+  });
+
+  it("should throw an error if content update fails", async () => {
+    mockServer.mockContentGet(testPath).reply(200, mockContentWithBlock);
+    nock(testBaseUrl, { reqheaders: defaultReqHeaders })
+      .patch(`/++api++${testPath}`)
+      .reply(500, "Server Error");
+
+    const args = { path: testPath, blockId: blockToRemoveId };
+    await expect(ploneRemoveSingleBlock(args)).rejects.toThrow(
+      `[RemoveBlock] Request failed with status code 500`,
+    );
+    expect(nock.isDone()).toBe(true);
+  });
+
+  it("should throw an error if Plone client is not configured", async () => {
+    ploneHandlersSingleton.client = null;
+
+    const args = { path: testPath, blockId: blockToRemoveId };
+    await expect(ploneRemoveSingleBlock(args)).rejects.toThrow(
+      "Plone client not configured. Please run plone_configure first.",
+    );
+    expect(nock.pendingMocks()).toHaveLength(0); // No API call should be made
+  });
+});

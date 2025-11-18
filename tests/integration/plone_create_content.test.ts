@@ -1,0 +1,259 @@
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { cleanupNock, isNockDone, getPendingNocks, Nock } from "../utils/test-helpers";
+import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
+import ploneCreateContent from "../../src/tools/plone_create_content";
+import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { PloneClient } from "../../src/plone-client";
+import * as BlockUtils from "../../src/utils/block-utils"; // Added import
+import { PreparedBlocks } from "../../src/plone-service";
+
+describe("plone_create_content", () => {
+  let mockServer: PloneMockServer;
+  const testBaseUrl = "http://localhost:8080/Plone";
+  const parentPath = "/";
+  const newContentId = "my-new-page";
+  const newContentPath = `${parentPath}${newContentId}`;
+
+  const mockCreatedContent = {
+    "@id": `${testBaseUrl}/++api++${newContentPath}`,
+    ...sampleDocument,
+    id: newContentId,
+    title: "My New Page",
+  };
+
+  beforeEach(() => {
+    mockServer = new PloneMockServer(testBaseUrl);
+    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    ploneHandlersSingleton.clearPreparedBlocks(); // Ensure no prepared blocks initially
+    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation((
+      (i = 0) => () =>
+        `mock-id-${++i}`
+    )()); // Make generateBlockId return unique IDs
+  });
+
+  afterEach(() => {
+    cleanupNock();
+    vi.restoreAllMocks();
+    ploneHandlersSingleton.clearPreparedBlocks();
+  });
+
+  it("should successfully create simple content", async () => {
+    mockServer.mockContentCreate(
+      parentPath,
+      (body: any) => {
+        expect(body["@type"]).toBe("Document");
+        expect(body.title).toBe("My New Page");
+        expect(body.description).toBe("A description");
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        return true;
+      },
+      mockCreatedContent,
+    );
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "My New Page",
+      description: "A description",
+    };
+
+    const result = await ploneCreateContent(args);
+
+    expect(JSON.parse(result.content[0].text)).toEqual(mockCreatedContent);
+    expect(isNockDone()).toBe(true);
+  });
+
+  it("should create content with a specified ID", async () => {
+    mockServer.mockContentCreate(
+      parentPath,
+      (body: any) => {
+        expect(body["@type"]).toBe("Document");
+        expect(body.title).toBe("My New Page");
+        expect(body.id).toBe("custom-id");
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        return true;
+      },
+      { ...mockCreatedContent, id: "custom-id" },
+    );
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "My New Page",
+      id: "custom-id",
+    };
+
+    await ploneCreateContent(args);
+    expect(isNockDone()).toBe(true);
+  });
+
+  it("should create content with prepared blocks and clear them after", async () => {
+    // Generate unique IDs for prepared blocks, separate from the title block
+    const preparedBlockId = BlockUtils.generateBlockId();
+    const preparedBlocksData: PreparedBlocks = {
+      blocks: {
+        [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+      },
+      blocks_layout: { items: [preparedBlockId] },
+      timestamp: Date.now(),
+    };
+    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+
+    mockServer.mockContentCreate(
+      parentPath,
+      (body: any) => {
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks).toEqual({
+          [titleBlockId]: { "@type": "title" },
+          [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+        });
+        expect(body.blocks_layout.items).toEqual([titleBlockId, preparedBlockId]);
+        return true;
+      },
+      mockCreatedContent,
+    );
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "Page with Prepared Blocks",
+    };
+
+    await ploneCreateContent(args);
+
+    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
+    expect(isNockDone()).toBe(true);
+  });
+
+  it("should prioritize inline blocks over prepared blocks", async () => {
+    const preparedBlockId = BlockUtils.generateBlockId();
+    const preparedBlocksData: PreparedBlocks = {
+      blocks: {
+        [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+      },
+      blocks_layout: { items: [preparedBlockId] },
+      timestamp: Date.now(),
+    };
+    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+
+    const inlineBlockId = BlockUtils.generateBlockId();
+    const inlineBlocks = {
+      [inlineBlockId]: { "@type": "slate", plaintext: "Inline text" },
+    };
+    const inlineLayout = { items: [inlineBlockId] };
+
+    mockServer.mockContentCreate(
+      parentPath,
+      (body: any) => {
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks).toEqual({
+          [titleBlockId]: { "@type": "title" },
+          ...inlineBlocks,
+        });
+        expect(body.blocks_layout.items).toEqual([titleBlockId, ...inlineLayout.items]);
+        return true;
+      },
+      mockCreatedContent,
+    );
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "Page with Inline Blocks",
+      blocks: inlineBlocks,
+      blocks_layout: inlineLayout,
+    };
+
+    await ploneCreateContent(args);
+
+    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Still cleared
+    expect(isNockDone()).toBe(true);
+  });
+
+  it("should create content with additional fields", async () => {
+    const additionalFields = {
+      effective: "2025-01-01T12:00:00Z",
+      creators: ["author1"],
+    };
+
+    mockServer.mockContentCreate(
+      parentPath,
+      (body: any) => {
+        expect(body["@type"]).toBe("Document");
+        expect(body.title).toBe("Page with Extra Fields");
+        expect(body.effective).toBe(additionalFields.effective);
+        expect(body.creators).toEqual(additionalFields.creators);
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        return true;
+      },
+      mockCreatedContent,
+    );
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "Page with Extra Fields",
+      additionalFields: additionalFields,
+    };
+
+    await ploneCreateContent(args);
+    expect(isNockDone()).toBe(true);
+  });
+
+  it("should throw an error if content creation fails and clear prepared blocks", async () => {
+    const preparedBlockId = BlockUtils.generateBlockId();
+    const preparedBlocksData: PreparedBlocks = {
+      blocks: {
+        [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+      },
+      blocks_layout: { items: [preparedBlockId] },
+      timestamp: Date.now(),
+    };
+    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+
+    mockServer.mockContentCreate(
+      parentPath,
+      (body: any) => {
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks).toEqual({
+          [titleBlockId]: { "@type": "title" },
+          [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+        });
+        expect(body.blocks_layout.items).toEqual([titleBlockId, preparedBlockId]);
+        return true;
+      },
+      500,
+      "Server Error",
+    );
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "Failing Page",
+    };
+
+    await expect(ploneCreateContent(args)).rejects.toThrow(
+      "[CreateContent] Request failed with status code 500",
+    );
+    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
+    expect(isNockDone()).toBe(true);
+  });
+
+  it("should throw an error if Plone client is not configured", async () => {
+    ploneHandlersSingleton.client = null;
+
+    const args = {
+      parentPath: parentPath,
+      type: "Document",
+      title: "My New Page",
+    };
+
+    await expect(ploneCreateContent(args)).rejects.toThrow(
+      "Plone client not configured. Please run plone_configure first.",
+    );
+    expect(getPendingNocks()).toHaveLength(0); // No API call should be made
+  });
+});

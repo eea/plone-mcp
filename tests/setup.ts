@@ -1,18 +1,18 @@
 // Global test setup
-import nock from "nock";
+import { cleanupNock, Nock } from "./utils/test-helpers"; // Added Nock import
 
 // Disable actual HTTP requests during tests
 beforeAll(() => {
-  nock.disableNetConnect();
+  Nock.disableNetConnect();
   // Allow localhost connections for integration tests
-  nock.enableNetConnect("127.0.0.1");
+  Nock.enableNetConnect("127.0.0.1");
 });
 
 afterAll(() => {
-  nock.enableNetConnect();
+  Nock.enableNetConnect();
 });
 
 // Clean up after each test
 afterEach(() => {
-  nock.cleanAll();
+  cleanupNock();
 });

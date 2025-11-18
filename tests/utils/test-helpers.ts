@@ -1,7 +1,17 @@
-import nock from "nock";
+import * as nock from "nock"; // Import as namespace
+
+export const Nock = nock; // Export the entire namespace object
+
+export const cleanupNock = () => nock.cleanAll();
+export const isNockDone = () => nock.isDone();
+export const getPendingNocks = () => nock.pendingMocks();
 
 export class PloneMockServer {
   private baseUrl: string;
+  private defaultReqHeaders = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
 
   constructor(baseUrl: string = "https://test.plone.com") {
     this.baseUrl = baseUrl;
@@ -10,56 +20,56 @@ export class PloneMockServer {
   mockSiteRoot(
     response = { "@type": "Plone Site", id: "plone", title: "Test Site" },
   ) {
-    return nock(this.baseUrl).get("/++api++/").reply(200, response);
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get("/++api++/").reply(200, response);
   }
 
-  mockContentGet(path: string, response: any) {
-    return nock(this.baseUrl).get(`/++api++${path}`).reply(200, response);
+  mockContentGet(path: string) {
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get(`/++api++${path}`);
   }
 
   mockContentCreate(path: string, requestMatcher: any, response: any) {
-    return nock(this.baseUrl)
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .post(`/++api++${path}`, requestMatcher)
       .reply(201, response);
   }
 
   mockContentUpdate(path: string, requestMatcher: any, response: any) {
-    return nock(this.baseUrl)
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .patch(`/++api++${path}`, requestMatcher)
       .reply(200, response);
   }
 
   mockContentDelete(path: string) {
-    return nock(this.baseUrl).delete(`/++api++${path}`).reply(204);
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .delete(`/++api++${path}`).reply(204);
   }
 
   mockSearch(query: any, response: any) {
-    return nock(this.baseUrl)
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .get("/++api++/@search")
-      .query(query)
-      .reply(200, response);
+      .query(query).reply(200, response);
   }
 
   mockWorkflow(path: string, response: any) {
-    return nock(this.baseUrl)
-      .get(`/++api++${path}/@workflow`)
-      .reply(200, response);
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get(`/++api++${path}/@workflow`).reply(200, response);
   }
 
   mockWorkflowTransition(path: string, transition: string, response: any) {
-    return nock(this.baseUrl)
-      .post(`/++api++${path}/@workflow/${transition}`)
-      .reply(200, response);
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .post(`/++api++${path}/@workflow/${transition}`).reply(200, response);
   }
 
   mockTypes(response: any) {
-    return nock(this.baseUrl).get("/++api++/@types").reply(200, response);
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get("/++api++/@types").reply(200, response);
   }
 
-  mockVocabularies(vocabulary: string, response: any) {
-    return nock(this.baseUrl)
-      .get(`/++api++/@vocabularies/${vocabulary}`)
-      .reply(200, response);
+  mockVocabularies(vocabulary: string) {
+    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+      .get(`/++api++/@vocabularies/${vocabulary}`);
   }
 }
 
