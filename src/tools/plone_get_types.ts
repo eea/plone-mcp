@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {};
 
@@ -16,6 +18,22 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default async function ploneGetTypes(args: InferSchema<typeof schema>) {
-  return ploneHandlersSingleton.handleGetTypes(args);
+export default async function ploneGetTypes(
+  _args: InferSchema<typeof schema>,
+): Promise<CallToolResult> {
+  try {
+    const client = ploneHandlersSingleton.getClient();
+    const types = await client.get("/@types");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(types, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("GetTypes", error);
+  }
 }

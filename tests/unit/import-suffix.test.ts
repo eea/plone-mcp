@@ -1,7 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import { readFileSync } from "fs";
 import { globSync } from "glob";
-import { join } from "path";
 
 describe("Import Path Suffixes", () => {
   it("should not contain '.js' suffix in import paths of TypeScript files", () => {
@@ -11,7 +10,8 @@ describe("Import Path Suffixes", () => {
     tsFiles.forEach((file) => {
       const content = readFileSync(file, "utf-8");
       // Regex to find import/export statements with '.js' or '.cjs' or '.mjs' suffix
-      const regex = /(?:import|export)\s(?:.*?)\sfrom\s+['"].*\.(js|cjs|mjs)['"].*;/g;
+      const regex =
+        /(?:import|export)\s(?:.*?)\sfrom\s+['"].*\.(js|cjs|mjs)['"].*;/g;
       if (regex.test(content)) {
         filesWithJSSuffix.push(file);
       }

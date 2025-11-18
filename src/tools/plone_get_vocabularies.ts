@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   vocabulary: z.string().describe("Vocabulary name"),
@@ -22,6 +24,30 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneGetVocabularies(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleGetVocabularies(args);
+): Promise<CallToolResult> {
+  try {
+    const parsedArgs = args;
+    const client = ploneHandlersSingleton.getClient();
+    const { vocabulary, title, token } = parsedArgs;
+
+    const params: Record<string, any> = {};
+    if (title) params.title = title;
+    if (token) params.token = token;
+
+    const vocabularies = await client.get(
+      `/@vocabularies/${vocabulary}`,
+      params,
+    );
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(vocabularies, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("GetVocabularies", error);
+  }
 }

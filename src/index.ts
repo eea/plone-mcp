@@ -2,7 +2,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
-import { PloneToolHandlers } from "./handlers";
+import { PloneService } from "./plone-service"; // Updated import
 import { setPloneHandlersInstance } from "./plone-singleton";
 
 // =============================================================================
@@ -14,10 +14,10 @@ import { setPloneHandlersInstance } from "./plone-singleton";
 export class PloneMCPServer {
   private server: McpServer;
 
-  private handlers: PloneToolHandlers;
+  private handlers: PloneService; // Changed type to PloneService
 
   constructor() {
-    this.handlers = new PloneToolHandlers(null);
+    this.handlers = new PloneService(null); // Changed instantiation to PloneService
 
     setPloneHandlersInstance(this.handlers);
 

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -20,6 +22,22 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneGetWorkflowInfo(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleGetWorkflowInfo(args);
+): Promise<CallToolResult> {
+  try {
+    const { path } = args;
+    const client = ploneHandlersSingleton.getClient();
+
+    const workflow = await client.get(`${path}/@workflow`);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(workflow, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("GetWorkflowInfo", error);
+  }
 }

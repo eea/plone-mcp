@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
-import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, optionalNonEmpty } from "../plone-client";
+import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, PloneClient, optionalNonEmpty } from "../plone-client";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types"; // New import
+import { wrapError } from "../utils/block-utils"; // New import
 
 // Define the schema for tool parameters
 export const schema = {
@@ -39,6 +41,20 @@ export const metadata: ToolMetadata = {
 // Tool implementation
 export default async function ploneConfigure(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleConfigure(args);
+): Promise<CallToolResult> {
+  try {
+    const config = args;
+    ploneHandlersSingleton.client = new PloneClient(config); // Update the client instance
+
+    // Test the connection
+    await ploneHandlersSingleton.client.get("/");
+
+    const textContent: TextContent = {
+      type: "text",
+      text: `Successfully configured connection to Plone site: ${config.baseUrl}`,
+    };
+    return { content: [textContent] };
+  } catch (error) {
+    throw wrapError("Configure", error);
+  }
 }

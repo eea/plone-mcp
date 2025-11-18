@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   path: z.string().describe("Path to the content to update"),
@@ -36,6 +38,56 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneUpdateContent(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleUpdateContent(args);
+): Promise<CallToolResult> {
+  try {
+    const parsedArgs = args;
+    const client = ploneHandlersSingleton.getClient();
+    const {
+      path,
+      title,
+      description,
+      blocks,
+      blocks_layout,
+      additionalFields,
+    } = parsedArgs;
+
+    if (!path) {
+      throw new Error("Path is required for updating content");
+    }
+
+    const data: any = {};
+    if (title !== undefined) data.title = title;
+    if (description !== undefined) data.description = description;
+
+    // Use the centralized helper, which will return null if no block changes are needed
+    const blockData = ploneHandlersSingleton.processBlocksForContent(
+      blocks,
+      blocks_layout,
+      true,
+    );
+    if (blockData) {
+      data.blocks = blockData.blocks;
+      data.blocks_layout = blockData.blocks_layout;
+    }
+
+    if (additionalFields) Object.assign(data, additionalFields);
+
+    if (Object.keys(data).length === 0) {
+      throw new Error("No changes specified for update");
+    }
+
+    const content = await client.patch(path, data);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(content, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    ploneHandlersSingleton.clearPreparedBlocks();
+    throw wrapError("UpdateContent", error);
+  }
 }

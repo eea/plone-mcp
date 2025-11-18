@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
+import { PloneContent } from "../plone-client";
 
 export const schema = {
   parentPath: z
     .string()
     .describe(
-      "Path where to create the content (e.g., '/parentDocument' or '/' for root)",
+      "Path where to create the content (e.g., '/parentDocument/document' or '/' for root)",
     ),
   type: z
     .string()
@@ -55,6 +58,55 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneCreateContent(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleCreateContent(args);
+): Promise<CallToolResult> {
+  try {
+    const parsedArgs = args;
+    const client = ploneHandlersSingleton.getClient();
+    const {
+      parentPath,
+      type,
+      title,
+      description,
+      id,
+      blocks,
+      blocks_layout,
+      additionalFields,
+    } = parsedArgs;
+
+    const data: any = {
+      "@type": type,
+      title,
+    };
+
+    if (description) data.description = description;
+    if (id) data.id = id;
+
+    // Use the centralized helper to process blocks
+    const blockData = ploneHandlersSingleton.processBlocksForContent(
+      blocks,
+      blocks_layout,
+      false,
+    );
+    if (blockData) {
+      data.blocks = blockData.blocks;
+      data.blocks_layout = blockData.blocks_layout;
+    }
+
+    if (additionalFields) Object.assign(data, additionalFields);
+
+    const content = await client.post(parentPath, data);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(content, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    // Ensure prepared blocks are cleared on any error
+    ploneHandlersSingleton.clearPreparedBlocks();
+    throw wrapError("CreateContent", error);
+  }
 }

@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
-import { blockRegistry } from "../block-registry";
+import { blockRegistry } from "../block-registry"; // Already imported
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError, getBlockExample } from "../utils/block-utils"; // Added getBlockExample
 
 export const schema = {
   blockType: z
@@ -26,6 +28,61 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneGetBlockSchemas(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleGetBlockSchemas(args);
+): Promise<CallToolResult> {
+  try {
+    const { blockType } = args;
+
+    if (blockType && blockType !== "") {
+      const spec = blockRegistry.getSpecification(blockType);
+      if (!spec) {
+        throw new Error(
+          `Unknown block type: ${blockType}. Available types: ${blockRegistry
+            .getBlockTypes()
+            .join(", ")}`,
+        );
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(
+              {
+                blockType: blockType,
+                specification: spec,
+                example: getBlockExample(blockType),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
+
+    // Return all block schemas with examples
+    const examples: Record<string, any> = {};
+    for (const type of blockRegistry.getBlockTypes()) {
+      examples[type] = getBlockExample(type);
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              availableTypes: blockRegistry.getBlockTypes(),
+              specifications: blockRegistry.getSpecifications(),
+              examples: examples,
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("GetBlockSchemas", error);
+  }
 }

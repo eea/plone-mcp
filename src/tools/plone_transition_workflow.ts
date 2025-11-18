@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -22,6 +24,25 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneTransitionWorkflow(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleTransitionWorkflow(args);
+): Promise<CallToolResult> {
+  try {
+    const { path, transition, comment } = args;
+    const client = ploneHandlersSingleton.getClient();
+
+    const data: any = { transition };
+    if (comment) data.comment = comment;
+
+    const result = await client.post(`${path}/@workflow/${transition}`, data);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("TransitionWorkflow", error);
+  }
 }

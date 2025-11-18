@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   root_path: z
@@ -28,6 +30,32 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneGetNavigationTree(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleGetNavigationTree(args);
+): Promise<CallToolResult> {
+  try {
+    const { root_path, depth } = args;
+    const client = ploneHandlersSingleton.getClient();
+
+    // Use root path if provided, otherwise use site root
+    const pathToUse = root_path || "/";
+
+    // Build query parameters for navigation
+    const params: Record<string, any> = {};
+    if (depth !== undefined) {
+      params.depth = depth;
+    }
+
+    // Use the @navigation endpoint
+    const navigation = await client.get(`${pathToUse}/@navigation`, params);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(navigation, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("GetNavigationTree", error);
+  }
 }

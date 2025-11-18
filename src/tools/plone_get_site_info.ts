@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {};
 
@@ -17,7 +19,21 @@ export const metadata: ToolMetadata = {
 };
 
 export default async function ploneGetSiteInfo(
-  args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleGetSiteInfo(args);
+  _args: InferSchema<typeof schema>,
+): Promise<CallToolResult> {
+  try {
+    const client = ploneHandlersSingleton.getClient();
+    const siteInfo = await client.get("/");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(siteInfo, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("GetSiteInfo", error);
+  }
 }

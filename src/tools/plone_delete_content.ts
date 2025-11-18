@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   path: z.string().describe("Path to the content to delete"),
@@ -20,6 +22,22 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneDeleteContent(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleDeleteContent(args);
+): Promise<CallToolResult> {
+  try {
+    const { path } = args;
+    const client = ploneHandlersSingleton.getClient();
+
+    await client.delete(path);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully deleted content at path: ${path}`,
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("DeleteContent", error);
+  }
 }

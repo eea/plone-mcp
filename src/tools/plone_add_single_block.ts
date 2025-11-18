@@ -2,6 +2,14 @@ import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
 import { blockRegistry } from "../block-registry";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import {
+  wrapError,
+  generateBlockId,
+  processBlock,
+  validateImageURL,
+} from "../utils/block-utils";
+import { PloneContent } from "../plone-client";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -29,6 +37,68 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneAddSingleBlock(
   args: InferSchema<typeof schema>,
-) {
-  return ploneHandlersSingleton.handleAddBlock(args);
+): Promise<CallToolResult> {
+  try {
+    const { path, blockType, blockData, position } = args;
+    const client = ploneHandlersSingleton.getClient();
+
+    // First get the current content
+    const content: PloneContent = await client.get(path);
+
+    const blocks = content.blocks || {};
+    const blocks_layout = content.blocks_layout || { items: [] };
+
+    // Generate new block ID
+    const blockId = generateBlockId();
+
+    // Validate image URLs asynchronously before processing
+    if (blockType === "image" && blockData?.url) {
+      const isValid = await validateImageURL(blockData.url);
+      if (!isValid) {
+        throw wrapError(
+          "AddBlock",
+          `Invalid or inaccessible image URL: ${blockData.url}`,
+        );
+      }
+    }
+
+    // Process block using centralized logic
+    try {
+      blocks[blockId] = processBlock(blockType, blockData);
+    } catch (error) {
+      throw new Error(
+        `Error processing block data: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+
+    // Insert at specified position or at the end
+    if (
+      position !== undefined &&
+      position >= 0 &&
+      position <= blocks_layout.items.length
+    ) {
+      blocks_layout.items.splice(position, 0, blockId);
+    } else {
+      blocks_layout.items.push(blockId);
+    }
+
+    // Update the content
+    const updatedContent = await client.patch(path, {
+      blocks,
+      blocks_layout,
+    });
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(updatedContent, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("AddBlock", error);
+  }
 }

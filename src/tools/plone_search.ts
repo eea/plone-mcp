@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { ploneHandlersSingleton } from "../plone-singleton";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 export const schema = {
   query: z.string().optional().describe("Search query text"),
@@ -42,6 +44,45 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default async function ploneSearch(args: InferSchema<typeof schema>) {
-  return ploneHandlersSingleton.handleSearch(args);
+export default async function ploneSearch(
+  args: InferSchema<typeof schema>,
+): Promise<CallToolResult> {
+  try {
+    const parsedArgs = args;
+    const client = ploneHandlersSingleton.getClient();
+    const {
+      query,
+      portal_type,
+      path,
+      review_state,
+      sort_on,
+      sort_order,
+      b_size,
+      b_start,
+    } = parsedArgs;
+
+    const params: Record<string, any> = {};
+
+    if (query) params.SearchableText = query;
+    if (portal_type) params.portal_type = portal_type;
+    if (path) params.path = path;
+    if (review_state) params.review_state = review_state;
+    if (sort_on) params.sort_on = sort_on;
+    if (sort_order) params.sort_order = sort_order;
+    if (b_size) params.b_size = b_size;
+    if (b_start) params.b_start = b_start;
+
+    const results = await client.get("/@search", params);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(results, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    throw wrapError("Search", error);
+  }
 }
