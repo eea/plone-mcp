@@ -27,11 +27,12 @@
 3. **Decide strategy:** Favor in-place migration within current repo rather than side-by-side to avoid duplicated Plone logic. Document rollback plan (keep `main` branch on legacy server until XMCP build passes).
 
 ### Phase 1 – Bootstrap XMCP Workspace (1–2 days)
-1. **Add dependency:** Install `xmcp` (workspace or npm) plus peer deps (`zod@^3.24.4` already present).
+1. **Add dependency:** Install `xmcp` (workspace or npm) plus align peer deps with the docs requirement (`zod@^3.25.76`). Plan to bump `zod` and any types accordingly so `xmcp dev/build` work without peer warnings.
 2. **Scaffold entry:** Create `xmcp.config.ts` enabling `stdio`, referencing future middleware.
-3. **CLI scripts:** Update `package.json` scripts → `dev: "xmcp dev"`, `build: "xmcp build"`, keep legacy commands temporarily under `legacy:*` for regression comparison.
-4. **Binary shim:** Update `bin` to reference XMCP’s build output (likely `dist/stdio.js`). Provide compatibility wrapper that proxies `plone-mcp-server` to `node dist/stdio.js`.
-5. **TypeScript setup:** Ensure XMCP’s TS config (usually `tsconfig.app.json`) aligns; extend existing `tsconfig.json` rather than replacing to keep Vitest path mappings.
+3. **CLI scripts:** Update `package.json` scripts → `dev: "xmcp dev"`, `build: "xmcp build"`, `start: "node dist/stdio.js"` (per installation guide). Keep legacy commands temporarily under `legacy:*` for regression comparison.
+4. **Middleware stub:** Create `src/middleware.ts` (xmcp auto-loads this per docs) even if it only enforces `plone_configure` pre-check; fill it out later in Phase 5.
+5. **Binary shim:** Update `bin` to reference XMCP’s build output (likely `dist/stdio.js`). Provide compatibility wrapper that proxies `plone-mcp-server` to `node dist/stdio.js`.
+6. **TypeScript setup:** Ensure XMCP’s TS config (usually `tsconfig.app.json`) aligns; extend existing `tsconfig.json` rather than replacing to keep Vitest path mappings.
 
 ### Phase 2 – Shared Infrastructure Extraction (1–2 days)
 1. **Refactor `PloneToolHandlers`:** Split pure logic from registration glue. Convert handler methods into standalone functions under `src/lib/plone-tools/`.
@@ -52,9 +53,9 @@
 3. **Auto-discovery:** Verify XMCP CLI auto-registers these modules; remove manual registration code from legacy entry.
 
 ### Phase 5 – Middleware & Configuration (1 day)
-1. **Session configuration:** Implement XMCP middleware that requires `plone_configure` before other tools run (throw descriptive error otherwise).
-2. **Auth options:** Leverage XMCP’s middleware to inject API-key / JWT guardrails if needed later (align with `/docs/authentication` guidance).
-3. **Logging/metrics:** Hook into XMCP lifecycle events for structured logging, replacing ad-hoc `console.error`.
+1. **Session configuration:** Implement `src/middleware.ts` so every request checks for stored Plone credentials (fail fast with the same messaging as `plone_configure`). Use XMCP middleware chaining semantics from the docs.
+2. **Auth options:** Leverage XMCP’s built-in middleware helpers (`apiKeyAuthMiddleware`, `jwtAuthMiddleware`) if Plone endpoints require gatekeeping; keep configuration toggles in `xmcp.config.ts`.
+3. **Logging/metrics:** Hook into XMCP lifecycle events for structured logging, replacing ad-hoc `console.error`, and keep STDIO `debug` logging disabled to avoid client parse issues noted in the transport docs.
 
 ### Phase 6 – Build, Test, and QA Alignment (2 days)
 1. **Scripts:** Ensure `make test`, `make type-check`, `make format` still work (may need to call `xmcp build` inside `make build`).
@@ -80,14 +81,12 @@
 ## 6. Risks & Mitigations
 - **State handling differences:** XMCP modules are stateless by default; ensure `plone_create_blocks_layout`’s 60-second TTL is enforced via centralized cache. Mitigation: implement a small in-memory store with timestamps and cover it with tests.
 - **CLI disruption:** Consumers invoking `node dist/index.js` may break. Provide wrapper script and release notes before removing old entry.
-- **XMCP updates:** Framework evolves quickly; lock dependency version and watch upstream changelog.
+- **XMCP updates:** Framework evolves quickly; lock dependency version and watch upstream changelog (especially for middleware and transport APIs surfaced in `specs/xmcp-llms-full.txt`).
 - **Testing complexity:** Auto-discovered modules may complicate targeted tests. Use explicit import testing rather than relying on discovery for unit cases.
 
 ## 7. Open Questions
-1. Do we need HTTP transport (for deployment on Vercel/Replit) in addition to stdio? Decides `xmcp.config.ts` shape.
-2. Should `plone_configure` persist across sessions (file-based) or remain in-memory per process?
-3. Are there plans to add XMCP middlewares for auth (API key/JWT)? Impacts early architecture.
-4. How will we version the npm package during migration (beta channel vs. direct major release)?
+- Decisions tracked in `specs/xmcp-decision-points.md`; currently only the following remains unresolved:
+1. Are we adding XMCP middlewares for auth (API key/JWT) ahead of tool execution, or can we defer until after parity?
 
 ## 8. Next Steps
 1. Confirm answers to open questions with stakeholders.
