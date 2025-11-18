@@ -41,28 +41,48 @@ export class PloneMockServer {
       .reply(200, response);
   }
 
-  mockContentCreate(path: string, requestMatcher: any, response: any) {
+  mockContentCreate(
+    path: string,
+    requestMatcher: any,
+    responseOrStatus: any,
+    maybeBody?: any,
+  ) {
     const normalizedPath = this.normalizePath(path);
+    const { status, body } =
+      typeof responseOrStatus === "number"
+        ? { status: responseOrStatus, body: maybeBody }
+        : { status: 201, body: responseOrStatus };
+
     return nock
       .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .post(`/++api++${normalizedPath}`, requestMatcher)
-      .reply(201, response);
+      .reply(status, body);
   }
 
-  mockContentUpdate(path: string, requestMatcher: any, response: any) {
+  mockContentUpdate(
+    path: string,
+    requestMatcher: any,
+    responseOrStatus: any,
+    maybeBody?: any,
+  ) {
     const normalizedPath = this.normalizePath(path);
+    const { status, body } =
+      typeof responseOrStatus === "number"
+        ? { status: responseOrStatus, body: maybeBody }
+        : { status: 200, body: responseOrStatus };
+
     return nock
       .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .patch(`/++api++${normalizedPath}`, requestMatcher)
-      .reply(200, response);
+      .reply(status, body);
   }
 
-  mockContentDelete(path: string) {
+  mockContentDelete(path: string, status: number = 204, body?: any) {
     const normalizedPath = this.normalizePath(path);
     return nock
       .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
       .delete(`/++api++${normalizedPath}`)
-      .reply(204);
+      .reply(status, body);
   }
 
   mockSearch(query: any, response: any) {

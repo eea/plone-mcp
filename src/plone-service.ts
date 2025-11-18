@@ -73,8 +73,9 @@ export class PloneService {
     blocks_layout: { items: string[] };
   } | null {
     // Determine if we should process blocks at all
-    const hasProvidedBlocks = blocks || blocks_layout;
-    const hasPreparedBlocks = this.getPreparedBlocks() !== null; // Use getter to check for expiry
+    const preparedBlocks = this.getPreparedBlocks();
+    const hasProvidedBlocks = Boolean(blocks || blocks_layout);
+    const hasPreparedBlocks = Boolean(preparedBlocks);
 
     if (!hasProvidedBlocks && !hasPreparedBlocks) {
       // For updates, if no blocks are provided, do nothing.
@@ -84,20 +85,23 @@ export class PloneService {
       }
     }
 
-    // Use prepared blocks if available and not expired, otherwise use provided args
-    let finalBlocks: Record<string, any>;
-    let finalLayout: string[];
-    const currentPreparedBlocks = this.getPreparedBlocks();
+    // Inline blocks take precedence over prepared ones
+    let finalBlocks: Record<string, any> = {};
+    let finalLayout: string[] = [];
 
-    if (hasPreparedBlocks && currentPreparedBlocks) {
-      finalBlocks = currentPreparedBlocks.blocks;
-      finalLayout = currentPreparedBlocks.blocks_layout.items;
-    } else {
-      finalBlocks = blocks || {};
-      finalLayout = blocks_layout?.items || Object.keys(finalBlocks);
+    if (hasProvidedBlocks) {
+      finalBlocks = {
+        ...(blocks || {}),
+      };
+      const layoutItems = (blocks_layout as { items?: string[] } | undefined)
+        ?.items;
+      finalLayout = layoutItems ? [...layoutItems] : Object.keys(finalBlocks);
+    } else if (hasPreparedBlocks && preparedBlocks) {
+      finalBlocks = { ...preparedBlocks.blocks };
+      finalLayout = [...preparedBlocks.blocks_layout.items];
     }
 
-    // Always clear prepared blocks after they are consumed
+    // Prepared blocks should never leak into the next operation
     this.clearPreparedBlocks();
 
     // Find the existing title block
