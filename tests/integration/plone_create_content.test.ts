@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { cleanupNock, isNockDone, getPendingNocks, Nock } from "../utils/test-helpers";
+import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneCreateContent from "../../src/tools/plone_create_content";
 import { ploneHandlersSingleton } from "../../src/plone-singleton";
@@ -32,7 +32,7 @@ describe("plone_create_content", () => {
   });
 
   afterEach(() => {
-    cleanupNock();
+    Nock.cleanAll();
     vi.restoreAllMocks();
     ploneHandlersSingleton.clearPreparedBlocks();
   });
@@ -61,7 +61,7 @@ describe("plone_create_content", () => {
     const result = await ploneCreateContent(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockCreatedContent);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should create content with a specified ID", async () => {
@@ -86,7 +86,7 @@ describe("plone_create_content", () => {
     };
 
     await ploneCreateContent(args);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should create content with prepared blocks and clear them after", async () => {
@@ -124,7 +124,7 @@ describe("plone_create_content", () => {
     await ploneCreateContent(args);
 
     expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should prioritize inline blocks over prepared blocks", async () => {
@@ -169,7 +169,7 @@ describe("plone_create_content", () => {
     await ploneCreateContent(args);
 
     expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Still cleared
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should create content with additional fields", async () => {
@@ -200,7 +200,7 @@ describe("plone_create_content", () => {
     };
 
     await ploneCreateContent(args);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if content creation fails and clear prepared blocks", async () => {
@@ -239,7 +239,7 @@ describe("plone_create_content", () => {
       "[CreateContent] Request failed with status code 500",
     );
     expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
@@ -254,6 +254,6 @@ describe("plone_create_content", () => {
     await expect(ploneCreateContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
-    expect(getPendingNocks()).toHaveLength(0); // No API call should be made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });

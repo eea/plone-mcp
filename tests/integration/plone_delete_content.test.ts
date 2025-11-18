@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { cleanupNock, isNockDone, getPendingNocks } from "../utils/test-helpers";
+import { Nock } from "../utils/test-helpers";
 import { PloneMockServer } from "../utils/test-helpers";
 import ploneDeleteContent from "../../src/tools/plone_delete_content";
 import { ploneHandlersSingleton } from "../../src/plone-singleton";
@@ -16,7 +16,7 @@ describe("plone_delete_content", () => {
   });
 
   afterEach(() => {
-    cleanupNock();
+    Nock.cleanAll();
   });
 
   it("should successfully delete content", async () => {
@@ -28,11 +28,11 @@ describe("plone_delete_content", () => {
     expect(result.content[0].text).toContain(
       `Successfully deleted content at path: ${testPath}`,
     );
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if content deletion fails (e.g., 404 Not Found)", async () => {
-    nock(testBaseUrl, {
+    Nock.default(testBaseUrl, {
       reqheaders: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -45,7 +45,7 @@ describe("plone_delete_content", () => {
     await expect(ploneDeleteContent(args)).rejects.toThrow(
       "[DeleteContent] Request failed with status code 404",
     );
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
@@ -55,6 +55,6 @@ describe("plone_delete_content", () => {
     await expect(ploneDeleteContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
-    expect(nock.pendingMocks()).toHaveLength(0); // No API call should be made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { cleanupNock, isNockDone, getPendingNocks, Nock } from "../utils/test-helpers"; // Changed import
+import { Nock } from "../utils/test-helpers";
 import { PloneMockServer } from "../utils/test-helpers";
 import ploneGetSiteInfo from "../../src/tools/plone_get_site_info";
 import { ploneHandlersSingleton } from "../../src/plone-singleton";
@@ -26,7 +26,7 @@ describe("plone_get_site_info", () => {
   });
 
   afterEach(() => {
-    cleanupNock();
+    Nock.cleanAll();
   });
 
   it("should successfully retrieve site information", async () => {
@@ -35,7 +35,7 @@ describe("plone_get_site_info", () => {
     const result = await ploneGetSiteInfo({});
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockSiteInfo);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if site information retrieval fails", async () => {
@@ -51,7 +51,7 @@ describe("plone_get_site_info", () => {
     await expect(ploneGetSiteInfo({})).rejects.toThrow(
       "[GetSiteInfo] Request failed with status code 500",
     );
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
@@ -60,6 +60,6 @@ describe("plone_get_site_info", () => {
     await expect(ploneGetSiteInfo({})).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
-    expect(getPendingNocks()).toHaveLength(0); // No API call should be made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });

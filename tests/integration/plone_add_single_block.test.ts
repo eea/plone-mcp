@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import nock from "nock";
+import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneAddSingleBlock from "../../src/tools/plone_add_single_block";
 import { ploneHandlersSingleton } from "../../src/plone-singleton";
@@ -40,13 +40,13 @@ describe("plone_add_single_block", () => {
   });
 
   afterEach(() => {
-    nock.cleanAll();
+    Nock.cleanAll();
     vi.restoreAllMocks(); // Restore all mocks after each test
   });
 
   it("should successfully add a text block to an existing content item", async () => {
     // Mock getting the existing content
-    mockServer.mockContentGet(testPath).reply(200, mockContent);
+    mockServer.mockContentGet(testPath, mockContent);
 
     // Mock the patch request for updating content
     const mockContentAfterAdd = { ...mockContent, message: "Block added" };
@@ -75,14 +75,14 @@ describe("plone_add_single_block", () => {
     const result = await ploneAddSingleBlock(args);
 
     expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterAdd, null, 2));
-    expect(nock.isDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should successfully add an image block with a valid URL", async () => {
     // Ensure validateImageURL is mocked to return true for this test
     vi.spyOn(BlockUtils, "validateImageURL").mockResolvedValue(true);
 
-    mockServer.mockContentGet(testPath).reply(200, mockContent);
+    mockServer.mockContentGet(testPath, mockContent);
     const mockContentAfterImageAdd = {
       ...mockContent,
       message: "Image block added",
@@ -113,13 +113,13 @@ describe("plone_add_single_block", () => {
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
       "http://example.com/image.jpg",
     );
-    expect(nock.isDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if an image block is added with an invalid URL", async () => {
     vi.spyOn(BlockUtils, "validateImageURL").mockResolvedValue(false); // Simulate invalid URL
 
-    mockServer.mockContentGet(testPath).reply(200, mockContent);
+    mockServer.mockContentGet(testPath, mockContent);
     // No mock for patch, as it should not be called
 
     const args = {
@@ -134,11 +134,11 @@ describe("plone_add_single_block", () => {
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
       "http://invalid.com/image.jpg",
     );
-    expect(nock.pendingMocks()).toHaveLength(0); // No patch request should have been made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No patch request should have been made
   });
 
   it("should add a block at a specific position", async () => {
-    mockServer.mockContentGet(testPath).reply(200, mockContent);
+    mockServer.mockContentGet(testPath, mockContent);
 
     const mockContentAfterPositionAdd = {
       ...mockContent,
@@ -167,7 +167,7 @@ describe("plone_add_single_block", () => {
 
     const result = await ploneAddSingleBlock(args);
     expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterPositionAdd, null, 2));
-    expect(nock.isDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
@@ -182,11 +182,11 @@ describe("plone_add_single_block", () => {
     await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
-    expect(nock.pendingMocks()).toHaveLength(0); // No API calls should be made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No API calls should be made
   });
 
   it("should throw an error if getting content fails", async () => {
-    nock(testBaseUrl, { reqheaders: defaultReqHeaders })
+    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
       .get(`/++api++${testPath}`)
       .reply(404, "Not Found");
 
@@ -199,12 +199,12 @@ describe("plone_add_single_block", () => {
     await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       `[AddBlock] Request failed with status code 404`,
     );
-    expect(nock.isDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if patching content fails", async () => {
-    mockServer.mockContentGet(testPath).reply(200, mockContent);
-    nock(testBaseUrl, { reqheaders: defaultReqHeaders })
+    mockServer.mockContentGet(testPath, mockContent);
+    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
       .patch(`/++api++${testPath}`)
       .reply(500, "Server Error");
 
@@ -217,6 +217,6 @@ describe("plone_add_single_block", () => {
     await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       `[AddBlock] Request failed with status code 500`,
     );
-    expect(nock.isDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 });

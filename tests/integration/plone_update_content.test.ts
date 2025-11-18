@@ -31,7 +31,7 @@ describe("plone_update_content", () => {
   });
 
   afterEach(() => {
-    nock.cleanAll();
+    Nock.cleanAll();
     vi.restoreAllMocks();
     ploneHandlersSingleton.clearPreparedBlocks();
   });
@@ -188,7 +188,7 @@ describe("plone_update_content", () => {
     };
     ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
 
-    Nock(testBaseUrl, {
+    Nock.default(testBaseUrl, {
       reqheaders: {
         Accept: "application/json",
         "Content-Type": "application/json",

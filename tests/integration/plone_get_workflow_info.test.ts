@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { cleanupNock, isNockDone, getPendingNocks } from "../utils/test-helpers";
+import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleWorkflowInfo } from "../utils/test-helpers";
 import ploneGetWorkflowInfo from "../../src/tools/plone_get_workflow_info";
 import { ploneHandlersSingleton } from "../../src/plone-singleton";
@@ -16,7 +16,7 @@ describe("plone_get_workflow_info", () => {
   });
 
   afterEach(() => {
-    cleanupNock();
+    Nock.cleanAll();
   });
 
   it("should successfully retrieve workflow information", async () => {
@@ -26,11 +26,11 @@ describe("plone_get_workflow_info", () => {
     const result = await ploneGetWorkflowInfo(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleWorkflowInfo);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if workflow information retrieval fails", async () => {
-    nock(testBaseUrl, {
+    Nock.default(testBaseUrl, {
           reqheaders: {
             Accept: "application/json",
             "Content-Type": "application/json",
@@ -43,7 +43,7 @@ describe("plone_get_workflow_info", () => {
     await expect(ploneGetWorkflowInfo(args)).rejects.toThrow(
       "[GetWorkflowInfo] Request failed with status code 404",
     );
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
@@ -53,6 +53,6 @@ describe("plone_get_workflow_info", () => {
     await expect(ploneGetWorkflowInfo(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
-    expect(nock.pendingMocks()).toHaveLength(0); // No API call should be made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });

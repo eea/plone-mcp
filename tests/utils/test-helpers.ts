@@ -21,12 +21,13 @@ export class PloneMockServer {
     response = { "@type": "Plone Site", id: "plone", title: "Test Site" },
   ) {
     return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get("/++api++/").reply(200, response);
+      .get("/").reply(200, response);
   }
 
-  mockContentGet(path: string) {
+  mockContentGet(path: string, response: any) {
     return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get(`/++api++${path}`);
+      .get(`/++api++${path}`)
+      .reply(200, response);
   }
 
   mockContentCreate(path: string, requestMatcher: any, response: any) {
@@ -67,9 +68,10 @@ export class PloneMockServer {
       .get("/++api++/@types").reply(200, response);
   }
 
-  mockVocabularies(vocabulary: string) {
+  mockVocabularies(vocabulary: string, response: any) {
     return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get(`/++api++/@vocabularies/${vocabulary}`);
+      .get(`/++api++/@vocabularies/${vocabulary}`)
+      .reply(200, response);
   }
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { cleanupNock, isNockDone, getPendingNocks, Nock } from "../utils/test-helpers"; // Changed import
+import { Nock } from "../utils/test-helpers";
 import { PloneMockServer } from "../utils/test-helpers";
 import ploneGetNavigationTree from "../../src/tools/plone_get_navigation_tree";
 import { ploneHandlersSingleton } from "../../src/plone-singleton";
@@ -38,12 +38,12 @@ describe("plone_get_navigation_tree", () => {
   });
 
   afterEach(() => {
-    cleanupNock();
+    Nock.cleanAll();
   });
 
   it("should successfully retrieve navigation tree from root with default depth", async () => {
-    mockServer
-      .mockContentGet("/@navigation")
+    Nock.default(testBaseUrl)
+      .get("/++api++/@navigation")
       .query({ depth: 2 })
       .reply(200, mockNavigationTree);
 
@@ -51,14 +51,14 @@ describe("plone_get_navigation_tree", () => {
     const result = await ploneGetNavigationTree(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockNavigationTree);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should successfully retrieve navigation tree from a specific path with custom depth", async () => {
     const customPath = "/some/path";
     const customDepth = 3;
-    mockServer
-      .mockContentGet(`${customPath}/@navigation`)
+    Nock.default(testBaseUrl)
+      .get(`/++api++${customPath}/@navigation`)
       .query({ depth: customDepth })
       .reply(200, mockNavigationTree);
 
@@ -66,7 +66,7 @@ describe("plone_get_navigation_tree", () => {
     const result = await ploneGetNavigationTree(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockNavigationTree);
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if navigation tree retrieval fails", async () => {
@@ -86,7 +86,7 @@ describe("plone_get_navigation_tree", () => {
     await expect(ploneGetNavigationTree(args)).rejects.toThrow(
       "[GetNavigationTree] Request failed with status code 500",
     );
-    expect(isNockDone()).toBe(true);
+    expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
@@ -96,6 +96,6 @@ describe("plone_get_navigation_tree", () => {
     await expect(ploneGetNavigationTree(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
-    expect(getPendingNocks()).toHaveLength(0); // No API call should be made
+    expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });

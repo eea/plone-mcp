@@ -63,7 +63,7 @@ describe("plone_search", () => {
 
   it("should throw an error if search fails", async () => {
     const query = "failing search";
-    Nock(testBaseUrl)
+    Nock.default(testBaseUrl)
       .get("/++api++/@search")
       .query({ SearchableText: query })
       .reply(500, "Server Error");
