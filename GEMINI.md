@@ -23,8 +23,9 @@ This project is a Model Context Protocol (MCP) server designed to integrate MCP 
 
 @/home/tibi/.gemini/AGENTS.md
 
-@README.md
-@TESTING.md
+@./README.md
+@./TESTING.md
+@./XMCP.md
 
 ## Makefile Targets
 

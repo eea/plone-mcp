@@ -1,12 +1,6 @@
 import "isomorphic-fetch";
 import { z } from "zod";
 import {
-  ENV_BASE_URL,
-  ENV_USERNAME,
-  ENV_PASSWORD,
-  ENV_TOKEN,
-  optionalNonEmpty,
-  isValidUrl,
   PloneClient,
   PloneContent,
 } from "./plone-client.js";
@@ -17,214 +11,6 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { markdownParse } from "./markdown-parser.js";
 import { v4 as uuidv4 } from "uuid";
-
-export const PloneConfigureSchema = z.object({
-  baseUrl: optionalNonEmpty(ENV_BASE_URL)
-    .refine((val) => !val || isValidUrl(val), {
-      message: "Must be a valid URL (e.g., https://example.com)",
-    })
-    .describe(
-      "Base URL of the Plone site. Can be set via PLONE_BASE_URL environment variable.",
-    ),
-  username: optionalNonEmpty(ENV_USERNAME).describe(
-    "Username for authentication. Can be set via PLONE_USERNAME environment variable.",
-  ),
-  password: optionalNonEmpty(ENV_PASSWORD).describe(
-    "Password for authentication. Can be set via PLONE_PASSWORD environment variable.",
-  ),
-  token: optionalNonEmpty(ENV_TOKEN).describe(
-    "JWT token for authentication (alternative to username/password). Can be set via PLONE_TOKEN environment variable.",
-  ),
-});
-
-export const PloneGetContentSchema = z.object({
-  path: z
-    .string()
-    .describe(
-      "Path to content (e.g., '/parentDocument/document' or just '/' for root level)",
-    ),
-  expand: z
-    .array(z.string())
-    .optional()
-    .describe(
-      "Components to expand (e.g., ['breadcrumbs', 'actions', 'workflow'])",
-    ),
-});
-
-export const PloneCreateContentSchema = z.object({
-  parentPath: z
-    .string()
-    .describe(
-      "Path where to create the content (e.g., '/parentDocument' or '/' for root)",
-    ),
-  type: z
-    .string()
-    .describe(
-      "Content type to create (e.g., 'Document', 'Event', 'News Item')",
-    ),
-  title: z.string().describe("Title of the new content"),
-  description: z.string().optional().describe("Description of the new content"),
-  id: z
-    .string()
-    .optional()
-    .describe(
-      "ID for the new content (optional, will be auto-generated if not provided)",
-    ),
-  blocks: z
-    .record(z.any())
-    .optional()
-    .describe(
-      "Volto blocks structure for the content, it specifies the blocks data and content",
-    ),
-  blocks_layout: z
-    .record(z.any())
-    .optional()
-    .describe(
-      "Volto blocks layout configuration, it specifies the order of blocks",
-    ),
-  additionalFields: z
-    .record(z.any())
-    .optional()
-    .describe(
-      "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",
-    ),
-});
-
-export const PloneUpdateContentSchema = z.object({
-  path: z.string().describe("Path to the content to update"),
-  title: z.string().optional().describe("New title"),
-  description: z.string().optional().describe("New description"),
-  blocks: z
-    .record(z.any())
-    .optional()
-    .describe("Volto blocks structure for the content"),
-  blocks_layout: z
-    .record(z.any())
-    .optional()
-    .describe("Volto blocks layout configuration"),
-  additionalFields: z
-    .record(z.any())
-    .optional()
-    .describe(
-      "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",
-    ),
-});
-
-export const PloneDeleteContentSchema = z.object({
-  path: z.string().describe("Path to the content to delete"),
-});
-
-export const PloneSearchSchema = z.object({
-  query: z.string().optional().describe("Search query text"),
-  portal_type: z
-    .array(z.string())
-    .optional()
-    .describe("Content types to search for"),
-  path: z.string().optional().describe("Path to search within"),
-  review_state: z
-    .array(z.string())
-    .optional()
-    .describe("Workflow states to filter by"),
-  sort_on: z
-    .string()
-    .optional()
-    .describe(
-      "Field to sort by (e.g., 'modified', 'created', 'sortable_title')",
-    ),
-  sort_order: z
-    .enum(["ascending", "descending"])
-    .optional()
-    .describe("Sort order"),
-  b_size: z
-    .number()
-    .optional()
-    .describe("Batch size (number of results per page)"),
-  b_start: z.number().optional().describe("Batch start (for pagination)"),
-});
-
-export const PloneGetWorkflowInfoSchema = z.object({
-  path: z.string().describe("Path to the content"),
-});
-
-export const PloneGetNavigationTreeSchema = z.object({
-  root_path: z
-    .string()
-    .optional()
-    .describe("Starting point for navigation tree (defaults to portal root)"),
-  depth: z
-    .number()
-    .optional()
-    .default(2)
-    .describe("How deep to traverse in the navigation tree"),
-});
-
-export const PloneTransitionWorkflowSchema = z.object({
-  path: z.string().describe("Path to the content"),
-  transition: z.string().describe("Workflow transition to execute"),
-  comment: z.string().optional().describe("Comment for the transition"),
-});
-
-export const PloneGetVocabulariesSchema = z.object({
-  vocabulary: z.string().describe("Vocabulary name"),
-  title: z.string().optional().describe("Filter by title"),
-  token: z.string().optional().describe("Filter by token"),
-});
-
-// Dynamic block schemas using centralized registry
-export const PloneAddBlockSchema = z.object({
-  path: z.string().describe("Path to the content"),
-  blockType: z
-    .enum(blockRegistry.getBlockTypesEnum())
-    .describe("Type of block to add"),
-  blockData: z.record(z.any()).describe("Block-specific data"),
-  position: z
-    .number()
-    .optional()
-    .describe("Position to insert the block (optional, defaults to end)"),
-});
-
-export const PloneUpdateBlockSchema = z.object({
-  path: z.string().describe("Path to the content"),
-  blockId: z.string().describe("ID of the block to update"),
-  blockData: z.record(z.any()).describe("New block data"),
-});
-
-export const PloneRemoveBlockSchema = z.object({
-  path: z.string().describe("Path to the content"),
-  blockId: z.string().describe("ID of the block to remove"),
-});
-
-export const PloneCreateBlocksLayoutSchema = z.object({
-  blocks: z
-    .array(
-      z.object({
-        type: z
-          .enum(blockRegistry.getBlockTypesEnum())
-          .describe("Type of block to create"),
-        data: z
-          .record(z.any())
-          .describe("Block-specific data following the block specification"),
-        position: z
-          .number()
-          .optional()
-          .describe(
-            "Position in the layout (optional, defaults to sequential order)",
-          ),
-      }),
-    )
-    .describe(
-      "Array of block specifications to process. You MUST call plone_get_block_schemas first to see available block types and their required fields. You MUST follow the block specifications EXACTLY, DO NOT invent your own fields. DO NOT add the content object's title in a text block. To set the page title, use the 'title' field of the content object itself when calling plone_create_content or plone_update_content. A Title block will be automatically created by Plone.",
-    ),
-});
-
-export const PloneGetBlockSchemasSchema = z.object({
-  blockType: z
-    .enum(blockRegistry.getBlockTypesEnum())
-    .optional()
-    .describe(
-      "Specific block type to get schema for (optional, returns all if not specified).",
-    ),
-});
 
 // =============================================================================
 // TOOL HANDLERS - Configuration and Content Management
@@ -407,22 +193,7 @@ export class PloneToolHandlers {
   } | null = null;
   private readonly PREPARED_BLOCKS_TTL = 60000; // 60 seconds TTL
 
-  // Expose schemas as properties
-  public readonly PloneConfigureSchema = PloneConfigureSchema;
-  public readonly PloneGetContentSchema = PloneGetContentSchema;
-  public readonly PloneCreateContentSchema = PloneCreateContentSchema;
-  public readonly PloneUpdateContentSchema = PloneUpdateContentSchema;
-  public readonly PloneDeleteContentSchema = PloneDeleteContentSchema;
-  public readonly PloneSearchSchema = PloneSearchSchema;
-  public readonly PloneGetWorkflowInfoSchema = PloneGetWorkflowInfoSchema;
-  public readonly PloneGetNavigationTreeSchema = PloneGetNavigationTreeSchema;
-  public readonly PloneTransitionWorkflowSchema = PloneTransitionWorkflowSchema;
-  public readonly PloneGetVocabulariesSchema = PloneGetVocabulariesSchema;
-  public readonly PloneAddBlockSchema = PloneAddBlockSchema;
-  public readonly PloneUpdateBlockSchema = PloneUpdateBlockSchema;
-  public readonly PloneRemoveBlockSchema = PloneRemoveBlockSchema;
-  public readonly PloneCreateBlocksLayoutSchema = PloneCreateBlocksLayoutSchema;
-  public readonly PloneGetBlockSchemasSchema = PloneGetBlockSchemasSchema;
+
 
   constructor(client: PloneClient | null) {
     this.client = client;
@@ -514,9 +285,9 @@ export class PloneToolHandlers {
     };
   }
 
-  public async handleConfigure(args: unknown): Promise<CallToolResult> {
+  public async handleConfigure(args: any): Promise<CallToolResult> {
     try {
-      const config = PloneConfigureSchema.parse(args);
+      const config = args;
       this.client = new PloneClient(config);
 
       // Test the connection
@@ -532,9 +303,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleGetContent(args: unknown): Promise<CallToolResult> {
+  public async handleGetContent(args: any): Promise<CallToolResult> {
     try {
-      const { path, expand } = PloneGetContentSchema.parse(args);
+      const { path, expand } = args;
       const client = this.requireClient();
 
       const params: Record<string, any> = {};
@@ -557,9 +328,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleCreateContent(args: unknown): Promise<CallToolResult> {
+  public async handleCreateContent(args: any): Promise<CallToolResult> {
     try {
-      const parsedArgs = PloneCreateContentSchema.parse(args);
+      const parsedArgs = args;
       const client = this.requireClient();
       const {
         parentPath,
@@ -612,9 +383,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleUpdateContent(args: unknown): Promise<CallToolResult> {
+  public async handleUpdateContent(args: any): Promise<CallToolResult> {
     try {
-      const parsedArgs = PloneUpdateContentSchema.parse(args);
+      const parsedArgs = args;
       const client = this.requireClient();
       const {
         path,
@@ -668,9 +439,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleDeleteContent(args: unknown): Promise<CallToolResult> {
+  public async handleDeleteContent(args: any): Promise<CallToolResult> {
     try {
-      const { path } = PloneDeleteContentSchema.parse(args);
+      const { path } = args;
       const client = this.requireClient();
 
       await client.delete(path);
@@ -688,9 +459,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleSearch(args: unknown): Promise<CallToolResult> {
+  public async handleSearch(args: any): Promise<CallToolResult> {
     try {
-      const parsedArgs = PloneSearchSchema.parse(args);
+      const parsedArgs = args;
       const client = this.requireClient();
       const {
         query,
@@ -765,9 +536,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleGetVocabularies(args: unknown): Promise<CallToolResult> {
+  public async handleGetVocabularies(args: any): Promise<CallToolResult> {
     try {
-      const parsedArgs = PloneGetVocabulariesSchema.parse(args);
+      const parsedArgs = args;
       const client = this.requireClient();
       const { vocabulary, title, token } = parsedArgs;
 
@@ -793,9 +564,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleGetWorkflowInfo(args: unknown): Promise<CallToolResult> {
+  public async handleGetWorkflowInfo(args: any): Promise<CallToolResult> {
     try {
-      const { path } = PloneGetWorkflowInfoSchema.parse(args);
+      const { path } = args;
       const client = this.requireClient();
 
       const workflow = await client.get(`${path}/@workflow`);
@@ -813,12 +584,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleTransitionWorkflow(
-    args: unknown,
-  ): Promise<CallToolResult> {
+  public async handleTransitionWorkflow(args: any): Promise<CallToolResult> {
     try {
-      const { path, transition, comment } =
-        PloneTransitionWorkflowSchema.parse(args);
+      const { path, transition, comment } = args;
       const client = this.requireClient();
 
       const data: any = { transition };
@@ -839,9 +607,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleGetBlockSchemas(args: unknown): Promise<CallToolResult> {
+  public async handleGetBlockSchemas(args: any): Promise<CallToolResult> {
     try {
-      const { blockType } = PloneGetBlockSchemasSchema.parse(args);
+      const { blockType } = args;
 
       if (blockType && blockType !== "") {
         const spec = blockRegistry.getSpecification(blockType);
@@ -898,11 +666,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleCreateBlocksLayout(
-    args: unknown,
-  ): Promise<CallToolResult> {
+  public async handleCreateBlocksLayout(args: any): Promise<CallToolResult> {
     try {
-      const { blocks } = PloneCreateBlocksLayoutSchema.parse(args);
+      const { blocks } = args;
 
       const processedBlocks: Record<string, any> = {};
       const blockIds: string[] = [];
@@ -955,10 +721,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleAddBlock(args: unknown): Promise<CallToolResult> {
+  public async handleAddBlock(args: any): Promise<CallToolResult> {
     try {
-      const { path, blockType, blockData, position } =
-        PloneAddBlockSchema.parse(args);
+      const { path, blockType, blockData, position } = args;
       const client = this.requireClient();
 
       // First get the current content
@@ -1022,9 +787,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleUpdateBlock(args: unknown): Promise<CallToolResult> {
+  public async handleUpdateBlock(args: any): Promise<CallToolResult> {
     try {
-      const { path, blockId, blockData } = PloneUpdateBlockSchema.parse(args);
+      const { path, blockId, blockData } = args;
       const client = this.requireClient();
 
       // First get the current content
@@ -1063,9 +828,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleRemoveBlock(args: unknown): Promise<CallToolResult> {
+  public async handleRemoveBlock(args: any): Promise<CallToolResult> {
     try {
-      const { path, blockId } = PloneRemoveBlockSchema.parse(args);
+      const { path, blockId } = args;
       const client = this.requireClient();
 
       // First get the current content
@@ -1111,9 +876,9 @@ export class PloneToolHandlers {
     }
   }
 
-  public async handleGetNavigationTree(args: unknown): Promise<CallToolResult> {
+  public async handleGetNavigationTree(args: any): Promise<CallToolResult> {
     try {
-      const { root_path, depth } = PloneGetNavigationTreeSchema.parse(args);
+      const { root_path, depth } = args;
       const client = this.requireClient();
 
       // Use root path if provided, otherwise use site root

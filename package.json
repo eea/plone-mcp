@@ -17,14 +17,17 @@
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "inspector:built": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
-    "test:unit": "vitest tests/unit",
+    "test:unit": "vitest run tests/unit",
     "test:unit-only": "vitest tests/unit --coverage",
     "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "type-check": "tsc --noEmit",
-    "lint": "eslint \"{src,tests}/**/*.ts\""
+    "lint": "eslint \"{src,tests}/**/*.ts\"",
+    "build-xmcp": "xmcp build",
+    "dev-xmcp": "xmcp dev",
+    "start-xmcp": "node dist/http.js"
   },
   "keywords": [
     "mcp",
