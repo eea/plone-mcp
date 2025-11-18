@@ -21,8 +21,10 @@ This project is a Model Context Protocol (MCP) server designed to integrate MCP 
 - The formatting target should be executed before committing code. Use `make format`.
 - Important!!! Never trigger a `git commit` unless the user explicitly asked for that operation to be performed.
 
-@./README.md
-@./TESTING.md
+@/home/tibi/.gemini/AGENTS.md
+
+@README.md
+@TESTING.md
 
 ## Makefile Targets
 

@@ -20,3 +20,8 @@ docker-run: ## Run the Docker container.
 
 docker-clean: ## Remove the Docker image.
 	docker rmi plone-mcp
+
+gen-agents-md: ## Generate AGENTS.md from a source markdown file.
+	@echo "Generating $(OUTPUT_FILE)..."
+	@mkdir -p scripts
+	@python3 scripts/gen-agentsmd.py --input $(INPUT_FILE)$(if $(OUTPUT_FILE), --output $(OUTPUT_FILE))
