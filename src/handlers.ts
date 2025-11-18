@@ -1,15 +1,9 @@
 import "isomorphic-fetch";
 import { z } from "zod";
-import {
-  PloneClient,
-  PloneContent,
-} from "./plone-client.js";
-import { blockRegistry } from "./block-registry.js";
-import {
-  CallToolResult,
-  TextContent,
-} from "@modelcontextprotocol/sdk/types.js";
-import { markdownParse } from "./markdown-parser.js";
+import { PloneClient, PloneContent } from "./plone-client";
+import { blockRegistry } from "./block-registry";
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { markdownParse } from "./markdown-parser";
 import { v4 as uuidv4 } from "uuid";
 
 // =============================================================================

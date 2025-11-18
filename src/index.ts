@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { PloneToolHandlers } from "./handlers.js";
-import { setPloneHandlersInstance } from "./plone-singleton.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio";
+import { PloneToolHandlers } from "./handlers";
+import { setPloneHandlersInstance } from "./plone-singleton";
 
 // =============================================================================
 

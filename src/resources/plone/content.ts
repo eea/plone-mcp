@@ -5,9 +5,9 @@ interface Uri {
 
 import { z } from "zod";
 import { type InferSchema, type ResourceMetadata } from "xmcp";
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp";
 
-import { ploneHandlersSingleton } from "../../plone-singleton.js";
+import { ploneHandlersSingleton } from "../../plone-singleton";
 
 // Define the input schema for the resource
 export const schema = {

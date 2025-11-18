@@ -1,4 +1,4 @@
-import { PloneToolHandlers } from "./handlers.js";
+import { PloneToolHandlers } from "./handlers";
 
 class PloneHandlersSingleton {
   private static instance: PloneToolHandlers;

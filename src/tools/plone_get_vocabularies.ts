@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton.js";
+import { ploneHandlersSingleton } from "../plone-singleton";
 
 export const schema = {
   vocabulary: z.string().describe("Vocabulary name"),

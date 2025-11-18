@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton.js";
-import { blockRegistry } from "../block-registry.js";
+import { ploneHandlersSingleton } from "../plone-singleton";
+import { blockRegistry } from "../block-registry";
 
 export const schema = {
   blockType: z

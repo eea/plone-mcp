@@ -6,7 +6,7 @@ interface Uri {
 import { z } from "zod"; // Not strictly needed for this resource, but good practice for consistency
 import { type InferSchema, type ResourceMetadata } from "xmcp";
 
-import { ploneHandlersSingleton } from "../../plone-singleton.js";
+import { ploneHandlersSingleton } from "../../plone-singleton";
 
 export const schema = {}; // No specific parameters for this resource
 

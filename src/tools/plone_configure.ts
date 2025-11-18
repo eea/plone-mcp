@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton.js";
-import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, optionalNonEmpty } from "../plone-client.js";
+import { ploneHandlersSingleton } from "../plone-singleton";
+import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, optionalNonEmpty } from "../plone-client";
 
 // Define the schema for tool parameters
 export const schema = {
