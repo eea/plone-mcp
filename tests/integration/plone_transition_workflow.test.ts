@@ -5,6 +5,8 @@ import ploneTransitionWorkflow from "../../src/tools/plone_transition_workflow";
 import { PloneClient } from "../../src/plone-client";
 import { sessionManager } from "../../src/session-manager";
 import { headers } from "xmcp/headers";
+import { type InferSchema } from "xmcp";
+import { schema } from "../../src/tools/plone_transition_workflow";
 
 describe("plone_transition_workflow", () => {
   let mockServer: PloneMockServer;
@@ -35,7 +37,7 @@ describe("plone_transition_workflow", () => {
       sampleWorkflowInfo,
     );
 
-    const args = { path: testPath, transition: transitionName };
+    const args: InferSchema<typeof schema> = { path: testPath, transition: transitionName, comment: undefined };
     const result = await ploneTransitionWorkflow(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleWorkflowInfo);
@@ -54,7 +56,7 @@ describe("plone_transition_workflow", () => {
       },
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       path: testPath,
       transition: transitionName,
       comment: comment,
@@ -76,7 +78,7 @@ describe("plone_transition_workflow", () => {
       .post(`/++api++${testPath}/@workflow/${transitionName}`)
       .reply(400, "Bad Request");
 
-    const args = { path: testPath, transition: transitionName };
+    const args: InferSchema<typeof schema> = { path: testPath, transition: transitionName, comment: undefined };
     await expect(ploneTransitionWorkflow(args)).rejects.toThrow(
       "[TransitionWorkflow] Request failed with status code 400",
     );
@@ -87,7 +89,7 @@ describe("plone_transition_workflow", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args = { path: testPath, transition: transitionName };
+    const args: InferSchema<typeof schema> = { path: testPath, transition: transitionName, comment: undefined };
     await expect(ploneTransitionWorkflow(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );

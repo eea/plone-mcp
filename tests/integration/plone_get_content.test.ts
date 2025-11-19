@@ -5,6 +5,8 @@ import ploneGetContent from "../../src/tools/plone_get_content";
 import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client";
 import { headers } from "xmcp/headers";
+import { type InferSchema } from "xmcp";
+import { schema } from "../../src/tools/plone_get_content";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
@@ -37,7 +39,7 @@ describe("plone_get_content", () => {
   it("should successfully retrieve content", async () => {
     mockServer.mockContentGet(testPath, sampleDocument);
 
-    const args = { path: testPath };
+    const args: InferSchema<typeof schema> = { path: testPath, expand: undefined };
     const result = await ploneGetContent(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleDocument);
@@ -53,7 +55,7 @@ describe("plone_get_content", () => {
       })
       .reply(200, sampleDocument);
 
-    const args = { path: testPath, expand: expandParams };
+    const args: InferSchema<typeof schema> = { path: testPath, expand: expandParams };
     await ploneGetContent(args);
 
     expect(Nock.isDone()).toBe(true);
@@ -64,7 +66,7 @@ describe("plone_get_content", () => {
       .get(`/++api++${testPath}`)
       .reply(404, "Not Found");
 
-    const args = { path: testPath };
+    const args: InferSchema<typeof schema> = { path: testPath, expand: undefined };
     await expect(ploneGetContent(args)).rejects.toThrow(
       "[GetContent] Request failed with status code 404",
     );
@@ -75,7 +77,7 @@ describe("plone_get_content", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args = { path: testPath };
+    const args: InferSchema<typeof schema> = { path: testPath, expand: undefined };
     await expect(ploneGetContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );

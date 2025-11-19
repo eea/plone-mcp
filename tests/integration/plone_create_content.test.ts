@@ -10,6 +10,10 @@ import { headers } from "xmcp/headers";
 import { type InferSchema } from "xmcp";
 import { schema } from "../../src/tools/plone_create_content";
 
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
+
 describe("plone_create_content", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
@@ -29,11 +33,9 @@ describe("plone_create_content", () => {
     mockServer = new PloneMockServer(testBaseUrl);
 
     // Mock headers to return the test session ID
-    vi.mock("xmcp/headers", () => ({
-      headers: vi.fn(() => ({
-        get: vi.fn((name: string) => (name === "mcp-session-id" ? sessionId : undefined)),
-      })),
-    }));
+    vi.mocked(headers).mockReturnValue({
+      get: vi.fn((name: string) => (name === "mcp-session-id" ? sessionId : undefined)),
+    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
     service.clearPreparedBlocks(); // Ensure no prepared blocks initially
@@ -278,7 +280,7 @@ describe("plone_create_content", () => {
         return true;
       },
       500,
-      "Server Error",
+      "Server Error" as string,
     );
 
     const args: InferSchema<typeof schema> = {

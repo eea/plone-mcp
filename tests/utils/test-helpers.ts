@@ -47,7 +47,7 @@ export class PloneMockServer {
     path: string,
     requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
     responseOrStatus: Record<string, unknown> | number,
-    maybeBody?: Record<string, unknown>,
+    maybeBody?: string | Record<string, unknown>,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
@@ -64,7 +64,7 @@ export class PloneMockServer {
     path: string,
     requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
     responseOrStatus: Record<string, unknown> | number,
-    maybeBody?: unknown,
+    maybeBody?: string | Record<string, unknown>,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
@@ -77,7 +77,7 @@ export class PloneMockServer {
       .reply(status, body as nock.ReplyBody);
   }
 
-  mockContentDelete(path: string, status = 204, body?: Record<string, unknown>) {
+  mockContentDelete(path: string, status = 204, body?: string | Record<string, unknown>) {
     const normalizedPath = this.normalizePath(path);
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .delete(`/++api++${normalizedPath}`)
@@ -88,25 +88,25 @@ export class PloneMockServer {
     query: Record<string, string | string[] | number>,
     response: Record<string, unknown>,
   ) {
-    const serializedQuery: Record<string, string | number> = {};
+    const queryParams: string[] = [];
 
     Object.entries(query).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        serializedQuery[key] = value.join(","); // Join array values into a comma-separated string
-        return;
+        value.forEach((item) => {
+          queryParams.push(`${key}[]=${encodeURIComponent(item)}`);
+        });
+      } else if (typeof value === "number") {
+        queryParams.push(`${key}=${encodeURIComponent(value.toString())}`);
+      } else {
+        queryParams.push(`${key}=${encodeURIComponent(value)}`);
       }
-
-      if (typeof value === "number") {
-        serializedQuery[key] = value;
-        return;
-      }
-
-      serializedQuery[key] = value;
     });
+
+    const queryString = queryParams.join("&");
 
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++/@search")
-      .query(serializedQuery)
+      .query(queryString)
       .reply(200, response as nock.ReplyBody);
   }
 
