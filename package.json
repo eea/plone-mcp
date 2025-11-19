@@ -11,24 +11,19 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && npm run copy-blocks-specs && chmod 755 dist/index.js",
-    "dev": "tsx src/index.ts",
+    "build": "xmcp build && npm run copy-blocks-specs && chmod 755 dist/index.js",
+    "dev": "xmcp dev",
     "copy-blocks-specs": "copyfiles -u 1 src/blocks.json dist/",
-    "start": "node dist/index.js",
-    "inspector": "npx @modelcontextprotocol/inspector tsx src/index.ts",
-    "inspector:built": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "start": "node dist/http.js",
+    "inspector:built": "npx @modelcontextprotocol/inspector node dist/http.js",
     "test": "vitest run",
-    "test:run": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run tests/unit",
     "test:unit-only": "vitest tests/unit --coverage",
     "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
     "type-check": "tsc --noEmit",
-    "lint": "eslint \"{src,tests}/**/*.ts\"",
-    "build-xmcp": "xmcp build",
-    "dev-xmcp": "xmcp dev",
-    "start-xmcp": "node dist/http.js"
+    "lint": "eslint \"{src,tests}/**/*.ts\""
   },
   "keywords": [
     "mcp",
@@ -70,5 +65,5 @@
     "typescript": "^5.0.0",
     "vitest": "^4.0.8"
   },
-  "packageManager": "pnpm@9.14.1"
+  "packageManager": "pnpm@10.22.0"
 }

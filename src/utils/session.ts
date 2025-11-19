@@ -1,0 +1,49 @@
+type HeadersLike =
+  | {
+      get?: (name: string) => string | null | undefined;
+      [key: string]: unknown;
+    }
+  | undefined
+  | null;
+
+const SESSION_HEADER = "mcp-session-id";
+
+/**
+ * Safely read case-insensitive header values from XMCP headers helper output.
+ */
+export function getHeaderValue(
+  headers: HeadersLike,
+  name: string,
+): string | undefined {
+  if (!headers) {
+    return undefined;
+  }
+
+  const normalized = name.toLowerCase();
+
+  if (typeof (headers as any).get === "function") {
+    const value =
+      (headers as any).get(name) ??
+      (headers as any).get(normalized) ??
+      (headers as any).get(name.toUpperCase());
+    if (typeof value === "string" && value.length > 0) {
+      return value;
+    }
+  }
+
+  const direct =
+    (headers as any)[name] ??
+    (headers as any)[normalized] ??
+    (headers as any)[name.toUpperCase()];
+
+  return typeof direct === "string" && direct.length > 0
+    ? direct
+    : undefined;
+}
+
+/**
+ * Resolve the MCP session id header or fall back to "default".
+ */
+export function getSessionId(headers: HeadersLike): string {
+  return getHeaderValue(headers, SESSION_HEADER) ?? "default";
+}
