@@ -4,8 +4,6 @@ import { headers } from "xmcp/headers";
 import { sessionManager } from "../../session-manager";
 import { getSessionId } from "../../utils/session";
 
-export const schema = z.object({}); // No specific parameters for this resource
-
 export const metadata: ResourceMetadata = {
   name: "plone-site",
   title: "Plone Site Information",
