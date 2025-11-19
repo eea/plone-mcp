@@ -8,6 +8,7 @@ import { type ResourceMetadata } from "xmcp"; // ResourceMetadata is still used
 import { headers } from "xmcp/headers";
 
 import { sessionManager } from "../../session-manager";
+import { getSessionId } from "../../utils/session";
 
 export const schema = z.object({}); // No specific parameters for this resource
 
@@ -23,7 +24,7 @@ export default async function handler(
   uri: Uri,
   params: z.infer<typeof schema>,
 ) {
-  const sessionId = headers()?.get("mcp-session-id") || "default";
+  const sessionId = getSessionId(headers());
   const service = sessionManager.getSession(sessionId);
   const client = service.getClient();
 

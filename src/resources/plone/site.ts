@@ -7,6 +7,7 @@ import { z } from "zod"; // Not strictly needed for this resource, but good prac
 import { type ResourceTemplate, type ReadResourceResult } from "@modelcontextprotocol/sdk";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../../session-manager";
+import { getSessionId } from "../../utils/session";
 
 export const schema = z.object({}); // No specific parameters for this resource
 
@@ -21,7 +22,7 @@ export const metadata: ResourceTemplate = {
 export default async function read(
   args: z.infer<typeof schema>,
 ): Promise<ReadResourceResult> {
-  const sessionId = headers()?.get("mcp-session-id") || "default";
+  const sessionId = getSessionId(headers());
   const service = sessionManager.getSession(sessionId);
   const client = service.getClient();
 

@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneUpdateSingleBlock from "../../src/tools/plone_update_single_block";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
 import { PloneClient } from "../../src/plone-client";
+import { sessionManager } from "../../src/session-manager";
+import { headers } from "xmcp/headers";
 
 describe("plone_update_single_block", () => {
   let mockServer: PloneMockServer;
@@ -41,13 +42,20 @@ describe("plone_update_single_block", () => {
     "Content-Type": "application/json",
   };
 
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    } as any);
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
+    sessionManager.clearSession(sessionId);
   });
 
   it("should successfully update an existing block", async () => {
@@ -84,13 +92,13 @@ describe("plone_update_single_block", () => {
     };
 
     await expect(ploneUpdateSingleBlock(args)).rejects.toThrow(
-      `Block with ID '${nonExistentBlockId}' not found. Available block IDs: ${blockToUpdateId}`,
+      `[UpdateBlock] Block with ID '${nonExistentBlockId}' not found. Available block IDs: ${blockToUpdateId}`,
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No patch request should have been made
   });
 
   it("should throw an error if content retrieval fails", async () => {
-    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
+    Nock(testBaseUrl, { reqheaders: defaultReqHeaders })
       .get(`/++api++${testPath}`)
       .reply(404, "Not Found");
 
@@ -107,7 +115,7 @@ describe("plone_update_single_block", () => {
 
   it("should throw an error if content update fails", async () => {
     mockServer.mockContentGet(testPath, mockContentWithBlock);
-    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
+    Nock(testBaseUrl, { reqheaders: defaultReqHeaders })
       .patch(`/++api++${testPath}`)
       .reply(500, "Server Error");
 
@@ -123,7 +131,8 @@ describe("plone_update_single_block", () => {
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = {
       path: testPath,

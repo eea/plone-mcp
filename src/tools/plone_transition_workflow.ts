@@ -4,6 +4,7 @@ import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -28,7 +29,7 @@ export default async function ploneTransitionWorkflow(
 ): Promise<CallToolResult> {
   try {
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     const client = service.getClient();
 
@@ -37,7 +38,7 @@ export default async function ploneTransitionWorkflow(
     const data: any = { transition };
     if (comment) data.comment = comment;
 
-    const result = await client.post(`${path} /@workflow/${transition} `, data);
+    const result = await client.post(`${path}/@workflow/${transition}`, data);
 
     return {
       content: [

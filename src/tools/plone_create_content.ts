@@ -5,6 +5,7 @@ import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   parentPath: z
@@ -61,7 +62,7 @@ export default async function ploneCreateContent(
   args: InferSchema<typeof schema>,
 ) {
   const requestHeaders = headers();
-  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
 
   try {
@@ -112,7 +113,7 @@ export default async function ploneCreateContent(
   } catch (error) {
     // Ensure prepared blocks are cleared on any error
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     service.clearPreparedBlocks();
     throw wrapError("CreateContent", error);

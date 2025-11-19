@@ -1,22 +1,30 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleWorkflowInfo } from "../utils/test-helpers";
 import ploneGetWorkflowInfo from "../../src/tools/plone_get_workflow_info";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
 import { PloneClient } from "../../src/plone-client";
+import { sessionManager } from "../../src/session-manager";
+import { headers } from "xmcp/headers";
 
 describe("plone_get_workflow_info", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/my-document";
 
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    } as any);
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
+    sessionManager.clearSession(sessionId);
   });
 
   it("should successfully retrieve workflow information", async () => {
@@ -30,7 +38,7 @@ describe("plone_get_workflow_info", () => {
   });
 
   it("should throw an error if workflow information retrieval fails", async () => {
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
           reqheaders: {
             Accept: "application/json",
             "Content-Type": "application/json",
@@ -47,7 +55,8 @@ describe("plone_get_workflow_info", () => {
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = { path: testPath };
     await expect(ploneGetWorkflowInfo(args)).rejects.toThrow(

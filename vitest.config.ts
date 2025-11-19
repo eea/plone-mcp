@@ -6,8 +6,9 @@ export default defineConfig({
     globals: true,
     environment: 'node', // Keeping 'node' as per Jest config
     setupFiles: ['./tests/setup.ts'], // Vitest's equivalent of setupFilesAfterEnv
-    include: ['**/*.{test,spec}.{ts,js}'], // Similar to Jest's testMatch
+    include: ['tests/**/*.{test,spec}.{ts,js}'], // Limit discovery to repo tests
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'], // Default excludes
+    pool: 'threads', // Forked workers were crashing in CI, stick to threads
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],

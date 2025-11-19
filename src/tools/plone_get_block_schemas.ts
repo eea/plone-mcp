@@ -5,6 +5,7 @@ import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry"; // Already imported
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError, getBlockExample } from "../utils/block-utils"; // Added getBlockExample
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   blockType: z
@@ -31,7 +32,7 @@ export default async function ploneGetBlockSchemas(
   args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
   const requestHeaders = headers();
-  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
   try {
     const { blockType } = args;

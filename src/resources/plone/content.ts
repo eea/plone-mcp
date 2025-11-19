@@ -9,6 +9,7 @@ import { ResourceTemplate } from "@modelcontextprotocol/sdk";
 import { headers } from "xmcp/headers";
 
 import { sessionManager } from "../../session-manager";
+import { getSessionId } from "../../utils/session";
 
 // Define the input schema for the resource
 export const schema = {
@@ -31,7 +32,7 @@ export default async function handler(
   uri: Uri,
   params: InferSchema<typeof schema>,
 ) {
-  const sessionId = headers()?.get("mcp-session-id") || "default";
+  const sessionId = getSessionId(headers());
   const service = sessionManager.getSession(sessionId);
   const client = service.getClient();
 

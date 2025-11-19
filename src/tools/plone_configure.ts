@@ -5,6 +5,7 @@ import { sessionManager } from "../session-manager";
 import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, PloneClient, optionalNonEmpty } from "../plone-client";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 // Define the schema for tool parameters
 export const schema = {
@@ -45,7 +46,7 @@ export default async function ploneConfigure(
 ): Promise<CallToolResult> {
   let client: PloneClient | null = null;
   const requestHeaders = headers();
-  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
 
   try {
@@ -55,14 +56,14 @@ export default async function ploneConfigure(
 
     const textContent: TextContent = {
       type: "text",
-      text: `Successfully configured connection to Plone site: ${client.baseUrl} `,
+      text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
     };
     return { content: [textContent] };
   } catch (error) {
     // If configuration fails, we might want to clear the client from the session
     // But since we get the service from the session, we can just set client to null
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 

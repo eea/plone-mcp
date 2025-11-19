@@ -1,21 +1,29 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleSearchResults } from "../utils/test-helpers";
 import ploneSearch from "../../src/tools/plone_search";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
 import { PloneClient } from "../../src/plone-client";
+import { sessionManager } from "../../src/session-manager";
+import { headers } from "xmcp/headers";
 
 describe("plone_search", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
 
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    } as any);
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
+    sessionManager.clearSession(sessionId);
   });
 
   it("should successfully perform a basic search", async () => {
@@ -63,7 +71,7 @@ describe("plone_search", () => {
 
   it("should throw an error if search fails", async () => {
     const query = "failing search";
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get("/++api++/@search")
       .query({ SearchableText: query })
       .reply(500, "Server Error");
@@ -76,7 +84,8 @@ describe("plone_search", () => {
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = { query: "any" };
     await expect(ploneSearch(args)).rejects.toThrow(

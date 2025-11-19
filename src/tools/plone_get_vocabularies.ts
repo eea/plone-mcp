@@ -4,6 +4,7 @@ import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   vocabulary: z.string().describe("Vocabulary name"),
@@ -29,7 +30,7 @@ export default async function ploneGetVocabularies(
   try {
     const parsedArgs = args;
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     const client = service.getClient();
     const { vocabulary, title, token } = parsedArgs;
@@ -38,10 +39,7 @@ export default async function ploneGetVocabularies(
     if (title) params.title = title;
     if (token) params.token = token;
 
-    const vocabularies = await client.get(
-      `/ @vocabularies / ${vocabulary} `,
-      params,
-    );
+    const vocabularies = await client.get(`/@vocabularies/${vocabulary}`, params);
 
     return {
       content: [

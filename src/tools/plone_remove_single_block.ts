@@ -5,6 +5,7 @@ import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -29,7 +30,7 @@ export default async function ploneRemoveSingleBlock(
   try {
     const { path, blockId } = args;
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     const client = service.getClient();
 
@@ -42,10 +43,9 @@ export default async function ploneRemoveSingleBlock(
     if (!blocks[blockId]) {
       const availableBlockIds = Object.keys(blocks);
       throw new Error(
-        `Block with ID '${blockId}' not found.Available block IDs: ${availableBlockIds.join(
+        `Block with ID '${blockId}' not found. Available block IDs: ${availableBlockIds.join(
           ", ",
-        )
-        } `,
+        )}`,
       );
     }
 

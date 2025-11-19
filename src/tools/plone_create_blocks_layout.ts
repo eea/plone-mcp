@@ -11,6 +11,7 @@ import {
   validateImageURL,
 } from "../utils/block-utils";
 import { PreparedBlocks } from "../plone-service";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   blocks: z
@@ -51,7 +52,7 @@ export default async function ploneCreateBlocksLayout(
   args: InferSchema<typeof schema>,
 ) {
   const requestHeaders = headers();
-  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
 
   try {
@@ -104,7 +105,7 @@ export default async function ploneCreateBlocksLayout(
   } catch (error) {
     // Clear prepared blocks on error
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     service.clearPreparedBlocks();
     throw wrapError("CreateBlocksLayout", error);

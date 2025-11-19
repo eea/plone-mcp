@@ -1,10 +1,25 @@
 import { describe, it } from "vitest";
-import { readFileSync } from "fs";
-import { globSync } from "glob";
+import { readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
 
 describe("Import Path Suffixes", () => {
   it("should not contain '.js' suffix in import paths of TypeScript files", () => {
-    const tsFiles = globSync("src/**/*.ts", { ignore: ["node_modules/**"] });
+    const collectTsFiles = (dir: string): string[] => {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      return entries.flatMap((entry) => {
+        const entryPath = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+          return collectTsFiles(entryPath);
+        }
+
+        return entry.isFile() && entry.name.endsWith(".ts")
+          ? [entryPath]
+          : [];
+      });
+    };
+
+    const tsFiles = collectTsFiles(path.join(process.cwd(), "src"));
     const filesWithJSSuffix: string[] = [];
 
     tsFiles.forEach((file) => {

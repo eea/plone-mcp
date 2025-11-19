@@ -11,6 +11,7 @@ import {
   validateImageURL,
 } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -41,7 +42,7 @@ export default async function ploneAddSingleBlock(
 ): Promise<CallToolResult> {
   try {
     const requestHeaders = headers();
-    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const sessionId = getSessionId(requestHeaders);
     const service = sessionManager.getSession(sessionId);
     const { path, blockType, position, blockData } = args;
     const client = service.getClient();
