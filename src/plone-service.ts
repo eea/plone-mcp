@@ -99,7 +99,8 @@ export class PloneService {
 
     // Find the existing title block
     let titleBlockId = finalLayout.find(
-      (id: string) => (finalBlocks[id] as { "@type"?: string })?.["@type"] === "title",
+      (id: string) =>
+        (finalBlocks[id] as { "@type"?: string })?.["@type"] === "title",
     );
 
     if (!titleBlockId) {

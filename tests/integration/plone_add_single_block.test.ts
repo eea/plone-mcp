@@ -65,7 +65,18 @@ describe("plone_add_single_block", () => {
     const mockContentAfterAdd = { ...mockContent, message: "Block added" };
     mockServer.mockContentUpdate(
       testPath,
-      (body: { blocks: Record<string, { "@type": string; plaintext: string; url?: string; value?: unknown[] }>; blocks_layout: { items: string[] } }) => {
+      (body: {
+        blocks: Record<
+          string,
+          {
+            "@type": string;
+            plaintext: string;
+            url?: string;
+            value?: unknown[];
+          }
+        >;
+        blocks_layout: { items: string[] };
+      }) => {
         // Assert that the new block is in the body
         const newBlockId = body.blocks_layout.items.find(
           (id: string) => !mockContent.blocks[id],
@@ -104,7 +115,10 @@ describe("plone_add_single_block", () => {
     };
     mockServer.mockContentUpdate(
       testPath,
-      (body: { blocks: Record<string, unknown>; blocks_layout: { items: string[] } }) => {
+      (body: {
+        blocks: Record<string, unknown>;
+        blocks_layout: { items: string[] };
+      }) => {
         const newBlockId = body.blocks_layout.items.find(
           (id: string) => !mockContent.blocks[id],
         );
@@ -165,7 +179,10 @@ describe("plone_add_single_block", () => {
     };
     mockServer.mockContentUpdate(
       testPath,
-      (body: { blocks: Record<string, unknown>; blocks_layout: { items: string[] } }) => {
+      (body: {
+        blocks: Record<string, unknown>;
+        blocks_layout: { items: string[] };
+      }) => {
         const newBlockId = body.blocks_layout.items[1]; // Should be at index 1
         expect(body.blocks[newBlockId]["@type"]).toBe("slate");
         expect(body.blocks[newBlockId].plaintext).toBe("Inserted paragraph");

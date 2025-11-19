@@ -100,7 +100,10 @@ export default async function ploneCreateContent(
 
     if (additionalFields) Object.assign(data, additionalFields);
 
-    const content: PloneContent = (await client.post(parentPath, data)) as PloneContent;
+    const content: PloneContent = (await client.post(
+      parentPath,
+      data,
+    )) as PloneContent;
 
     const textContent: TextContent = {
       type: "text",

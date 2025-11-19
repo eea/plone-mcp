@@ -24,7 +24,10 @@ export function getHeaderValue(
 
   // Check if headers object has a 'get' method (like Headers or custom objects)
   if (typeof headers.get === "function") {
-    value = headers.get(name) ?? headers.get(normalized) ?? headers.get(name.toUpperCase());
+    value =
+      headers.get(name) ??
+      headers.get(normalized) ??
+      headers.get(name.toUpperCase());
     if (typeof value === "string" && value.length > 0) {
       return value;
     }

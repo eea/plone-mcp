@@ -63,7 +63,10 @@ describe("plone_remove_single_block", () => {
     mockServer.mockContentGet(testPath, mockContentWithBlock);
     mockServer.mockContentUpdate(
       testPath,
-      (body: { blocks: Record<string, unknown>; blocks_layout: { items: string[] } }) => {
+      (body: {
+        blocks: Record<string, unknown>;
+        blocks_layout: { items: string[] };
+      }) => {
         expect(body.blocks).not.toHaveProperty(blockToRemoveId);
         expect(body.blocks_layout.items).not.toContain(blockToRemoveId);
         expect(body.blocks_layout.items).toContain(remainingBlockId);

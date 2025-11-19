@@ -25,7 +25,11 @@ export class PloneMockServer {
   }
 
   mockSiteRoot(
-    response: Record<string, unknown> = { "@type": "Plone Site", id: "plone", title: "Test Site" },
+    response: Record<string, unknown> = {
+      "@type": "Plone Site",
+      id: "plone",
+      title: "Test Site",
+    },
   ) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++")
@@ -80,7 +84,10 @@ export class PloneMockServer {
       .reply(status, body);
   }
 
-  mockSearch(query: Record<string, string | string[] | number>, response: unknown) {
+  mockSearch(
+    query: Record<string, string | string[] | number>,
+    response: unknown,
+  ) {
     const serializedQuery: Record<string, unknown> = {};
 
     Object.entries(query).forEach(([key, value]) => {
