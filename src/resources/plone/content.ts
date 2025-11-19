@@ -5,9 +5,10 @@ interface Uri {
 
 import { z } from "zod";
 import { type InferSchema, type ResourceMetadata } from "xmcp";
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp";
+import { ResourceTemplate } from "@modelcontextprotocol/sdk";
+import { headers } from "xmcp/headers";
 
-import { ploneHandlersSingleton } from "../../plone-singleton";
+import { sessionManager } from "../../session-manager";
 
 // Define the input schema for the resource
 export const schema = {
@@ -17,7 +18,7 @@ export const schema = {
 };
 
 // Define the resource metadata
-export const metadata: ResourceMetadata = {
+export const metadata: ResourceTemplate = {
   name: "plone-content",
   title: "Plone Content Item",
   description:
@@ -29,15 +30,10 @@ export const metadata: ResourceMetadata = {
 export default async function handler(
   uri: Uri,
   params: InferSchema<typeof schema>,
-  // To access the Plone client, the resource handlers need to be
-  // initialized with the `PloneToolHandlers` instance that holds the client.
-  // This typically means the `PloneMCPServer` instance itself needs to
-  // be passed or the client needs to be accessible globally or via context.
-  // For now, we'll instantiate it here as a placeholder, but this needs
-  // a more robust solution for the actual client configuration.
-  // This will throw "Plone client not configured" until properly wired.
 ) {
-  const { client } = ploneHandlersSingleton;
+  const sessionId = headers()?.get("mcp-session-id") || "default";
+  const service = sessionManager.getSession(sessionId);
+  const client = service.getClient();
 
   if (!client) {
     throw new Error(

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry"; // Already imported
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError, getBlockExample } from "../utils/block-utils"; // Added getBlockExample
@@ -29,6 +30,9 @@ export const metadata: ToolMetadata = {
 export default async function ploneGetBlockSchemas(
   args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
+  const requestHeaders = headers();
+  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const service = sessionManager.getSession(sessionId);
   try {
     const { blockType } = args;
 
@@ -38,7 +42,8 @@ export default async function ploneGetBlockSchemas(
         throw new Error(
           `Unknown block type: ${blockType}. Available types: ${blockRegistry
             .getBlockTypes()
-            .join(", ")}`,
+            .join(", ")
+          } `,
         );
       }
 

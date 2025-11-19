@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 
@@ -25,7 +26,10 @@ export default async function ploneGetWorkflowInfo(
 ): Promise<CallToolResult> {
   try {
     const { path } = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
 
     const workflow = await client.get(`${path}/@workflow`);
 

@@ -1,33 +1,44 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneGetContent from "../../src/tools/plone_get_content";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client";
+import { headers } from "xmcp/headers";
+
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
 
 describe("plone_get_content", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/test-document";
+  const sessionId = "test-session-id";
   const defaultReqHeaders = {
     Accept: "application/json",
     "Content-Type": "application/json",
   };
 
   beforeEach(() => {
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    });
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
+    vi.restoreAllMocks();
   });
 
   it("should successfully retrieve content", async () => {
     mockServer.mockContentGet(testPath, sampleDocument);
 
     const args = { path: testPath };
-    const result = await ploneGetContent(args);
+    const result = await ploneGetContent(args as any);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleDocument);
     expect(Nock.isDone()).toBe(true);
@@ -35,7 +46,7 @@ describe("plone_get_content", () => {
 
   it("should retrieve content with expand parameters", async () => {
     const expandParams = ["breadcrumbs", "workflow"];
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get(`/++api++${testPath}`)
       .query({
         expand: expandParams.join(","),
@@ -43,28 +54,29 @@ describe("plone_get_content", () => {
       .reply(200, sampleDocument);
 
     const args = { path: testPath, expand: expandParams };
-    await ploneGetContent(args);
+    await ploneGetContent(args as any);
 
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if content retrieval fails (e.g., 404 Not Found)", async () => {
-    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
+    Nock(testBaseUrl, { reqheaders: defaultReqHeaders })
       .get(`/++api++${testPath}`)
       .reply(404, "Not Found");
 
     const args = { path: testPath };
-    await expect(ploneGetContent(args)).rejects.toThrow(
+    await expect(ploneGetContent(args as any)).rejects.toThrow(
       "[GetContent] Request failed with status code 404",
     );
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = { path: testPath };
-    await expect(ploneGetContent(args)).rejects.toThrow(
+    await expect(ploneGetContent(args as any)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

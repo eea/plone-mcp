@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 
@@ -46,10 +47,13 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneSearch(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
   try {
     const parsedArgs = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
     const {
       query,
       portal_type,

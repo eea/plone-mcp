@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, PloneClient, optionalNonEmpty } from "../plone-client";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types"; // New import
-import { wrapError } from "../utils/block-utils"; // New import
+import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { wrapError } from "../utils/block-utils";
 
 // Define the schema for tool parameters
 export const schema = {
@@ -40,21 +41,31 @@ export const metadata: ToolMetadata = {
 
 // Tool implementation
 export default async function ploneConfigure(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema>
 ): Promise<CallToolResult> {
   let client: PloneClient | null = null;
+  const requestHeaders = headers();
+  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const service = sessionManager.getSession(sessionId);
+
   try {
     client = new PloneClient(args);
     await client.get("/");
-    ploneHandlersSingleton.client = client;
+    service.client = client;
 
     const textContent: TextContent = {
       type: "text",
-      text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
+      text: `Successfully configured connection to Plone site: ${client.baseUrl} `,
     };
     return { content: [textContent] };
   } catch (error) {
-    ploneHandlersSingleton.client = null;
+    // If configuration fails, we might want to clear the client from the session
+    // But since we get the service from the session, we can just set client to null
+    const requestHeaders = headers();
+    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
+
     throw wrapError("Configure", error);
   }
 }

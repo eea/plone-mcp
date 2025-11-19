@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
@@ -58,10 +59,14 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneCreateContent(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
+  const requestHeaders = headers();
+  const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+  const service = sessionManager.getSession(sessionId);
+
   try {
     const parsedArgs = args;
-    const client = ploneHandlersSingleton.getClient();
+    const client = service.getClient();
     const {
       parentPath,
       type,
@@ -82,7 +87,7 @@ export default async function ploneCreateContent(
     if (id) data.id = id;
 
     // Use the centralized helper to process blocks
-    const blockData = ploneHandlersSingleton.processBlocksForContent(
+    const blockData = service.processBlocksForContent(
       blocks,
       blocks_layout,
       false,
@@ -106,7 +111,10 @@ export default async function ploneCreateContent(
     };
   } catch (error) {
     // Ensure prepared blocks are cleared on any error
-    ploneHandlersSingleton.clearPreparedBlocks();
+    const requestHeaders = headers();
+    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const service = sessionManager.getSession(sessionId);
+    service.clearPreparedBlocks();
     throw wrapError("CreateContent", error);
   }
 }

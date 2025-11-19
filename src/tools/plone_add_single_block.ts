@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import {
@@ -39,8 +40,11 @@ export default async function ploneAddSingleBlock(
   args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
   try {
-    const { path, blockType, blockData, position } = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const service = sessionManager.getSession(sessionId);
+    const { path, blockType, position, blockData } = args;
+    const client = service.getClient();
 
     // First get the current content
     const content: PloneContent = await client.get(path);
@@ -57,7 +61,7 @@ export default async function ploneAddSingleBlock(
       if (!isValid) {
         throw wrapError(
           "AddBlock",
-          `Invalid or inaccessible image URL: ${blockData.url}`,
+          `Invalid or inaccessible image URL: ${blockData.url} `,
         );
       }
     }
@@ -67,9 +71,8 @@ export default async function ploneAddSingleBlock(
       blocks[blockId] = processBlock(blockType, blockData);
     } catch (error) {
       throw new Error(
-        `Error processing block data: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `Error processing block data: ${error instanceof Error ? error.message : String(error)
+        } `,
       );
     }
 

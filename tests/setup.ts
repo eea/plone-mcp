@@ -1,5 +1,6 @@
 // Global test setup
-import { cleanupNock, Nock } from "./utils/test-helpers"; // Added Nock import
+import { cleanupNock, Nock } from "./utils/test-helpers";
+import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 
 // Disable actual HTTP requests during tests
 beforeAll(() => {
@@ -10,6 +11,12 @@ beforeAll(() => {
 
 afterAll(() => {
   Nock.enableNetConnect();
+});
+
+vi.mock("xmcp/headers", () => {
+  return {
+    headers: vi.fn().mockReturnValue({}),
+  };
 });
 
 // Clean up after each test

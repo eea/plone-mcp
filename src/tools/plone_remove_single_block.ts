@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
@@ -24,10 +25,13 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneRemoveSingleBlock(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
   try {
     const { path, blockId } = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = (requestHeaders["mcp-session-id"] as string) || "default";
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
 
     // First get the current content
     const content: PloneContent = await client.get(path);
@@ -38,9 +42,10 @@ export default async function ploneRemoveSingleBlock(
     if (!blocks[blockId]) {
       const availableBlockIds = Object.keys(blocks);
       throw new Error(
-        `Block with ID '${blockId}' not found. Available block IDs: ${availableBlockIds.join(
+        `Block with ID '${blockId}' not found.Available block IDs: ${availableBlockIds.join(
           ", ",
-        )}`,
+        )
+        } `,
       );
     }
 
