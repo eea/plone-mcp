@@ -1,6 +1,6 @@
 # Plone MCP Server
 
-A Model Context Protocol (MCP) server for integrating MCP clients with Plone CMS via REST API. Enables content management, search, workflow operations, and Volto blocks management.
+A Model Context Protocol (MCP) server for integrating MCP clients with Plone CMS via REST API. It is built with the `xmcp` framework and enables content management, search, workflow operations, and Volto blocks management.
 
 ## Prerequisites
 
@@ -352,7 +352,7 @@ This project uses `make` for common development tasks.
 ## Resources
 
 - [Plone REST API Documentation](https://plonerestapi.readthedocs.io/)
-- [MCP Documentation](https://modelcontextprotocol.io/docs)
+- [xmcp Documentation](https://xmcp.dev/docs)
 
 ## License
 

@@ -4,7 +4,7 @@ This whole file contains help for AI Assistant Agents and should not be deleted.
 
 ## Project Overview
 
-This project is a Model Context Protocol (MCP) server designed to integrate MCP clients with a Plone CMS via its REST API. It provides a comprehensive set of tools for managing Plone content. The server is built with Node.js and TypeScript, leveraging the `@modelcontextprotocol/sdk` for MCP server implementation and `axios` for HTTP communication with the Plone REST API. It uses `zod` for schema validation.
+This project is a Model Context Protocol (MCP) server designed to integrate MCP clients with a Plone CMS via its REST API. It provides a comprehensive set of tools for managing Plone content. The server is built with Node.js and TypeScript, leveraging the `xmcp` framework for MCP server implementation and `axios` for HTTP communication with the Plone REST API. It uses `zod` for schema validation.
 
 ## Development Conventions
 
