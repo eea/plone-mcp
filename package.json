@@ -8,6 +8,10 @@
     "cms",
     "rest-api"
   ],
+  "scripts": {
+    "build": "xmcp build"
+  },
+  "main": "dist/http.js",
   "author": "",
   "license": "MIT",
   "dependencies": {

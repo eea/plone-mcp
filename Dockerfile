@@ -36,4 +36,4 @@ COPY --from=builder /app/src/blocks.json ./src/blocks.json
 # EXPOSE 3000
 
 # Command to run the application
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/http.js"]
