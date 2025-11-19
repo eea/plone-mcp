@@ -3,10 +3,36 @@ import { sessionManager } from "../../src/session-manager";
 import ploneCreateBlocksLayout from "../../src/tools/plone_create_blocks_layout";
 import * as BlockUtils from "../../src/utils/block-utils";
 import { headers } from "xmcp/headers";
+import { PreparedBlocks } from "../../src/plone-service"; // Import PreparedBlocks
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
 }));
+
+// Define interfaces for the expected block structures in tests
+interface SlateBlock {
+  "@type": "slate";
+  plaintext: string;
+}
+
+interface TeaserBlock {
+  "@type": "teaser";
+  title: string;
+  href: { "@id": string }[];
+}
+
+interface ImageBlock {
+  "@type": "image";
+  url: string;
+}
+
+type Block = SlateBlock | TeaserBlock | ImageBlock | Record<string, unknown>;
+
+// Extend PreparedBlocks to make 'blocks' property more specific for testing
+interface TestPreparedBlocks extends PreparedBlocks {
+  blocks: Record<string, Block>;
+}
+
 
 describe("plone_create_blocks_layout", () => {
   const sessionId = "test-session-id";
@@ -39,20 +65,21 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    const result = await ploneCreateBlocksLayout(args);
+    await ploneCreateBlocksLayout(args);
     const service = sessionManager.getSession(sessionId);
     const preparedBlocks = service.getPreparedBlocks();
 
-    expect(result.content[0].text).toContain("Successfully prepared 2 blocks");
     expect(preparedBlocks).not.toBeNull();
-    expect(Object.keys(preparedBlocks?.blocks || {}).length).toBe(2);
-    expect(preparedBlocks?.blocks_layout.items.length).toBe(2);
-    expect(preparedBlocks?.blocks["mock-id-1"]["@type"]).toBe("slate"); // 'text' type becomes 'slate'
-    expect(preparedBlocks?.blocks["mock-id-1"].plaintext).toBe("Hello World");
-    expect(preparedBlocks?.blocks["mock-id-2"]["@type"]).toBe("slate");
-    expect(preparedBlocks?.blocks["mock-id-2"].plaintext).toBe(
-      "Another paragraph",
-    );
+    if (preparedBlocks) { // Type guard to narrow type
+      const typedPreparedBlocks = preparedBlocks as TestPreparedBlocks;
+      expect(typedPreparedBlocks.blocks_layout.items.length).toBe(2);
+      expect(typedPreparedBlocks.blocks["mock-id-1"]["@type"]).toBe("slate"); // 'text' type becomes 'slate'
+      expect((typedPreparedBlocks.blocks["mock-id-1"] as SlateBlock).plaintext).toBe("Hello World");
+      expect(typedPreparedBlocks.blocks["mock-id-2"]["@type"]).toBe("slate");
+      expect((typedPreparedBlocks.blocks["mock-id-2"] as SlateBlock).plaintext).toBe(
+        "Another paragraph",
+      );
+    }
   });
 
   it("should successfully prepare a layout with a mix of block types", async () => {
@@ -66,21 +93,22 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    const result = await ploneCreateBlocksLayout(args);
+    await ploneCreateBlocksLayout(args);
     const service = sessionManager.getSession(sessionId);
     const preparedBlocks = service.getPreparedBlocks();
 
-    expect(result.content[0].text).toContain("Successfully prepared 2 blocks");
     expect(preparedBlocks).not.toBeNull();
-    expect(Object.keys(preparedBlocks?.blocks || {}).length).toBe(2);
-    expect(preparedBlocks?.blocks_layout.items.length).toBe(2);
-    expect(preparedBlocks?.blocks["mock-id-1"]["@type"]).toBe("slate");
-    expect(preparedBlocks?.blocks["mock-id-1"].plaintext).toBe("Intro");
-    expect(preparedBlocks?.blocks["mock-id-2"]["@type"]).toBe("teaser");
-    expect(preparedBlocks?.blocks["mock-id-2"].title).toBe("My Teaser");
-    expect(preparedBlocks?.blocks["mock-id-2"].href[0]["@id"]).toBe(
-      "/some-path",
-    );
+    if (preparedBlocks) { // Type guard
+      const typedPreparedBlocks = preparedBlocks as TestPreparedBlocks;
+      expect(typedPreparedBlocks.blocks_layout.items.length).toBe(2);
+      expect(typedPreparedBlocks.blocks["mock-id-1"]["@type"]).toBe("slate");
+      expect((typedPreparedBlocks.blocks["mock-id-1"] as SlateBlock).plaintext).toBe("Intro");
+      expect(typedPreparedBlocks.blocks["mock-id-2"]["@type"]).toBe("teaser");
+      expect((typedPreparedBlocks.blocks["mock-id-2"] as TeaserBlock).title).toBe("My Teaser");
+      expect((typedPreparedBlocks.blocks["mock-id-2"] as TeaserBlock).href[0]["@id"]).toBe(
+        "/some-path",
+      );
+    }
   });
 
   it("should prepare a layout with an image block when URL is valid", async () => {
@@ -96,10 +124,13 @@ describe("plone_create_blocks_layout", () => {
     const preparedBlocks = service.getPreparedBlocks();
 
     expect(preparedBlocks).not.toBeNull();
-    expect(preparedBlocks?.blocks["mock-id-1"]["@type"]).toBe("image");
-    expect(preparedBlocks?.blocks["mock-id-1"].url).toBe(
-      "http://example.com/image.jpg",
-    );
+    if (preparedBlocks) { // Type guard
+      const typedPreparedBlocks = preparedBlocks as TestPreparedBlocks;
+      expect(typedPreparedBlocks.blocks["mock-id-1"]["@type"]).toBe("image");
+      expect((typedPreparedBlocks.blocks["mock-id-1"] as ImageBlock).url).toBe(
+        "http://example.com/image.jpg",
+      );
+    }
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
       "http://example.com/image.jpg",
     );

@@ -179,7 +179,12 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const args: Partial<InferSchema<typeof schema>> = {};
+    const args: InferSchema<typeof schema> = {
+      baseUrl: undefined,
+      username: undefined,
+      password: undefined,
+      token: undefined,
+    };
 
     const result = await ploneConfigure(args);
 

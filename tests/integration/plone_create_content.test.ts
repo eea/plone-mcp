@@ -7,6 +7,8 @@ import { PloneClient, PloneContent } from "../../src/plone-client";
 import * as BlockUtils from "../../src/utils/block-utils";
 import { PreparedBlocks } from "../../src/plone-service";
 import { headers } from "xmcp/headers";
+import { type InferSchema } from "xmcp";
+import { schema } from "../../src/tools/plone_create_content";
 
 describe("plone_create_content", () => {
   let mockServer: PloneMockServer;
@@ -17,8 +19,8 @@ describe("plone_create_content", () => {
   const sessionId = "test-session-id";
 
   const mockCreatedContent = {
-    "@id": `${testBaseUrl}/++api++${newContentPath}`,
     ...sampleDocument,
+    "@id": `${testBaseUrl}/++api++${newContentPath}`,
     id: newContentId,
     title: "My New Page",
   };
@@ -27,10 +29,11 @@ describe("plone_create_content", () => {
     mockServer = new PloneMockServer(testBaseUrl);
 
     // Mock headers to return the test session ID
-    vi.mocked(headers).mockReturnValue({
-      get: (name: string) => (name === "mcp-session-id" ? sessionId : null),
-    });
-
+    vi.mock("xmcp/headers", () => ({
+      headers: vi.fn(() => ({
+        get: vi.fn((name: string) => (name === "mcp-session-id" ? sessionId : undefined)),
+      })),
+    }));
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
     service.clearPreparedBlocks(); // Ensure no prepared blocks initially
@@ -58,18 +61,22 @@ describe("plone_create_content", () => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
         expect(body.description).toBe("A description");
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        const titleBlockId = body.blocks_layout!.items[0];
+        expect(body.blocks![titleBlockId]).toEqual({ "@type": "title" });
         return true;
       },
       mockCreatedContent,
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "My New Page",
       description: "A description",
+      id: undefined, // Explicitly undefined
+      blocks: undefined, // Explicitly undefined
+      blocks_layout: undefined, // Explicitly undefined
+      additionalFields: undefined, // Explicitly undefined
     };
 
     const result = await ploneCreateContent(args);
@@ -85,18 +92,22 @@ describe("plone_create_content", () => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
         expect(body.id).toBe("custom-id");
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        const titleBlockId = body.blocks_layout!.items[0];
+        expect(body.blocks![titleBlockId]).toEqual({ "@type": "title" });
         return true;
       },
       { ...mockCreatedContent, id: "custom-id" },
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "My New Page",
       id: "custom-id",
+      description: undefined, // Explicitly undefined
+      blocks: undefined, // Explicitly undefined
+      blocks_layout: undefined, // Explicitly undefined
+      additionalFields: undefined, // Explicitly undefined
     };
 
     await ploneCreateContent(args);
@@ -120,12 +131,12 @@ describe("plone_create_content", () => {
     mockServer.mockContentCreate(
       parentPath,
       (body: PloneContent) => {
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks).toEqual({
+        const titleBlockId = body.blocks_layout!.items[0];
+        expect(body.blocks!).toEqual({
           [titleBlockId]: { "@type": "title" },
           [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
         });
-        expect(body.blocks_layout.items).toEqual([
+        expect(body.blocks_layout!.items).toEqual([
           titleBlockId,
           preparedBlockId,
         ]);
@@ -134,10 +145,15 @@ describe("plone_create_content", () => {
       mockCreatedContent,
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "Page with Prepared Blocks",
+      description: undefined, // Explicitly undefined
+      id: undefined, // Explicitly undefined
+      blocks: undefined, // Explicitly undefined
+      blocks_layout: undefined, // Explicitly undefined
+      additionalFields: undefined, // Explicitly undefined
     };
 
     await ploneCreateContent(args);
@@ -168,12 +184,12 @@ describe("plone_create_content", () => {
     mockServer.mockContentCreate(
       parentPath,
       (body: PloneContent) => {
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks).toEqual({
+        const titleBlockId = body.blocks_layout!.items[0];
+        expect(body.blocks!).toEqual({
           [titleBlockId]: { "@type": "title" },
           ...inlineBlocks,
         });
-        expect(body.blocks_layout.items).toEqual([
+        expect(body.blocks_layout!.items).toEqual([
           titleBlockId,
           ...inlineLayout.items,
         ]);
@@ -182,12 +198,15 @@ describe("plone_create_content", () => {
       mockCreatedContent,
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "Page with Inline Blocks",
       blocks: inlineBlocks,
       blocks_layout: inlineLayout,
+      description: undefined, // Explicitly undefined
+      id: undefined, // Explicitly undefined
+      additionalFields: undefined, // Explicitly undefined
     };
 
     await ploneCreateContent(args);
@@ -209,18 +228,22 @@ describe("plone_create_content", () => {
         expect(body.title).toBe("Page with Extra Fields");
         expect(body.effective).toBe(additionalFields.effective);
         expect(body.creators).toEqual(additionalFields.creators);
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        const titleBlockId = body.blocks_layout!.items[0];
+        expect(body.blocks![titleBlockId]).toEqual({ "@type": "title" });
         return true;
       },
       mockCreatedContent,
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "Page with Extra Fields",
       additionalFields: additionalFields,
+      description: undefined, // Explicitly undefined
+      id: undefined, // Explicitly undefined
+      blocks: undefined, // Explicitly undefined
+      blocks_layout: undefined, // Explicitly undefined
     };
 
     await ploneCreateContent(args);
@@ -243,12 +266,12 @@ describe("plone_create_content", () => {
     mockServer.mockContentCreate(
       parentPath,
       (body: PloneContent) => {
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks).toEqual({
+        const titleBlockId = body.blocks_layout!.items[0];
+        expect(body.blocks!).toEqual({
           [titleBlockId]: { "@type": "title" },
           [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
         });
-        expect(body.blocks_layout.items).toEqual([
+        expect(body.blocks_layout!.items).toEqual([
           titleBlockId,
           preparedBlockId,
         ]);
@@ -258,10 +281,15 @@ describe("plone_create_content", () => {
       "Server Error",
     );
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "Failing Page",
+      description: undefined, // Explicitly undefined
+      id: undefined, // Explicitly undefined
+      blocks: undefined, // Explicitly undefined
+      blocks_layout: undefined, // Explicitly undefined
+      additionalFields: undefined, // Explicitly undefined
     };
 
     await expect(ploneCreateContent(args)).rejects.toThrow(
@@ -275,10 +303,15 @@ describe("plone_create_content", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args = {
+    const args: InferSchema<typeof schema> = {
       parentPath: parentPath,
       type: "Document",
       title: "My New Page",
+      description: undefined, // Explicitly undefined
+      id: undefined, // Explicitly undefined
+      blocks: undefined, // Explicitly undefined
+      blocks_layout: undefined, // Explicitly undefined
+      additionalFields: undefined, // Explicitly undefined
     };
 
     await expect(ploneCreateContent(args)).rejects.toThrow(
@@ -287,3 +320,4 @@ describe("plone_create_content", () => {
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });
+

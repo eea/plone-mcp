@@ -64,7 +64,7 @@ export class PloneMockServer {
     path: string,
     requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
     responseOrStatus: Record<string, unknown> | number,
-    maybeBody?: Record<string, unknown>,
+    maybeBody?: unknown,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
