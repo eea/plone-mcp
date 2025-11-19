@@ -13,7 +13,7 @@ export class PloneMockServer {
     "Content-Type": "application/json",
   };
 
-  constructor(baseUrl: string = "https://test.plone.com") {
+  constructor(baseUrl = "https://test.plone.com") {
     this.baseUrl = baseUrl;
   }
 
@@ -77,7 +77,7 @@ export class PloneMockServer {
       .reply(status, body);
   }
 
-  mockContentDelete(path: string, status: number = 204, body?: unknown) {
+  mockContentDelete(path: string, status = 204, body?: unknown) {
     const normalizedPath = this.normalizePath(path);
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .delete(`/++api++${normalizedPath}`)

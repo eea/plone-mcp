@@ -49,11 +49,11 @@ export const metadata: ToolMetadata = {
 };
 
 interface PloneCreateBlocksLayoutArgs {
-  blocks: Array<{
+  blocks: {
     type: string;
     data: Record<string, unknown>;
     position?: number;
-  }>;
+  }[];
 }
 
 export default async function ploneCreateBlocksLayout(
@@ -67,7 +67,7 @@ export default async function ploneCreateBlocksLayout(
     const { blocks } = args;
     const processedBlocks: Record<string, unknown> = {};
     const blockIds: string[] = [];
-    const blockInfo: Array<{ id: string; type: string }> = [];
+    const blockInfo: { id: string; type: string }[] = [];
 
     // Process each block in the array
     for (const blockSpec of blocks) {

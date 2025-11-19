@@ -55,7 +55,10 @@ export default async function ploneRemoveSingleBlock(
     }
 
     // Remove the block
-    delete blocks[blockId];
+    const updatedBlocks = Object.fromEntries(
+      Object.entries(blocks).filter(([key]) => key !== blockId),
+    );
+    // Set the blocks to the new object without the removed block
 
     // Remove from layout
     const index = blocks_layout.items.indexOf(blockId);
@@ -65,7 +68,7 @@ export default async function ploneRemoveSingleBlock(
 
     // Update the content
     const updatedContent = (await client.patch(path, {
-      blocks,
+      blocks: updatedBlocks,
       blocks_layout,
     })) as PloneContent;
 

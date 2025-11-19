@@ -1,11 +1,11 @@
 import { PloneClient } from "./plone-client";
 import { generateBlockId } from "./utils/block-utils";
 
-export type PreparedBlocks = {
+export interface PreparedBlocks {
   blocks: Record<string, unknown>;
   blocks_layout: { items: string[] };
   timestamp: number;
-};
+}
 
 export class PloneService {
   public client: PloneClient | null = null;
@@ -60,7 +60,7 @@ export class PloneService {
   public processBlocksForContent(
     blocks: Record<string, unknown> | undefined,
     blocks_layout: Record<string, unknown> | undefined,
-    isUpdate: boolean = false,
+    isUpdate = false,
   ): {
     blocks: Record<string, unknown>;
     blocks_layout: { items: string[] };

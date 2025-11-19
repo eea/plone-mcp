@@ -57,7 +57,11 @@ export default async function ploneAddSingleBlock(
     const blockId = generateBlockId();
 
     // Validate image URLs asynchronously before processing
-    if (blockType === "image" && typeof blockData.url === 'string' && blockData.url) {
+    if (
+      blockType === "image" &&
+      typeof blockData.url === "string" &&
+      blockData.url
+    ) {
       const isValid = await validateImageURL(blockData.url);
       if (!isValid) {
         throw wrapError(

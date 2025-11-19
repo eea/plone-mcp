@@ -57,11 +57,7 @@ describe("Block Helpers", () => {
 
   describe("Block Data Creation", () => {
     it("should create image block data", () => {
-      const createImageBlock = (
-        imageUrl: string,
-        alt: string = "",
-        size: string = "l",
-      ) => ({
+      const createImageBlock = (imageUrl: string, alt = "", size = "l") => ({
         "@type": "image",
         url: imageUrl,
         alt,

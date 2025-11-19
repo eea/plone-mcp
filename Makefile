@@ -54,3 +54,9 @@ dev: ## Start in development mode with hot reload.
 	$(PNPM_BIN)/xmcp dev
 inspector: ## Run with MCP Inspector.
 	$(PNPM_BIN)/mcp-inspector
+
+ci:	## teste, type-check, lint and format
+	make test
+	make type-check
+	make lint
+	make format
