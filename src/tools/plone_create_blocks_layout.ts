@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import {
@@ -10,6 +11,7 @@ import {
   validateImageURL,
 } from "../utils/block-utils";
 import { PreparedBlocks } from "../plone-service";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   blocks: z
@@ -48,10 +50,13 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneCreateBlocksLayout(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
+  const requestHeaders = headers();
+  const sessionId = getSessionId(requestHeaders);
+  const service = sessionManager.getSession(sessionId);
+
   try {
     const { blocks } = args;
-
     const processedBlocks: Record<string, any> = {};
     const blockIds: string[] = [];
     const blockInfo: Array<{ id: string; type: string }> = [];
@@ -64,7 +69,7 @@ export default async function ploneCreateBlocksLayout(
         if (!isValid) {
           throw wrapError(
             "CreateBlocksLayout",
-            `Invalid or inaccessible image URL: ${blockSpec.data.url}`,
+            `Invalid or inaccessible image URL: ${blockSpec.data.url} `,
           );
         }
       }
@@ -83,23 +88,26 @@ export default async function ploneCreateBlocksLayout(
       blocks_layout: { items: blockIds },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+    service.setPreparedBlocks(preparedBlocksData);
 
     return {
       content: [
         {
           type: "text" as const,
-          text: `Successfully prepared ${
-            blocks.length
-          } blocks for next create/update operation (valid for 60 seconds). Blocks ready: ${blockInfo
-            .map((block) => `${block.type}:[${block.id}]`)
-            .join(", ")}`,
+          text: `Successfully prepared ${blocks.length
+            } blocks for next create / update operation(valid for 60 seconds).Blocks ready: ${blockInfo
+              .map((block) => `${block.type}:[${block.id}]`)
+              .join(", ")
+            } `,
         },
       ],
     };
   } catch (error) {
     // Clear prepared blocks on error
-    ploneHandlersSingleton.clearPreparedBlocks();
+    const requestHeaders = headers();
+    const sessionId = getSessionId(requestHeaders);
+    const service = sessionManager.getSession(sessionId);
+    service.clearPreparedBlocks();
     throw wrapError("CreateBlocksLayout", error);
   }
 }

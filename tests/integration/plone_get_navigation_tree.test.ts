@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer } from "../utils/test-helpers";
 import ploneGetNavigationTree from "../../src/tools/plone_get_navigation_tree";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
 import { PloneClient } from "../../src/plone-client";
+import { sessionManager } from "../../src/session-manager";
+import { headers } from "xmcp/headers";
 
 describe("plone_get_navigation_tree", () => {
   let mockServer: PloneMockServer;
@@ -31,18 +32,24 @@ describe("plone_get_navigation_tree", () => {
     "Content-Type": "application/json",
   };
 
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
-    // Removed global nock.matchHeader calls
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    } as any);
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
+    sessionManager.clearSession(sessionId);
   });
 
   it("should successfully retrieve navigation tree from root with default depth", async () => {
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get("/++api++/@navigation")
       .query({ depth: 2 })
       .reply(200, mockNavigationTree);
@@ -57,7 +64,7 @@ describe("plone_get_navigation_tree", () => {
   it("should successfully retrieve navigation tree from a specific path with custom depth", async () => {
     const customPath = "/some/path";
     const customDepth = 3;
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get(`/++api++${customPath}/@navigation`)
       .query({ depth: customDepth })
       .reply(200, mockNavigationTree);
@@ -71,7 +78,7 @@ describe("plone_get_navigation_tree", () => {
 
   it("should throw an error if navigation tree retrieval fails", async () => {
     const customPath = "/non-existent";
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
       reqheaders: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -91,7 +98,8 @@ describe("plone_get_navigation_tree", () => {
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = {};
     await expect(ploneGetNavigationTree(args)).rejects.toThrow(

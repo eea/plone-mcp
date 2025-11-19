@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   root_path: z
@@ -33,7 +35,10 @@ export default async function ploneGetNavigationTree(
 ): Promise<CallToolResult> {
   try {
     const { root_path, depth } = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = getSessionId(requestHeaders);
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
 
     const normalizedRootPath =
       typeof root_path === "string"

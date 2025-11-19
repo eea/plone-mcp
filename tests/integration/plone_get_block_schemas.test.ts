@@ -2,9 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import ploneGetBlockSchemas from "../../src/tools/plone_get_block_schemas";
 import { blockRegistry } from "../../src/block-registry";
 import * as BlockUtils from "../../src/utils/block-utils"; // Import BlockUtils for mocking getBlockExample
+import { headers } from "xmcp/headers";
+
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
 
 describe("plone_get_block_schemas", () => {
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    });
     vi.restoreAllMocks();
   });
 
@@ -27,7 +37,7 @@ describe("plone_get_block_schemas", () => {
     vi.spyOn(BlockUtils, "getBlockExample").mockReturnValue(mockExample);
 
     const args = { blockType: mockBlockType };
-    const result = await ploneGetBlockSchemas(args);
+    const result = await ploneGetBlockSchemas(args as any);
     const parsedContent = JSON.parse(result.content[0].text);
 
     expect(parsedContent.blockType).toBe(mockBlockType);
@@ -52,10 +62,10 @@ describe("plone_get_block_schemas", () => {
 
     vi.spyOn(blockRegistry, "getBlockTypes").mockReturnValue(mockAvailableTypes);
     vi.spyOn(blockRegistry, "getSpecifications").mockReturnValue(mockSpecifications);
-    vi.spyOn(BlockUtils, "getBlockExample").mockImplementation((type) => mockExamples[type]);
+    vi.spyOn(BlockUtils, "getBlockExample").mockImplementation((type) => (mockExamples as any)[type]);
 
     const args = {}; // No blockType specified
-    const result = await ploneGetBlockSchemas(args);
+    const result = await ploneGetBlockSchemas(args as any);
     const parsedContent = JSON.parse(result.content[0].text);
 
     expect(parsedContent.availableTypes).toEqual(mockAvailableTypes);
@@ -72,7 +82,7 @@ describe("plone_get_block_schemas", () => {
     vi.spyOn(blockRegistry, "getBlockTypes").mockReturnValue(["text", "image"]);
 
     const args = { blockType: unknownBlockType };
-    await expect(ploneGetBlockSchemas(args)).rejects.toThrow(
+    await expect(ploneGetBlockSchemas(args as any)).rejects.toThrow(
       `Unknown block type: ${unknownBlockType}. Available types: text, image`,
     );
     expect(blockRegistry.getSpecification).toHaveBeenCalledWith(unknownBlockType);
@@ -84,7 +94,7 @@ describe("plone_get_block_schemas", () => {
     });
 
     const args = {};
-    await expect(ploneGetBlockSchemas(args)).rejects.toThrow(
+    await expect(ploneGetBlockSchemas(args as any)).rejects.toThrow(
       "[GetBlockSchemas] Mock block registry error",
     );
   });

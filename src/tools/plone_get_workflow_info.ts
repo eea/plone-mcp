@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -25,7 +27,10 @@ export default async function ploneGetWorkflowInfo(
 ): Promise<CallToolResult> {
   try {
     const { path } = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = getSessionId(requestHeaders);
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
 
     const workflow = await client.get(`${path}/@workflow`);
 

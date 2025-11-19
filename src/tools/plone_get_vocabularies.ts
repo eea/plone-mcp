@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   vocabulary: z.string().describe("Vocabulary name"),
@@ -27,17 +29,17 @@ export default async function ploneGetVocabularies(
 ): Promise<CallToolResult> {
   try {
     const parsedArgs = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = getSessionId(requestHeaders);
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
     const { vocabulary, title, token } = parsedArgs;
 
     const params: Record<string, any> = {};
     if (title) params.title = title;
     if (token) params.token = token;
 
-    const vocabularies = await client.get(
-      `/@vocabularies/${vocabulary}`,
-      params,
-    );
+    const vocabularies = await client.get(`/@vocabularies/${vocabulary}`, params);
 
     return {
       content: [

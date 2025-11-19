@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   query: z.string().optional().describe("Search query text"),
@@ -46,10 +48,13 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneSearch(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
   try {
     const parsedArgs = args;
-    const client = ploneHandlersSingleton.getClient();
+    const requestHeaders = headers();
+    const sessionId = getSessionId(requestHeaders);
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
     const {
       query,
       portal_type,

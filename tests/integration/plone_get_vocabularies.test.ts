@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer } from "../utils/test-helpers";
 import ploneGetVocabularies from "../../src/tools/plone_get_vocabularies";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
 import { PloneClient } from "../../src/plone-client";
+import { sessionManager } from "../../src/session-manager";
+import { headers } from "xmcp/headers";
 
 describe("plone_get_vocabularies", () => {
   let mockServer: PloneMockServer;
@@ -17,13 +18,20 @@ describe("plone_get_vocabularies", () => {
     ],
   };
 
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    } as any);
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
+    sessionManager.clearSession(sessionId);
   });
 
   it("should successfully retrieve vocabulary values", async () => {
@@ -38,7 +46,7 @@ describe("plone_get_vocabularies", () => {
 
   it("should retrieve vocabulary values with title filter", async () => {
     const titleFilter = "Keyword 1";
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get(`/++api++/@vocabularies/${testVocabulary}`)
       .query({ title: titleFilter })
       .reply(200, mockVocabularyResponse);
@@ -51,7 +59,7 @@ describe("plone_get_vocabularies", () => {
 
   it("should retrieve vocabulary values with token filter", async () => {
     const tokenFilter = "keyword2";
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get(`/++api++/@vocabularies/${testVocabulary}`)
       .query({ token: tokenFilter })
       .reply(200, mockVocabularyResponse);
@@ -64,7 +72,7 @@ describe("plone_get_vocabularies", () => {
 
   it("should throw an error if vocabulary retrieval fails", async () => {
     const nonExistentVocabulary = "non.existent.vocabulary";
-    Nock.default(testBaseUrl)
+    Nock(testBaseUrl)
       .get(`/++api++/@vocabularies/${nonExistentVocabulary}`)
       .reply(404, "Not Found");
 
@@ -76,7 +84,8 @@ describe("plone_get_vocabularies", () => {
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = { vocabulary: testVocabulary };
     await expect(ploneGetVocabularies(args)).rejects.toThrow(

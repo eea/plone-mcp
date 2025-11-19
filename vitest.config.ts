@@ -1,12 +1,14 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node', // Keeping 'node' as per Jest config
     setupFiles: ['./tests/setup.ts'], // Vitest's equivalent of setupFilesAfterEnv
-    include: ['**/*.{test,spec}.{ts,js}'], // Similar to Jest's testMatch
+    include: ['tests/**/*.{test,spec}.{ts,js}'], // Limit discovery to repo tests
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'], // Default excludes
+    pool: 'threads', // Forked workers were crashing in CI, stick to threads
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
@@ -18,7 +20,8 @@ export default defineConfig({
       ],
     },
     testTimeout: 10000, // 10 seconds, matching Jest's testTimeout
-    // For ESM compatibility, Vitest handles this better than Jest
-    // moduleNameMapper is not typically needed with Vitest's native ESM support
+    alias: {
+      "xmcp/headers": path.resolve(__dirname, "./tests/mocks/xmcp-headers.ts"),
+    },
   },
 });

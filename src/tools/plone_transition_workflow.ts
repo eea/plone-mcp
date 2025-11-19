@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { ploneHandlersSingleton } from "../plone-singleton";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../session-manager";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
+import { getSessionId } from "../utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -26,8 +28,12 @@ export default async function ploneTransitionWorkflow(
   args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
   try {
+    const requestHeaders = headers();
+    const sessionId = getSessionId(requestHeaders);
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
+
     const { path, transition, comment } = args;
-    const client = ploneHandlersSingleton.getClient();
 
     const data: any = { transition };
     if (comment) data.comment = comment;

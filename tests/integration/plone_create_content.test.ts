@@ -2,10 +2,11 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneCreateContent from "../../src/tools/plone_create_content";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client";
-import * as BlockUtils from "../../src/utils/block-utils"; // Added import
+import * as BlockUtils from "../../src/utils/block-utils";
 import { PreparedBlocks } from "../../src/plone-service";
+import { headers } from "xmcp/headers";
 
 describe("plone_create_content", () => {
   let mockServer: PloneMockServer;
@@ -13,6 +14,7 @@ describe("plone_create_content", () => {
   const parentPath = "/";
   const newContentId = "my-new-page";
   const newContentPath = `${parentPath}${newContentId}`;
+  const sessionId = "test-session-id";
 
   const mockCreatedContent = {
     "@id": `${testBaseUrl}/++api++${newContentPath}`,
@@ -23,8 +25,16 @@ describe("plone_create_content", () => {
 
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
-    ploneHandlersSingleton.clearPreparedBlocks(); // Ensure no prepared blocks initially
+
+    // Mock headers to return the test session ID
+    vi.mocked(headers).mockReturnValue({
+      get: (name: string) => (name === "mcp-session-id" ? sessionId : null),
+    } as any);
+
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
+    service.clearPreparedBlocks(); // Ensure no prepared blocks initially
+
     vi.spyOn(BlockUtils, "generateBlockId").mockImplementation((
       (i = 0) => () =>
         `mock-id-${++i}`
@@ -34,7 +44,8 @@ describe("plone_create_content", () => {
   afterEach(() => {
     Nock.cleanAll();
     vi.restoreAllMocks();
-    ploneHandlersSingleton.clearPreparedBlocks();
+    const service = sessionManager.getSession(sessionId);
+    service.clearPreparedBlocks();
   });
 
   it("should successfully create simple content", async () => {
@@ -58,7 +69,7 @@ describe("plone_create_content", () => {
       description: "A description",
     };
 
-    const result = await ploneCreateContent(args);
+    const result = await ploneCreateContent(args as any);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockCreatedContent);
     expect(Nock.isDone()).toBe(true);
@@ -85,7 +96,7 @@ describe("plone_create_content", () => {
       id: "custom-id",
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent(args as any);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -99,7 +110,9 @@ describe("plone_create_content", () => {
       blocks_layout: { items: [preparedBlockId] },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+
+    const service = sessionManager.getSession(sessionId);
+    service.setPreparedBlocks(preparedBlocksData);
 
     mockServer.mockContentCreate(
       parentPath,
@@ -121,9 +134,9 @@ describe("plone_create_content", () => {
       title: "Page with Prepared Blocks",
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent(args as any);
 
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
+    expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -136,7 +149,9 @@ describe("plone_create_content", () => {
       blocks_layout: { items: [preparedBlockId] },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+
+    const service = sessionManager.getSession(sessionId);
+    service.setPreparedBlocks(preparedBlocksData);
 
     const inlineBlockId = BlockUtils.generateBlockId();
     const inlineBlocks = {
@@ -166,9 +181,9 @@ describe("plone_create_content", () => {
       blocks_layout: inlineLayout,
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent(args as any);
 
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Still cleared
+    expect(service.getPreparedBlocks()).toBeNull(); // Still cleared
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -199,7 +214,7 @@ describe("plone_create_content", () => {
       additionalFields: additionalFields,
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent(args as any);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -212,7 +227,9 @@ describe("plone_create_content", () => {
       blocks_layout: { items: [preparedBlockId] },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+
+    const service = sessionManager.getSession(sessionId);
+    service.setPreparedBlocks(preparedBlocksData);
 
     mockServer.mockContentCreate(
       parentPath,
@@ -235,15 +252,16 @@ describe("plone_create_content", () => {
       title: "Failing Page",
     };
 
-    await expect(ploneCreateContent(args)).rejects.toThrow(
+    await expect(ploneCreateContent(args as any)).rejects.toThrow(
       "[CreateContent] Request failed with status code 500",
     );
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
+    expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = {
       parentPath: parentPath,
@@ -251,7 +269,7 @@ describe("plone_create_content", () => {
       title: "My New Page",
     };
 
-    await expect(ploneCreateContent(args)).rejects.toThrow(
+    await expect(ploneCreateContent(args as any)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

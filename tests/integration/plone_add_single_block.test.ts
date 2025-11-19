@@ -2,14 +2,20 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneAddSingleBlock from "../../src/tools/plone_add_single_block";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client";
 import * as BlockUtils from "../../src/utils/block-utils"; // Import all from block-utils
+import { headers } from "xmcp/headers";
+
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
 
 describe("plone_add_single_block", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/my-page";
+  const sessionId = "test-session-id";
   const mockContent = {
     ...sampleDocument,
     "@id": `${testBaseUrl}/++api++${testPath}`,
@@ -28,8 +34,12 @@ describe("plone_add_single_block", () => {
   };
 
   beforeEach(() => {
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    });
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
     // Mock the validateImageURL function
     vi.spyOn(BlockUtils, "validateImageURL").mockResolvedValue(true);
     // Mock generateBlockId to return unique IDs
@@ -55,7 +65,7 @@ describe("plone_add_single_block", () => {
       (body: any) => {
         // Assert that the new block is in the body
         const newBlockId = body.blocks_layout.items.find(
-          (id: string) => !mockContent.blocks[id],
+          (id: string) => !(mockContent.blocks as any)[id],
         );
         expect(newBlockId).toBeDefined();
         expect(body.blocks[newBlockId]["@type"]).toBe("slate"); // processBlock converts "text" to "slate"
@@ -72,7 +82,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "New paragraph" },
     };
 
-    const result = await ploneAddSingleBlock(args);
+    const result = await ploneAddSingleBlock(args as any);
 
     expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterAdd, null, 2));
     expect(Nock.isDone()).toBe(true);
@@ -91,7 +101,7 @@ describe("plone_add_single_block", () => {
       testPath,
       (body: any) => {
         const newBlockId = body.blocks_layout.items.find(
-          (id: string) => !mockContent.blocks[id],
+          (id: string) => !(mockContent.blocks as any)[id],
         );
         expect(newBlockId).toBeDefined();
         expect(body.blocks[newBlockId]["@type"]).toBe("image");
@@ -107,7 +117,7 @@ describe("plone_add_single_block", () => {
       blockData: { url: "http://example.com/image.jpg", alt: "My Image" },
     };
 
-    const result = await ploneAddSingleBlock(args);
+    const result = await ploneAddSingleBlock(args as any);
 
     expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterImageAdd, null, 2));
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
@@ -128,7 +138,7 @@ describe("plone_add_single_block", () => {
       blockData: { url: "http://invalid.com/image.jpg", alt: "Invalid Image" },
     };
 
-    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
       "[AddBlock] Invalid or inaccessible image URL: http://invalid.com/image.jpg",
     );
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
@@ -165,13 +175,14 @@ describe("plone_add_single_block", () => {
       position: 1,
     };
 
-    const result = await ploneAddSingleBlock(args);
+    const result = await ploneAddSingleBlock(args as any);
     expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterPositionAdd, null, 2));
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null; // Ensure client is not configured
+    const service = sessionManager.getSession(sessionId);
+    service.client = null; // Ensure client is not configured
 
     const args = {
       path: testPath,
@@ -179,14 +190,14 @@ describe("plone_add_single_block", () => {
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API calls should be made
   });
 
   it("should throw an error if getting content fails", async () => {
-    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
+    Nock(testBaseUrl, { reqheaders: defaultReqHeaders })
       .get(`/++api++${testPath}`)
       .reply(404, "Not Found");
 
@@ -196,7 +207,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
       `[AddBlock] Request failed with status code 404`,
     );
     expect(Nock.isDone()).toBe(true);
@@ -204,7 +215,7 @@ describe("plone_add_single_block", () => {
 
   it("should throw an error if patching content fails", async () => {
     mockServer.mockContentGet(testPath, mockContent);
-    Nock.default(testBaseUrl, { reqheaders: defaultReqHeaders })
+    Nock(testBaseUrl, { reqheaders: defaultReqHeaders })
       .patch(`/++api++${testPath}`)
       .reply(500, "Server Error");
 
@@ -214,7 +225,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
       `[AddBlock] Request failed with status code 500`,
     );
     expect(Nock.isDone()).toBe(true);

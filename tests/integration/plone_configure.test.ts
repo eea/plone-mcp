@@ -1,13 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers"; // Use Nock from test-helpers
 import { PloneMockServer } from "../utils/test-helpers";
 import ploneConfigure from "../../src/tools/plone_configure";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client"; // Import PloneClient to check its instance
+import { headers } from "xmcp/headers";
+
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
 
 describe("plone_configure", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
+  const sessionId = "test-session-id";
   const mockSiteRootResponse = {
     "@type": "Plone Site",
     id: "plone",
@@ -15,17 +21,22 @@ describe("plone_configure", () => {
   };
 
   beforeEach(() => {
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    });
     mockServer = new PloneMockServer(testBaseUrl);
-    // Ensure the singleton client is null before each test
-    ploneHandlersSingleton.client = null;
+    // Ensure the session client is null before each test
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
   });
 
   afterEach(() => {
     Nock.cleanAll(); // Use Nock.cleanAll()
+    vi.restoreAllMocks();
   });
 
   it("should successfully configure the Plone client with valid credentials", async () => {
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
       reqheaders: {
         authorization: "Basic YWRtaW46YWRtaW4=",
         Accept: "application/json",
@@ -41,18 +52,19 @@ describe("plone_configure", () => {
       password: "admin",
     };
 
-    const result = await ploneConfigure(args);
+    const result = await ploneConfigure(args as any);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
     );
-    expect(ploneHandlersSingleton.client).toBeInstanceOf(PloneClient);
-    expect(ploneHandlersSingleton.client?.baseUrl).toBe(testBaseUrl);
+    const service = sessionManager.getSession(sessionId);
+    expect(service.client).toBeInstanceOf(PloneClient);
+    expect(service.client?.baseUrl).toBe(testBaseUrl);
     expect(Nock.isDone()).toBe(true); // Use Nock.isDone()
   });
 
   it("should successfully configure the Plone client with a token", async () => {
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
       reqheaders: {
         authorization: "Bearer test-token",
         Accept: "application/json",
@@ -67,18 +79,19 @@ describe("plone_configure", () => {
       token: "test-token",
     };
 
-    const result = await ploneConfigure(args);
+    const result = await ploneConfigure(args as any);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
     );
-    expect(ploneHandlersSingleton.client).toBeInstanceOf(PloneClient);
-    expect(ploneHandlersSingleton.client?.token).toBe("test-token");
+    const service = sessionManager.getSession(sessionId);
+    expect(service.client).toBeInstanceOf(PloneClient);
+    expect(service.client?.token).toBe("test-token");
     expect(Nock.isDone()).toBe(true); // Use Nock.isDone()
   });
 
   it("should throw an error if configuration fails (e.g., unauthorized)", async () => {
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
       reqheaders: {
         authorization: "Basic YmFkdXNlcjpiYWRwYXNzd29yZA==",
         Accept: "application/json",
@@ -94,10 +107,11 @@ describe("plone_configure", () => {
       password: "badpassword",
     };
 
-    await expect(ploneConfigure(args)).rejects.toThrow(
+    await expect(ploneConfigure(args as any)).rejects.toThrow(
       "[Configure] Request failed with status code 401",
     );
-    expect(ploneHandlersSingleton.client).toBeNull(); // Client should not be set on failure
+    const service = sessionManager.getSession(sessionId);
+    expect(service.client).toBeNull(); // Client should not be set on failure
     expect(Nock.isDone()).toBe(true); // Use Nock.isDone()
   });
 
@@ -108,10 +122,11 @@ describe("plone_configure", () => {
       password: "admin",
     };
 
-    await expect(ploneConfigure(args)).rejects.toThrow(
+    await expect(ploneConfigure(args as any)).rejects.toThrow(
       "[Configure] Invalid base URL: invalid-url",
     );
-    expect(ploneHandlersSingleton.client).toBeNull();
+    const service = sessionManager.getSession(sessionId);
+    expect(service.client).toBeNull();
     expect(Nock.pendingMocks()).toHaveLength(0); // Use Nock.pendingMocks()
   });
 
@@ -120,7 +135,7 @@ describe("plone_configure", () => {
     process.env.PLONE_USERNAME = "envuser";
     process.env.PLONE_PASSWORD = "envpass";
 
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
       reqheaders: {
         authorization: "Basic YXJndXNlcjphcmdwYXNz",
         Accept: "application/json",
@@ -136,12 +151,13 @@ describe("plone_configure", () => {
       password: "argpass",
     };
 
-    const result = await ploneConfigure(args);
+    const result = await ploneConfigure(args as any);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
     );
-    expect(ploneHandlersSingleton.client?.baseUrl).toBe(testBaseUrl);
+    const service = sessionManager.getSession(sessionId);
+    expect(service.client?.baseUrl).toBe(testBaseUrl);
     // Cleanup env vars
     delete process.env.PLONE_BASE_URL;
     delete process.env.PLONE_USERNAME;
@@ -154,7 +170,7 @@ describe("plone_configure", () => {
     process.env.PLONE_USERNAME = "envuser";
     process.env.PLONE_PASSWORD = "envpass";
 
-    Nock.default(process.env.PLONE_BASE_URL, {
+    Nock(process.env.PLONE_BASE_URL, {
       reqheaders: {
         authorization: "Basic ZW52dXNlcjplbnZwYXNz",
         Accept: "application/json",
@@ -164,12 +180,13 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const result = await ploneConfigure({});
+    const result = await ploneConfigure({} as any);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${process.env.PLONE_BASE_URL}`,
     );
-    expect(ploneHandlersSingleton.client?.baseUrl).toBe(process.env.PLONE_BASE_URL);
+    const service = sessionManager.getSession(sessionId);
+    expect(service.client?.baseUrl).toBe(process.env.PLONE_BASE_URL);
     // Cleanup env vars
     delete process.env.PLONE_BASE_URL;
     delete process.env.PLONE_USERNAME;

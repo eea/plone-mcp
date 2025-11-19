@@ -4,13 +4,14 @@ interface Uri {
 }
 
 import { z } from "zod"; // Not strictly needed for this resource, but good practice for consistency
-import { type InferSchema, type ResourceMetadata } from "xmcp";
+import { type ResourceTemplate, type ReadResourceResult } from "@modelcontextprotocol/sdk";
+import { headers } from "xmcp/headers";
+import { sessionManager } from "../../session-manager";
+import { getSessionId } from "../../utils/session";
 
-import { ploneHandlersSingleton } from "../../plone-singleton";
+export const schema = z.object({}); // No specific parameters for this resource
 
-export const schema = {}; // No specific parameters for this resource
-
-export const metadata: ResourceMetadata = {
+export const metadata: ResourceTemplate = {
   name: "plone-site",
   title: "Plone Site Information",
   description:
@@ -18,11 +19,12 @@ export const metadata: ResourceMetadata = {
   resourceTemplate: "plone://site", // Direct URI string
 };
 
-export default async function handler(
-  uri: Uri,
-  params: InferSchema<typeof schema>,
-) {
-  const { client } = ploneHandlersSingleton;
+export default async function read(
+  args: z.infer<typeof schema>,
+): Promise<ReadResourceResult> {
+  const sessionId = getSessionId(headers());
+  const service = sessionManager.getSession(sessionId);
+  const client = service.getClient();
 
   if (!client) {
     throw new Error(

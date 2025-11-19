@@ -2,15 +2,21 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneUpdateContent from "../../src/tools/plone_update_content";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client";
 import * as BlockUtils from "../../src/utils/block-utils"; // Import for mocking generateBlockId
 import { PreparedBlocks } from "../../src/plone-service";
+import { headers } from "xmcp/headers";
+
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
 
 describe("plone_update_content", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/my-page";
+  const sessionId = "test-session-id";
   const mockContent = {
     ...sampleDocument,
     "@id": `${testBaseUrl}/++api++${testPath}`,
@@ -22,9 +28,13 @@ describe("plone_update_content", () => {
   };
 
   beforeEach(() => {
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    });
     mockServer = new PloneMockServer(testBaseUrl);
-    ploneHandlersSingleton.client = new PloneClient({ baseUrl: testBaseUrl });
-    ploneHandlersSingleton.clearPreparedBlocks(); // Ensure no prepared blocks initially
+    const service = sessionManager.getSession(sessionId);
+    service.client = new PloneClient({ baseUrl: testBaseUrl });
+    service.clearPreparedBlocks(); // Ensure no prepared blocks initially
     vi.spyOn(BlockUtils, "generateBlockId").mockImplementation(
       () => "mock-title-block-id",
     ); // Mock for title block generation
@@ -33,7 +43,8 @@ describe("plone_update_content", () => {
   afterEach(() => {
     Nock.cleanAll();
     vi.restoreAllMocks();
-    ploneHandlersSingleton.clearPreparedBlocks();
+    const service = sessionManager.getSession(sessionId);
+    service.clearPreparedBlocks();
   });
 
   it("should successfully update title and description", async () => {
@@ -53,7 +64,7 @@ describe("plone_update_content", () => {
       description: updatedDescription,
     };
 
-    const result = await ploneUpdateContent(args);
+    const result = await ploneUpdateContent(args as any);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockUpdatedContent);
     expect(Nock.isDone()).toBe(true);
@@ -67,7 +78,8 @@ describe("plone_update_content", () => {
       blocks_layout: { items: ["block-1"] },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+    const service = sessionManager.getSession(sessionId);
+    service.setPreparedBlocks(preparedBlocksData);
 
     const mockResponseWithPreparedBlocks = {
       ...mockContent,
@@ -90,9 +102,9 @@ describe("plone_update_content", () => {
 
     const args = { path: testPath }; // No inline blocks, should use prepared
 
-    await ploneUpdateContent(args);
+    await ploneUpdateContent(args as any);
 
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
+    expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -104,7 +116,8 @@ describe("plone_update_content", () => {
       blocks_layout: { items: ["block-prepared"] },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+    const service = sessionManager.getSession(sessionId);
+    service.setPreparedBlocks(preparedBlocksData);
 
     const inlineBlocks = {
       "block-inline": { "@type": "slate", plaintext: "Inline text for update" },
@@ -139,9 +152,9 @@ describe("plone_update_content", () => {
       blocks_layout: inlineLayout,
     };
 
-    await ploneUpdateContent(args);
+    await ploneUpdateContent(args as any);
 
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Prepared should still be cleared
+    expect(service.getPreparedBlocks()).toBeNull(); // Prepared should still be cleared
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -157,14 +170,14 @@ describe("plone_update_content", () => {
 
     const args = { path: testPath, additionalFields: additionalFields };
 
-    await ploneUpdateContent(args);
+    await ploneUpdateContent(args as any);
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if no changes are specified", async () => {
     const args = { path: testPath }; // Only path, no title, description, blocks, or additionalFields
 
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
       "No changes specified for update",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
@@ -172,7 +185,7 @@ describe("plone_update_content", () => {
 
   it("should throw an error if path is missing", async () => {
     const args = { title: "New title" }; // Missing path
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
       "Path is required for updating content",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
@@ -186,9 +199,10 @@ describe("plone_update_content", () => {
       blocks_layout: { items: ["block-1"] },
       timestamp: Date.now(),
     };
-    ploneHandlersSingleton.setPreparedBlocks(preparedBlocksData);
+    const service = sessionManager.getSession(sessionId);
+    service.setPreparedBlocks(preparedBlocksData);
 
-    Nock.default(testBaseUrl, {
+    Nock(testBaseUrl, {
       reqheaders: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -199,18 +213,19 @@ describe("plone_update_content", () => {
 
     const args = { path: testPath, title: "Failing Update" };
 
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
       "[UpdateContent] Request failed with status code 500",
     );
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared
+    expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if Plone client is not configured", async () => {
-    ploneHandlersSingleton.client = null;
+    const service = sessionManager.getSession(sessionId);
+    service.client = null;
 
     const args = { path: testPath, title: "New Title" };
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

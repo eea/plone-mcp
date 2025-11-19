@@ -1,6 +1,6 @@
-import * as nock from "nock"; // Import as namespace
+import nock from "nock";
 
-export const Nock = nock; // Export the entire namespace object
+export const Nock = nock;
 
 export const cleanupNock = () => nock.cleanAll();
 export const isNockDone = () => nock.isDone();
@@ -27,16 +27,14 @@ export class PloneMockServer {
   mockSiteRoot(
     response = { "@type": "Plone Site", id: "plone", title: "Test Site" },
   ) {
-    return nock
-      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++")
       .reply(200, response);
   }
 
   mockContentGet(path: string, response: any) {
     const normalizedPath = this.normalizePath(path);
-    return nock
-      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++${normalizedPath}`)
       .reply(200, response);
   }
@@ -53,8 +51,7 @@ export class PloneMockServer {
         ? { status: responseOrStatus, body: maybeBody }
         : { status: 201, body: responseOrStatus };
 
-    return nock
-      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .post(`/++api++${normalizedPath}`, requestMatcher)
       .reply(status, body);
   }
@@ -71,16 +68,14 @@ export class PloneMockServer {
         ? { status: responseOrStatus, body: maybeBody }
         : { status: 200, body: responseOrStatus };
 
-    return nock
-      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .patch(`/++api++${normalizedPath}`, requestMatcher)
       .reply(status, body);
   }
 
   mockContentDelete(path: string, status: number = 204, body?: any) {
     const normalizedPath = this.normalizePath(path);
-    return nock
-      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .delete(`/++api++${normalizedPath}`)
       .reply(status, body);
   }
@@ -104,16 +99,16 @@ export class PloneMockServer {
       serializedQuery[key] = value;
     });
 
-    return nock
-      .default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++/@search")
       .query(serializedQuery)
       .reply(200, response);
   }
 
   mockWorkflow(path: string, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get(`/++api++${path}/@workflow`).reply(200, response);
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
+      .get(`/++api++${path}/@workflow`)
+      .reply(200, response);
   }
 
   mockWorkflowTransition(
@@ -122,9 +117,9 @@ export class PloneMockServer {
     response: any,
     bodyMatcher?: nock.RequestBodyMatcher,
   ) {
-    const scope = nock.default(this.baseUrl, {
+    const scope = nock(this.baseUrl, {
       reqheaders: this.defaultReqHeaders,
-    }); // Use nock.default
+    });
 
     if (bodyMatcher !== undefined) {
       return scope
@@ -138,12 +133,13 @@ export class PloneMockServer {
   }
 
   mockTypes(response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
-      .get("/++api++/@types").reply(200, response);
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
+      .get("/++api++/@types")
+      .reply(200, response);
   }
 
   mockVocabularies(vocabulary: string, response: any) {
-    return nock.default(this.baseUrl, { reqheaders: this.defaultReqHeaders }) // Use nock.default
+    return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++/@vocabularies/${vocabulary}`)
       .reply(200, response);
   }

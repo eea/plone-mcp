@@ -1,12 +1,22 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { ploneHandlersSingleton } from "../../src/plone-singleton";
+import { sessionManager } from "../../src/session-manager";
 import ploneCreateBlocksLayout from "../../src/tools/plone_create_blocks_layout";
 import * as BlockUtils from "../../src/utils/block-utils";
-import { blockRegistry } from "../../src/block-registry";
+import { headers } from "xmcp/headers";
+
+vi.mock("xmcp/headers", () => ({
+  headers: vi.fn(),
+}));
 
 describe("plone_create_blocks_layout", () => {
+  const sessionId = "test-session-id";
+
   beforeEach(() => {
-    ploneHandlersSingleton.clearPreparedBlocks();
+    vi.mocked(headers).mockReturnValue({
+      "mcp-session-id": sessionId,
+    });
+    const service = sessionManager.getSession(sessionId);
+    service.clearPreparedBlocks();
     vi.restoreAllMocks(); // Restore all mocks for clean slate
     vi.spyOn(BlockUtils, "validateImageURL").mockResolvedValue(true); // Default to valid image URLs
     let idCounter = 0;
@@ -14,7 +24,8 @@ describe("plone_create_blocks_layout", () => {
   });
 
   afterEach(() => {
-    ploneHandlersSingleton.clearPreparedBlocks();
+    const service = sessionManager.getSession(sessionId);
+    service.clearPreparedBlocks();
     vi.restoreAllMocks();
   });
 
@@ -26,8 +37,9 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    const result = await ploneCreateBlocksLayout(args);
-    const preparedBlocks = ploneHandlersSingleton.getPreparedBlocks();
+    const result = await ploneCreateBlocksLayout(args as any);
+    const service = sessionManager.getSession(sessionId);
+    const preparedBlocks = service.getPreparedBlocks();
 
     expect(result.content[0].text).toContain("Successfully prepared 2 blocks");
     expect(preparedBlocks).not.toBeNull();
@@ -50,8 +62,9 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    const result = await ploneCreateBlocksLayout(args);
-    const preparedBlocks = ploneHandlersSingleton.getPreparedBlocks();
+    const result = await ploneCreateBlocksLayout(args as any);
+    const service = sessionManager.getSession(sessionId);
+    const preparedBlocks = service.getPreparedBlocks();
 
     expect(result.content[0].text).toContain("Successfully prepared 2 blocks");
     expect(preparedBlocks).not.toBeNull();
@@ -74,8 +87,9 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    await ploneCreateBlocksLayout(args);
-    const preparedBlocks = ploneHandlersSingleton.getPreparedBlocks();
+    await ploneCreateBlocksLayout(args as any);
+    const service = sessionManager.getSession(sessionId);
+    const preparedBlocks = service.getPreparedBlocks();
 
     expect(preparedBlocks).not.toBeNull();
     expect(preparedBlocks?.blocks["mock-id-1"]["@type"]).toBe("image");
@@ -95,19 +109,21 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    await expect(ploneCreateBlocksLayout(args)).rejects.toThrow(
+    await expect(ploneCreateBlocksLayout(args as any)).rejects.toThrow(
       "[CreateBlocksLayout] Invalid or inaccessible image URL: http://invalid.com/image.jpg",
     );
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
       "http://invalid.com/image.jpg",
     );
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull(); // Should be cleared on error
+    const service = sessionManager.getSession(sessionId);
+    expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared on error
   });
 
   it("should prepare an empty layout if no blocks are provided", async () => {
     const args = { blocks: [] };
-    const result = await ploneCreateBlocksLayout(args);
-    const preparedBlocks = ploneHandlersSingleton.getPreparedBlocks();
+    const result = await ploneCreateBlocksLayout(args as any);
+    const service = sessionManager.getSession(sessionId);
+    const preparedBlocks = service.getPreparedBlocks();
 
     expect(result.content[0].text).toContain("Successfully prepared 0 blocks");
     expect(preparedBlocks).not.toBeNull();
@@ -124,9 +140,10 @@ describe("plone_create_blocks_layout", () => {
       blocks: [{ type: "text", data: { text: "This will fail" } }],
     };
 
-    await expect(ploneCreateBlocksLayout(args)).rejects.toThrow(
+    await expect(ploneCreateBlocksLayout(args as any)).rejects.toThrow(
       "[CreateBlocksLayout] Mock processing error",
     );
-    expect(ploneHandlersSingleton.getPreparedBlocks()).toBeNull();
+    const service = sessionManager.getSession(sessionId);
+    expect(service.getPreparedBlocks()).toBeNull();
   });
 });
