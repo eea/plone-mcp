@@ -22,8 +22,12 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneGetWorkflowInfoArgs {
+  path: string;
+}
+
 export default async function ploneGetWorkflowInfo(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneGetWorkflowInfoArgs,
 ): Promise<CallToolResult> {
   try {
     const { path } = args;

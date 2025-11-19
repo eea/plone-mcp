@@ -58,8 +58,19 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneCreateContentArgs {
+  parentPath: string;
+  type: string;
+  title: string;
+  description?: string;
+  id?: string;
+  blocks?: Record<string, unknown>;
+  blocks_layout?: Record<string, unknown>;
+  additionalFields?: Record<string, unknown>;
+}
+
 export default async function ploneCreateContent(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneCreateContentArgs,
 ): Promise<CallToolResult> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);

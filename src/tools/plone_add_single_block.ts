@@ -48,7 +48,7 @@ export default async function ploneAddSingleBlock(
     const client = service.getClient();
 
     // First get the current content
-    const content: PloneContent = await client.get(path);
+    const content = (await client.get(path)) as PloneContent;
 
     const blocks = content.blocks || {};
     const blocks_layout = content.blocks_layout || { items: [] };
@@ -57,7 +57,7 @@ export default async function ploneAddSingleBlock(
     const blockId = generateBlockId();
 
     // Validate image URLs asynchronously before processing
-    if (blockType === "image" && blockData?.url) {
+    if (blockType === "image" && typeof blockData.url === 'string' && blockData.url) {
       const isValid = await validateImageURL(blockData.url);
       if (!isValid) {
         throw wrapError(

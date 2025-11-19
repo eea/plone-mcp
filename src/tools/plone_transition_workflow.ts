@@ -24,8 +24,14 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneTransitionWorkflowArgs {
+  path: string;
+  transition: string;
+  comment?: string;
+}
+
 export default async function ploneTransitionWorkflow(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneTransitionWorkflowArgs,
 ): Promise<CallToolResult> {
   try {
     const requestHeaders = headers();

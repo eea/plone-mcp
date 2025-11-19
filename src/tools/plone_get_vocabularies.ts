@@ -24,8 +24,14 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneGetVocabulariesArgs {
+  vocabulary: string;
+  title?: string;
+  token?: string;
+}
+
 export default async function ploneGetVocabularies(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneGetVocabulariesArgs,
 ): Promise<CallToolResult> {
   try {
     const parsedArgs = args;

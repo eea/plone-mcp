@@ -22,8 +22,12 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneDeleteContentArgs {
+  path: string;
+}
+
 export default async function ploneDeleteContent(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneDeleteContentArgs,
 ): Promise<CallToolResult> {
   try {
     const { path } = args;

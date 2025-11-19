@@ -24,8 +24,13 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneRemoveSingleBlockArgs {
+  path: string;
+  blockId: string;
+}
+
 export default async function ploneRemoveSingleBlock(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneRemoveSingleBlockArgs,
 ): Promise<CallToolResult> {
   try {
     const { path, blockId } = args;
@@ -35,7 +40,7 @@ export default async function ploneRemoveSingleBlock(
     const client = service.getClient();
 
     // First get the current content
-    const content: PloneContent = await client.get(path);
+    const content = (await client.get(path)) as PloneContent;
 
     const blocks = content.blocks || {};
     const blocks_layout = content.blocks_layout || { items: [] };
@@ -59,10 +64,10 @@ export default async function ploneRemoveSingleBlock(
     }
 
     // Update the content
-    const updatedContent = await client.patch(path, {
+    const updatedContent = (await client.patch(path, {
       blocks,
       blocks_layout,
-    });
+    })) as PloneContent;
 
     const textContent: TextContent = {
       type: "text",

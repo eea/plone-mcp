@@ -38,8 +38,17 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneUpdateContentArgs {
+  path: string;
+  title?: string;
+  description?: string;
+  blocks?: Record<string, unknown>;
+  blocks_layout?: Record<string, unknown>;
+  additionalFields?: Record<string, unknown>;
+}
+
 export default async function ploneUpdateContent(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneUpdateContentArgs,
 ): Promise<CallToolResult> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);

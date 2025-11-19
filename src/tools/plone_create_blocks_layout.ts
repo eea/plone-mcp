@@ -48,8 +48,16 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneCreateBlocksLayoutArgs {
+  blocks: Array<{
+    type: string;
+    data: Record<string, unknown>;
+    position?: number;
+  }>;
+}
+
 export default async function ploneCreateBlocksLayout(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneCreateBlocksLayoutArgs,
 ): Promise<CallToolResult> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
@@ -64,7 +72,7 @@ export default async function ploneCreateBlocksLayout(
     // Process each block in the array
     for (const blockSpec of blocks) {
       // Validate image URLs asynchronously before processing
-      if (blockSpec.type === "image" && blockSpec.data?.url) {
+      if (blockSpec.type === "image" && typeof blockSpec.data.url === 'string' && blockSpec.data.url) {
         const isValid = await validateImageURL(blockSpec.data.url);
         if (!isValid) {
           throw wrapError(

@@ -30,8 +30,13 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneGetNavigationTreeArgs {
+  root_path?: string;
+  depth?: number;
+}
+
 export default async function ploneGetNavigationTree(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneGetNavigationTreeArgs,
 ): Promise<CallToolResult> {
   try {
     const { root_path, depth } = args;

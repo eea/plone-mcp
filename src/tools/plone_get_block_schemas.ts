@@ -25,8 +25,12 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneGetBlockSchemasArgs {
+  blockType?: string;
+}
+
 export default async function ploneGetBlockSchemas(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneGetBlockSchemasArgs,
 ): Promise<CallToolResult> {
   try {
     const { blockType } = args;

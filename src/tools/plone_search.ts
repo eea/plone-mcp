@@ -46,8 +46,19 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneSearchArgs {
+  query?: string;
+  portal_type?: string[];
+  path?: string;
+  review_state?: string[];
+  sort_on?: string;
+  sort_order?: "ascending" | "descending";
+  b_size?: number;
+  b_start?: number;
+}
+
 export default async function ploneSearch(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneSearchArgs,
 ): Promise<CallToolResult> {
   try {
     const parsedArgs = args;

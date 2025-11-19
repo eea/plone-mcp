@@ -25,8 +25,14 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneUpdateSingleBlockArgs {
+  path: string;
+  blockId: string;
+  blockData: Record<string, unknown>;
+}
+
 export default async function ploneUpdateSingleBlock(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneUpdateSingleBlockArgs,
 ): Promise<CallToolResult> {
   try {
     const { path, blockId, blockData } = args;
@@ -36,7 +42,7 @@ export default async function ploneUpdateSingleBlock(
     const client = service.getClient();
 
     // First get the current content
-    const content: PloneContent = await client.get(path);
+    const content = (await client.get(path)) as PloneContent;
 
     const blocks = content.blocks || {};
 
@@ -56,7 +62,7 @@ export default async function ploneUpdateSingleBlock(
     };
 
     // Update the content
-    const updatedContent = await client.patch(path, { blocks });
+    const updatedContent = (await client.patch(path, { blocks })) as PloneContent;
 
     const textContent: TextContent = {
       type: "text",

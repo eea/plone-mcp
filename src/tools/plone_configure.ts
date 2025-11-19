@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import { type InferSchema, type ToolMetadata, type ToolSchema } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import {
@@ -10,6 +10,7 @@ import {
   isValidUrl,
   PloneClient,
   optionalNonEmpty,
+  Config,
 } from "../plone-client";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
@@ -33,9 +34,7 @@ export const schema = z.object({
   token: optionalNonEmpty(ENV_TOKEN).describe(
     "JWT token for authentication (alternative to username/password). Can be set via PLONE_TOKEN environment variable.",
   ),
-});
-
-// Define tool metadata
+};// Define tool metadata
 export const metadata: ToolMetadata = {
   name: "plone_configure",
   description:
@@ -58,7 +57,7 @@ export default async function ploneConfigure(
   const service = sessionManager.getSession(sessionId);
 
   try {
-    client = new PloneClient(args);
+    client = new PloneClient(args as Config);
     await client.get("/");
     service.client = client;
 

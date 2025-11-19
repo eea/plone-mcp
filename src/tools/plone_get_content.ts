@@ -32,8 +32,13 @@ export const metadata: ToolMetadata = {
   },
 };
 
+interface PloneGetContentArgs {
+  path: string;
+  expand?: string[];
+}
+
 export default async function ploneGetContent(
-  args: InferSchema<typeof schema>,
+  args: InferSchema<typeof schema> & PloneGetContentArgs,
 ): Promise<CallToolResult> {
   try {
     const { path, expand } = args;
