@@ -338,6 +338,7 @@ This project uses `make` for common development tasks.
 *   **`make test-unit-only`**: Runs unit tests only with coverage.
 *   **`make type-check`**: Runs TypeScript type checking.
 *   **`make lint`**: Lints the code using ESLint.
+*   **`make ci`**: Runs tests, type-check, lint, and format checks.
 
 ## Troubleshooting
 
