@@ -33,9 +33,13 @@ describe("plone_create_content", () => {
     mockServer = new PloneMockServer(testBaseUrl);
 
     // Mock headers to return the test session ID
-    vi.mocked(headers).mockReturnValue({
+    const mockedHeaders = {
       get: vi.fn((name: string) => (name === "mcp-session-id" ? sessionId : undefined)),
-    });
+    };
+
+    vi.mocked(headers).mockReturnValue(
+      mockedHeaders as unknown as ReturnType<typeof headers>,
+    );
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
     service.clearPreparedBlocks(); // Ensure no prepared blocks initially
@@ -322,4 +326,3 @@ describe("plone_create_content", () => {
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 });
-

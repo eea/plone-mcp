@@ -1,6 +1,6 @@
 type HeadersLike =
   | {
-      get?: (name: string) => string | null | undefined;
+      get?: (name: string) => string | string[] | null | undefined;
       [key: string]: unknown;
     }
   | undefined
@@ -20,7 +20,7 @@ export function getHeaderValue(
   }
 
   const normalized = name.toLowerCase();
-  let value: string | null | undefined;
+  let value: string | string[] | null | undefined;
 
   // Check if headers object has a 'get' method (like Headers or custom objects)
   if (typeof headers.get === "function") {
@@ -28,18 +28,19 @@ export function getHeaderValue(
       headers.get(name) ??
       headers.get(normalized) ??
       headers.get(name.toUpperCase());
-    if (typeof value === "string" && value.length > 0) {
-      return value;
+    const normalizedValue = normalizeValue(value);
+    if (normalizedValue) {
+      return normalizedValue;
     }
   }
 
   // Fallback to direct property access for plain objects
-  const direct =
+  const directCandidate =
     (headers as Record<string, unknown>)[name] ??
     (headers as Record<string, unknown>)[normalized] ??
     (headers as Record<string, unknown>)[name.toUpperCase()];
 
-  return typeof direct === "string" && direct.length > 0 ? direct : undefined;
+  return normalizeValue(directCandidate as string | string[] | null | undefined);
 }
 
 /**
@@ -47,4 +48,19 @@ export function getHeaderValue(
  */
 export function getSessionId(headers: HeadersLike): string {
   return getHeaderValue(headers, SESSION_HEADER) ?? "default";
+}
+
+function normalizeValue(
+  value: string | string[] | null | undefined,
+): string | undefined {
+  if (typeof value === "string" && value.length > 0) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.find(
+      (candidate): candidate is string =>
+        typeof candidate === "string" && candidate.length > 0,
+    );
+  }
+  return undefined;
 }
