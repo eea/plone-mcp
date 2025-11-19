@@ -86,8 +86,7 @@ export class PloneMockServer {
     Object.entries(query).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         const targetKey = key.endsWith("[]") ? key : `${key}[]`;
-        serializedQuery[targetKey] =
-          value.length === 1 ? value[0] : value;
+        serializedQuery[targetKey] = value.length === 1 ? value[0] : value;
         return;
       }
 

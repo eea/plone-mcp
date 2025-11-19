@@ -35,10 +35,13 @@ describe("plone_create_content", () => {
     service.client = new PloneClient({ baseUrl: testBaseUrl });
     service.clearPreparedBlocks(); // Ensure no prepared blocks initially
 
-    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation((
-      (i = 0) => () =>
-        `mock-id-${++i}`
-    )()); // Make generateBlockId return unique IDs
+    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation(
+      (
+        (i = 0) =>
+        () =>
+          `mock-id-${++i}`
+      )(),
+    ); // Make generateBlockId return unique IDs
   });
 
   afterEach(() => {
@@ -122,7 +125,10 @@ describe("plone_create_content", () => {
           [titleBlockId]: { "@type": "title" },
           [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
         });
-        expect(body.blocks_layout.items).toEqual([titleBlockId, preparedBlockId]);
+        expect(body.blocks_layout.items).toEqual([
+          titleBlockId,
+          preparedBlockId,
+        ]);
         return true;
       },
       mockCreatedContent,
@@ -167,7 +173,10 @@ describe("plone_create_content", () => {
           [titleBlockId]: { "@type": "title" },
           ...inlineBlocks,
         });
-        expect(body.blocks_layout.items).toEqual([titleBlockId, ...inlineLayout.items]);
+        expect(body.blocks_layout.items).toEqual([
+          titleBlockId,
+          ...inlineLayout.items,
+        ]);
         return true;
       },
       mockCreatedContent,
@@ -239,7 +248,10 @@ describe("plone_create_content", () => {
           [titleBlockId]: { "@type": "title" },
           [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
         });
-        expect(body.blocks_layout.items).toEqual([titleBlockId, preparedBlockId]);
+        expect(body.blocks_layout.items).toEqual([
+          titleBlockId,
+          preparedBlockId,
+        ]);
         return true;
       },
       500,

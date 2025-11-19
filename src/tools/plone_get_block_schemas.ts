@@ -43,8 +43,7 @@ export default async function ploneGetBlockSchemas(
         throw new Error(
           `Unknown block type: ${blockType}. Available types: ${blockRegistry
             .getBlockTypes()
-            .join(", ")
-          } `,
+            .join(", ")} `,
         );
       }
 

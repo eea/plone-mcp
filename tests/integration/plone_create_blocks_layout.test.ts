@@ -20,7 +20,9 @@ describe("plone_create_blocks_layout", () => {
     vi.restoreAllMocks(); // Restore all mocks for clean slate
     vi.spyOn(BlockUtils, "validateImageURL").mockResolvedValue(true); // Default to valid image URLs
     let idCounter = 0;
-    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation(() => `mock-id-${++idCounter}`); // Mock ID generation
+    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation(
+      () => `mock-id-${++idCounter}`,
+    ); // Mock ID generation
   });
 
   afterEach(() => {
@@ -48,7 +50,9 @@ describe("plone_create_blocks_layout", () => {
     expect(preparedBlocks?.blocks["mock-id-1"]["@type"]).toBe("slate"); // 'text' type becomes 'slate'
     expect(preparedBlocks?.blocks["mock-id-1"].plaintext).toBe("Hello World");
     expect(preparedBlocks?.blocks["mock-id-2"]["@type"]).toBe("slate");
-    expect(preparedBlocks?.blocks["mock-id-2"].plaintext).toBe("Another paragraph");
+    expect(preparedBlocks?.blocks["mock-id-2"].plaintext).toBe(
+      "Another paragraph",
+    );
   });
 
   it("should successfully prepare a layout with a mix of block types", async () => {

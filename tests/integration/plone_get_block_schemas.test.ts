@@ -60,9 +60,15 @@ describe("plone_get_block_schemas", () => {
       teaser: { title: "Sample Teaser" },
     };
 
-    vi.spyOn(blockRegistry, "getBlockTypes").mockReturnValue(mockAvailableTypes);
-    vi.spyOn(blockRegistry, "getSpecifications").mockReturnValue(mockSpecifications);
-    vi.spyOn(BlockUtils, "getBlockExample").mockImplementation((type) => (mockExamples as any)[type]);
+    vi.spyOn(blockRegistry, "getBlockTypes").mockReturnValue(
+      mockAvailableTypes,
+    );
+    vi.spyOn(blockRegistry, "getSpecifications").mockReturnValue(
+      mockSpecifications,
+    );
+    vi.spyOn(BlockUtils, "getBlockExample").mockImplementation(
+      (type) => (mockExamples as any)[type],
+    );
 
     const args = {}; // No blockType specified
     const result = await ploneGetBlockSchemas(args as any);
@@ -73,7 +79,9 @@ describe("plone_get_block_schemas", () => {
     expect(parsedContent.examples).toEqual(mockExamples);
     expect(blockRegistry.getBlockTypes).toHaveBeenCalled();
     expect(blockRegistry.getSpecifications).toHaveBeenCalled();
-    expect(BlockUtils.getBlockExample).toHaveBeenCalledTimes(mockAvailableTypes.length);
+    expect(BlockUtils.getBlockExample).toHaveBeenCalledTimes(
+      mockAvailableTypes.length,
+    );
   });
 
   it("should throw an error for an unknown blockType", async () => {
@@ -85,7 +93,9 @@ describe("plone_get_block_schemas", () => {
     await expect(ploneGetBlockSchemas(args as any)).rejects.toThrow(
       `Unknown block type: ${unknownBlockType}. Available types: text, image`,
     );
-    expect(blockRegistry.getSpecification).toHaveBeenCalledWith(unknownBlockType);
+    expect(blockRegistry.getSpecification).toHaveBeenCalledWith(
+      unknownBlockType,
+    );
   });
 
   it("should handle errors during schema retrieval (e.g., from an internal utility)", async () => {

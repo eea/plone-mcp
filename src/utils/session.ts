@@ -36,9 +36,7 @@ export function getHeaderValue(
     (headers as any)[normalized] ??
     (headers as any)[name.toUpperCase()];
 
-  return typeof direct === "string" && direct.length > 0
-    ? direct
-    : undefined;
+  return typeof direct === "string" && direct.length > 0 ? direct : undefined;
 }
 
 /**

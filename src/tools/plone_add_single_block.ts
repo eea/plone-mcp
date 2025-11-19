@@ -72,7 +72,8 @@ export default async function ploneAddSingleBlock(
       blocks[blockId] = processBlock(blockType, blockData);
     } catch (error) {
       throw new Error(
-        `Error processing block data: ${error instanceof Error ? error.message : String(error)
+        `Error processing block data: ${
+          error instanceof Error ? error.message : String(error)
         } `,
       );
     }

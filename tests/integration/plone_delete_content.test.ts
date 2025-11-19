@@ -50,7 +50,9 @@ describe("plone_delete_content", () => {
         "user-agent": /.*/,
         "accept-encoding": /.*/,
       },
-    }).delete(`/++api++${testPath}`).reply(404, "Not Found");
+    })
+      .delete(`/++api++${testPath}`)
+      .reply(404, "Not Found");
 
     const args = { path: testPath };
     await expect(ploneDeleteContent(args as any)).rejects.toThrow(

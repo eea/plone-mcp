@@ -39,7 +39,10 @@ export default async function ploneGetVocabularies(
     if (title) params.title = title;
     if (token) params.token = token;
 
-    const vocabularies = await client.get(`/@vocabularies/${vocabulary}`, params);
+    const vocabularies = await client.get(
+      `/@vocabularies/${vocabulary}`,
+      params,
+    );
 
     return {
       content: [

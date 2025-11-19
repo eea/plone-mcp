@@ -53,4 +53,4 @@ dev: ## Start in development mode with hot reload.
 	$(PNPM_BIN)/xmcp dev
 
 inspector: ## Run with MCP Inspector.
-	$(PNPM_BIN)/@modelcontextprotocol/inspector node dist/http.js
+	$(PNPM_BIN)/mcp-inspector

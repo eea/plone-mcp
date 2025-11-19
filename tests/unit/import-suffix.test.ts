@@ -13,9 +13,7 @@ describe("Import Path Suffixes", () => {
           return collectTsFiles(entryPath);
         }
 
-        return entry.isFile() && entry.name.endsWith(".ts")
-          ? [entryPath]
-          : [];
+        return entry.isFile() && entry.name.endsWith(".ts") ? [entryPath] : [];
       });
     };
 

@@ -47,7 +47,9 @@ describe("plone_get_types", () => {
         "user-agent": /.*/,
         "accept-encoding": /.*/,
       },
-    }).get("/++api++/@types").reply(500, "Server Error");
+    })
+      .get("/++api++/@types")
+      .reply(500, "Server Error");
 
     await expect(ploneGetTypes({})).rejects.toThrow(
       "[GetTypes] Request failed with status code 500",

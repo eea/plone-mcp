@@ -11,6 +11,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/inspector": "^0.17.2",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.6.0",
     "isomorphic-fetch": "^3.0.0",

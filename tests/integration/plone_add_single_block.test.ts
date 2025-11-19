@@ -43,10 +43,13 @@ describe("plone_add_single_block", () => {
     // Mock the validateImageURL function
     vi.spyOn(BlockUtils, "validateImageURL").mockResolvedValue(true);
     // Mock generateBlockId to return unique IDs
-    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation((
-      (i = 0) => () =>
-        `mock-id-${++i}`
-    )());
+    vi.spyOn(BlockUtils, "generateBlockId").mockImplementation(
+      (
+        (i = 0) =>
+        () =>
+          `mock-id-${++i}`
+      )(),
+    );
   });
 
   afterEach(() => {
@@ -84,7 +87,9 @@ describe("plone_add_single_block", () => {
 
     const result = await ploneAddSingleBlock(args as any);
 
-    expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterAdd, null, 2));
+    expect(result.content[0].text).toEqual(
+      JSON.stringify(mockContentAfterAdd, null, 2),
+    );
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -105,7 +110,9 @@ describe("plone_add_single_block", () => {
         );
         expect(newBlockId).toBeDefined();
         expect(body.blocks[newBlockId]["@type"]).toBe("image");
-        expect(body.blocks[newBlockId].url).toBe("http://example.com/image.jpg");
+        expect(body.blocks[newBlockId].url).toBe(
+          "http://example.com/image.jpg",
+        );
         return true;
       },
       mockContentAfterImageAdd,
@@ -119,7 +126,9 @@ describe("plone_add_single_block", () => {
 
     const result = await ploneAddSingleBlock(args as any);
 
-    expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterImageAdd, null, 2));
+    expect(result.content[0].text).toEqual(
+      JSON.stringify(mockContentAfterImageAdd, null, 2),
+    );
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
       "http://example.com/image.jpg",
     );
@@ -176,7 +185,9 @@ describe("plone_add_single_block", () => {
     };
 
     const result = await ploneAddSingleBlock(args as any);
-    expect(result.content[0].text).toEqual(JSON.stringify(mockContentAfterPositionAdd, null, 2));
+    expect(result.content[0].text).toEqual(
+      JSON.stringify(mockContentAfterPositionAdd, null, 2),
+    );
     expect(Nock.isDone()).toBe(true);
   });
 

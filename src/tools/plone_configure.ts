@@ -2,7 +2,15 @@ import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
-import { ENV_BASE_URL, ENV_USERNAME, ENV_PASSWORD, ENV_TOKEN, isValidUrl, PloneClient, optionalNonEmpty } from "../plone-client";
+import {
+  ENV_BASE_URL,
+  ENV_USERNAME,
+  ENV_PASSWORD,
+  ENV_TOKEN,
+  isValidUrl,
+  PloneClient,
+  optionalNonEmpty,
+} from "../plone-client";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
@@ -42,7 +50,7 @@ export const metadata: ToolMetadata = {
 
 // Tool implementation
 export default async function ploneConfigure(
-  args: InferSchema<typeof schema>
+  args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
   let client: PloneClient | null = null;
   const requestHeaders = headers();

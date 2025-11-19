@@ -54,7 +54,11 @@ describe("plone_transition_workflow", () => {
       },
     );
 
-    const args = { path: testPath, transition: transitionName, comment: comment };
+    const args = {
+      path: testPath,
+      transition: transitionName,
+      comment: comment,
+    };
     await ploneTransitionWorkflow(args);
 
     expect(Nock.isDone()).toBe(true);
@@ -68,7 +72,9 @@ describe("plone_transition_workflow", () => {
         "user-agent": /.*/,
         "accept-encoding": /.*/,
       },
-    }).post(`/++api++${testPath}/@workflow/${transitionName}`).reply(400, "Bad Request");
+    })
+      .post(`/++api++${testPath}/@workflow/${transitionName}`)
+      .reply(400, "Bad Request");
 
     const args = { path: testPath, transition: transitionName };
     await expect(ploneTransitionWorkflow(args)).rejects.toThrow(

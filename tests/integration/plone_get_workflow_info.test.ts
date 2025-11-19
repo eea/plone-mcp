@@ -39,13 +39,15 @@ describe("plone_get_workflow_info", () => {
 
   it("should throw an error if workflow information retrieval fails", async () => {
     Nock(testBaseUrl, {
-          reqheaders: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "user-agent": /.*/,
-            "accept-encoding": /.*/,
-          },
-        }).get(`/++api++${testPath}/@workflow`).reply(404, "Not Found");
+      reqheaders: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "user-agent": /.*/,
+        "accept-encoding": /.*/,
+      },
+    })
+      .get(`/++api++${testPath}/@workflow`)
+      .reply(404, "Not Found");
 
     const args = { path: testPath };
     await expect(ploneGetWorkflowInfo(args)).rejects.toThrow(

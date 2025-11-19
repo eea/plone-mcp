@@ -63,7 +63,9 @@ describe("plone_update_single_block", () => {
     mockServer.mockContentUpdate(
       testPath,
       (body: any) => {
-        expect(body.blocks[blockToUpdateId].plaintext).toBe(updatedBlockData.plaintext);
+        expect(body.blocks[blockToUpdateId].plaintext).toBe(
+          updatedBlockData.plaintext,
+        );
         return true;
       },
       mockContentAfterUpdate,

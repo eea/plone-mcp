@@ -56,7 +56,11 @@ describe("plone_update_content", () => {
     };
     const mockUpdatedContent = { ...mockContent, ...expectedPatchBody };
 
-    mockServer.mockContentUpdate(testPath, expectedPatchBody, mockUpdatedContent);
+    mockServer.mockContentUpdate(
+      testPath,
+      expectedPatchBody,
+      mockUpdatedContent,
+    );
 
     const args = {
       path: testPath,
@@ -95,10 +99,17 @@ describe("plone_update_content", () => {
         "mock-title-block-id": { "@type": "title" },
         "block-1": { "@type": "slate", plaintext: "Prepared text for update" },
       });
-      expect(body.blocks_layout.items).toEqual(["mock-title-block-id", "block-1"]);
+      expect(body.blocks_layout.items).toEqual([
+        "mock-title-block-id",
+        "block-1",
+      ]);
       return true;
     };
-    mockServer.mockContentUpdate(testPath, expectedPatchBody, mockResponseWithPreparedBlocks);
+    mockServer.mockContentUpdate(
+      testPath,
+      expectedPatchBody,
+      mockResponseWithPreparedBlocks,
+    );
 
     const args = { path: testPath }; // No inline blocks, should use prepared
 
@@ -144,7 +155,11 @@ describe("plone_update_content", () => {
       ]);
       return true;
     };
-    mockServer.mockContentUpdate(testPath, expectedPatchBody, mockResponseWithInlineBlocks);
+    mockServer.mockContentUpdate(
+      testPath,
+      expectedPatchBody,
+      mockResponseWithInlineBlocks,
+    );
 
     const args = {
       path: testPath,
@@ -166,7 +181,11 @@ describe("plone_update_content", () => {
     const expectedPatchBody = { ...additionalFields };
     const mockUpdatedContent = { ...mockContent, ...expectedPatchBody };
 
-    mockServer.mockContentUpdate(testPath, expectedPatchBody, mockUpdatedContent);
+    mockServer.mockContentUpdate(
+      testPath,
+      expectedPatchBody,
+      mockUpdatedContent,
+    );
 
     const args = { path: testPath, additionalFields: additionalFields };
 
@@ -209,7 +228,9 @@ describe("plone_update_content", () => {
         "user-agent": /.*/,
         "accept-encoding": /.*/,
       },
-    }).patch(`/++api++${testPath}`).reply(500, "Server Error");
+    })
+      .patch(`/++api++${testPath}`)
+      .reply(500, "Server Error");
 
     const args = { path: testPath, title: "Failing Update" };
 

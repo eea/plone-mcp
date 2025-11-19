@@ -46,14 +46,17 @@ describe("plone_get_site_info", () => {
   });
 
   it("should throw an error if site information retrieval fails", async () => {
-    Nock(testBaseUrl, { // nock.default is implied here if nock is a function
+    Nock(testBaseUrl, {
+      // nock.default is implied here if nock is a function
       reqheaders: {
         Accept: "application/json",
         "Content-Type": "application/json",
         "user-agent": /.*/,
         "accept-encoding": /.*/,
       },
-    }).get("/++api++").reply(500, "Server Error");
+    })
+      .get("/++api++")
+      .reply(500, "Server Error");
 
     await expect(ploneGetSiteInfo({})).rejects.toThrow(
       "[GetSiteInfo] Request failed with status code 500",

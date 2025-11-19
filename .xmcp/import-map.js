@@ -25,9 +25,9 @@ export const prompts = {
 };
 
 export const resources = {
-"src/resources/plone/content.ts": () => import("../src/resources/plone/content.ts"),
-"src/resources/plone/site.ts": () => import("../src/resources/plone/site.ts"),
-"src/resources/plone/types.ts": () => import("../src/resources/plone/types.ts"),
+"src/resources/(plone)/content.ts": () => import("../src/resources/(plone)/content.ts"),
+"src/resources/(plone)/site.ts": () => import("../src/resources/(plone)/site.ts"),
+"src/resources/(plone)/types.ts": () => import("../src/resources/(plone)/types.ts"),
 };
 
 export const clientBundles = {

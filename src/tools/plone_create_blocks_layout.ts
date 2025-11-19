@@ -94,11 +94,11 @@ export default async function ploneCreateBlocksLayout(
       content: [
         {
           type: "text" as const,
-          text: `Successfully prepared ${blocks.length
-            } blocks for next create / update operation(valid for 60 seconds).Blocks ready: ${blockInfo
-              .map((block) => `${block.type}:[${block.id}]`)
-              .join(", ")
-            } `,
+          text: `Successfully prepared ${
+            blocks.length
+          } blocks for next create / update operation(valid for 60 seconds).Blocks ready: ${blockInfo
+            .map((block) => `${block.type}:[${block.id}]`)
+            .join(", ")} `,
         },
       ],
     };

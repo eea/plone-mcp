@@ -46,9 +46,7 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default async function ploneSearch(
-  args: InferSchema<typeof schema>,
-) {
+export default async function ploneSearch(args: InferSchema<typeof schema>) {
   try {
     const parsedArgs = args;
     const requestHeaders = headers();

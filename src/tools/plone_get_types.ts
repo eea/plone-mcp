@@ -20,9 +20,7 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default async function ploneGetTypes(
-  args: InferSchema<typeof schema>,
-) {
+export default async function ploneGetTypes(args: InferSchema<typeof schema>) {
   try {
     const requestHeaders = headers();
     const sessionId = getSessionId(requestHeaders);

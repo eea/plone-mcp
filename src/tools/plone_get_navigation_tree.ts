@@ -41,9 +41,7 @@ export default async function ploneGetNavigationTree(
     const client = service.getClient();
 
     const normalizedRootPath =
-      typeof root_path === "string"
-        ? client.normalizePath(root_path)
-        : "";
+      typeof root_path === "string" ? client.normalizePath(root_path) : "";
 
     const navigationPath = normalizedRootPath
       ? `${normalizedRootPath}/@navigation`
