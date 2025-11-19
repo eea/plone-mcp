@@ -5,8 +5,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node', // Keeping 'node' as per Jest config
-    setupFiles: ['./tests/setup.ts'], // Vitest's equivalent of setupFilesAfterEnv
-    include: ['tests/**/*.{test,spec}.{ts,js}'], // Limit discovery to repo tests
+    setupFiles: ['./src/tests/setup.ts'], // Vitest's equivalent of setupFilesAfterEnv
+    include: ['src/tests/**/*.{test,spec}.{ts,js}'], // Limit discovery to repo tests
     exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'], // Default excludes
     pool: 'threads', // Forked workers were crashing in CI, stick to threads
     coverage: {
@@ -20,8 +20,6 @@ export default defineConfig({
       ],
     },
     testTimeout: 10000, // 10 seconds, matching Jest's testTimeout
-    alias: {
-      "xmcp/headers": path.resolve(__dirname, "./tests/mocks/xmcp-headers.ts"),
-    },
+    alias: { "xmcp/headers": path.resolve(__dirname, "./src/tests/mocks/xmcp-headers.ts"), "plone-mcp": path.resolve(__dirname, "./src"), },
   },
 });

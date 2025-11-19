@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
-import ploneUpdateContent from "../../src/tools/plone_update_content";
-import { sessionManager } from "../../src/session-manager";
-import { PloneClient } from "../../src/plone-client";
-import * as BlockUtils from "../../src/utils/block-utils"; // Import for mocking generateBlockId
-import { PreparedBlocks } from "../../src/plone-service";
+import { Nock } from "plone-mcp/tests/utils/test-helpers";
+import { PloneMockServer, sampleDocument } from "plone-mcp/tests/utils/test-helpers";
+import ploneUpdateContent from "plone-mcp/tools/plone_update_content";
+import { sessionManager } from "plone-mcp/session-manager";
+import { PloneClient } from "plone-mcp/plone-client";
+import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import for mocking generateBlockId
+import { PreparedBlocks } from "plone-mcp/plone-service";
 import { headers } from "xmcp/headers";
 import { type InferSchema } from "xmcp";
-import { schema } from "../../src/tools/plone_update_content";
+import { schema } from "plone-mcp/tools/plone_update_content";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),

@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { readFileSync } from "fs";
-import { join, dirname } from "path";
+import { join } from "path";
 
 // Load block specifications from JSON
 export const blocksSpecification = (() => {

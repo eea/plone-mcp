@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { wrapError } from "../utils/block-utils";
-import { getSessionId } from "../utils/session";
+import { sessionManager } from "plone-mcp/session-manager";
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),

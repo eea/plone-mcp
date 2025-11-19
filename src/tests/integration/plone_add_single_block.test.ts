@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
-import ploneAddSingleBlock from "../../src/tools/plone_add_single_block";
-import { sessionManager } from "../../src/session-manager";
-import { PloneClient } from "../../src/plone-client";
-import * as BlockUtils from "../../src/utils/block-utils"; // Import all from block-utils
+import { Nock } from "plone-mcp/tests/utils/test-helpers";
+import { PloneMockServer, sampleDocument } from "plone-mcp/tests/utils/test-helpers";
+import ploneAddSingleBlock from "plone-mcp/tools/plone_add_single_block";
+import { sessionManager } from "plone-mcp/session-manager";
+import { PloneClient } from "plone-mcp/plone-client";
+import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import all from block-utils
 import { headers } from "xmcp/headers";
 import { type InferSchema } from "xmcp";
-import { schema } from "../../src/tools/plone_add_single_block";
+import { schema } from "plone-mcp/tools/plone_add_single_block";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
@@ -18,8 +18,8 @@ describe("plone_add_single_block", () => {
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/my-page";
   const sessionId = "test-session-id";
-type Block = { "@type": string; plaintext: string; url?: string; string?: string; value?: unknown[]; };
-type Blocks = Record<string, Block>;
+interface Block { "@type": string; plaintext: string; url?: string; string?: string; value?: unknown[]; }
+
 
   const mockContent: {
     "@id": string;

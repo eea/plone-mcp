@@ -1,6 +1,6 @@
 import "isomorphic-fetch";
 import { z } from "zod";
-import { markdownParse } from "../markdown-parser";
+import { markdownParse } from "plone-mcp/markdown-parser";
 import { v4 as uuidv4 } from "uuid";
 
 export function wrapError(operation: string, error: unknown): Error {

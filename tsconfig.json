@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "allowJs": true,
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
@@ -16,7 +16,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "plone-mcp/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.ts", "xmcp-env.d.ts"],
   "exclude": ["node_modules", "dist"]

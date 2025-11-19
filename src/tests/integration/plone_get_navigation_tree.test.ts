@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import ploneGetNavigationTree from "../../src/tools/plone_get_navigation_tree";
-import { PloneClient } from "../../src/plone-client";
-import { sessionManager } from "../../src/session-manager";
+import { Nock } from "plone-mcp/tests/utils/test-helpers";
+import ploneGetNavigationTree from "plone-mcp/tools/plone_get_navigation_tree";
+import { PloneClient } from "plone-mcp/plone-client";
+import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
 import { type InferSchema } from "xmcp";
-import { schema } from "../../src/tools/plone_get_navigation_tree";
+import { schema } from "plone-mcp/tools/plone_get_navigation_tree";
 
 describe("plone_get_navigation_tree", () => {
   const testBaseUrl = "http://localhost:8080/Plone";

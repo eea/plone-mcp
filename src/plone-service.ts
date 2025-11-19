@@ -1,5 +1,5 @@
-import { PloneClient } from "./plone-client";
-import { generateBlockId } from "./utils/block-utils";
+import { PloneClient } from "plone-mcp/plone-client";
+import { generateBlockId } from "plone-mcp/utils/block-utils";
 
 export interface PreparedBlocks {
   blocks: Record<string, unknown>;

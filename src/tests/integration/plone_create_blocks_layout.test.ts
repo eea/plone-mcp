@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { sessionManager } from "../../src/session-manager";
-import ploneCreateBlocksLayout from "../../src/tools/plone_create_blocks_layout";
-import * as BlockUtils from "../../src/utils/block-utils";
+import { sessionManager } from "plone-mcp/session-manager";
+import ploneCreateBlocksLayout from "plone-mcp/tools/plone_create_blocks_layout";
+import * as BlockUtils from "plone-mcp/utils/block-utils";
 import { headers } from "xmcp/headers";
-import { PreparedBlocks } from "../../src/plone-service"; // Import PreparedBlocks
+import { PreparedBlocks } from "plone-mcp/plone-service"; // Import PreparedBlocks
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),

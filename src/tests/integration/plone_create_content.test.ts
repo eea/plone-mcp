@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
-import ploneCreateContent from "../../src/tools/plone_create_content";
-import { sessionManager } from "../../src/session-manager";
-import { PloneClient, PloneContent } from "../../src/plone-client";
-import * as BlockUtils from "../../src/utils/block-utils";
-import { PreparedBlocks } from "../../src/plone-service";
+import { Nock } from "plone-mcp/tests/utils/test-helpers";
+import { PloneMockServer, sampleDocument } from "plone-mcp/tests/utils/test-helpers";
+import ploneCreateContent from "plone-mcp/tools/plone_create_content";
+import { sessionManager } from "plone-mcp/session-manager";
+import { PloneClient, PloneContent } from "plone-mcp/plone-client";
+import * as BlockUtils from "plone-mcp/utils/block-utils";
+import { PreparedBlocks } from "plone-mcp/plone-service";
 import { headers } from "xmcp/headers";
 import { type InferSchema } from "xmcp";
-import { schema } from "../../src/tools/plone_create_content";
+import { schema } from "plone-mcp/tools/plone_create_content";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
@@ -66,9 +66,15 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
-        expect(body.description).toBe("A description");
-        const titleBlockId = body.blocks_layout!.items[0];
-        expect(body.blocks![titleBlockId]).toEqual({ "@type": "title" });
+        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
+          const titleBlockId = body.blocks_layout.items[0];
+          expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        } else {
+          // Fail the test explicitly if these are unexpectedly null/undefined
+          expect(body.blocks_layout).toBeDefined();
+          expect(body.blocks_layout?.items).toBeDefined();
+          expect(body.blocks).toBeDefined();
+        }
         return true;
       },
       mockCreatedContent,

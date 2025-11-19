@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { blockRegistry } from "../block-registry";
+import { blockRegistry } from "plone-mcp/block-registry";
 
-import { wrapError, getBlockExample } from "../utils/block-utils";
+import { wrapError, getBlockExample } from "plone-mcp/utils/block-utils";
 
 export const schema = {
   blockType: z

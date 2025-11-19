@@ -1,6 +1,6 @@
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
+import { sessionManager } from "plone-mcp/session-manager";
 import {
   ENV_BASE_URL,
   ENV_USERNAME,
@@ -10,10 +10,10 @@ import {
   PloneClient,
   optionalNonEmpty,
   Config,
-} from "../plone-client";
+} from "plone-mcp/plone-client";
 
-import { wrapError } from "../utils/block-utils";
-import { getSessionId } from "../utils/session";
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { getSessionId } from "plone-mcp/utils/session";
 
 // Define the schema for tool parameters
 export const schema = {

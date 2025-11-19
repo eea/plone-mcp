@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import ploneGetBlockSchemas from "../../src/tools/plone_get_block_schemas";
-import { blockRegistry } from "../../src/block-registry";
-import * as BlockUtils from "../../src/utils/block-utils"; // Import BlockUtils for mocking getBlockExample
+import ploneGetBlockSchemas from "plone-mcp/tools/plone_get_block_schemas";
+import { blockRegistry } from "plone-mcp/block-registry";
+import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import BlockUtils for mocking getBlockExample
 import { headers } from "xmcp/headers";
 import { type InferSchema } from "xmcp";
-import { schema } from "../../src/tools/plone_get_block_schemas";
+import { schema } from "plone-mcp/tools/plone_get_block_schemas";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),

@@ -1,17 +1,17 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { blockRegistry } from "../block-registry";
+import { sessionManager } from "plone-mcp/session-manager";
+import { blockRegistry } from "plone-mcp/block-registry";
 
 import {
   wrapError,
   generateBlockId,
   processBlock,
   validateImageURL,
-} from "../utils/block-utils";
-import { PreparedBlocks } from "../plone-service";
-import { getSessionId } from "../utils/session";
+} from "plone-mcp/utils/block-utils";
+import { PreparedBlocks } from "plone-mcp/plone-service";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const schema = {
   blocks: z
