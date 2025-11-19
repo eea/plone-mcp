@@ -13,7 +13,7 @@ import {
 import { PreparedBlocks } from "../plone-service";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   blocks: z
     .array(
       z.object({
@@ -34,7 +34,7 @@ export const schema = z.object({
     .describe(
       "Array of block specifications to process. You MUST call plone_get_block_schemas first to see available block types and their required fields. You MUST follow the block specifications EXACTLY, DO NOT invent your own fields. DO NOT add the content object's title in a text block. To set the page title, use the 'title' field of the content object itself when calling plone_create_content or plone_update_content. A Title block will be automatically created by Plone.",
     ),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_create_blocks_layout",
@@ -72,7 +72,11 @@ export default async function ploneCreateBlocksLayout(
     // Process each block in the array
     for (const blockSpec of blocks) {
       // Validate image URLs asynchronously before processing
-      if (blockSpec.type === "image" && typeof blockSpec.data.url === 'string' && blockSpec.data.url) {
+      if (
+        blockSpec.type === "image" &&
+        typeof blockSpec.data.url === "string" &&
+        blockSpec.data.url
+      ) {
         const isValid = await validateImageURL(blockSpec.data.url);
         if (!isValid) {
           throw wrapError(

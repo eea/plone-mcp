@@ -6,11 +6,11 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   vocabulary: z.string().describe("Vocabulary name"),
   title: z.string().optional().describe("Filter by title"),
   token: z.string().optional().describe("Filter by token"),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_get_vocabularies",

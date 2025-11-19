@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   path: z.string().describe("Path to the content to update"),
   title: z.string().optional().describe("New title"),
   description: z.string().optional().describe("New description"),
@@ -24,7 +24,7 @@ export const schema = z.object({
     .describe(
       "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",
     ),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_update_content",

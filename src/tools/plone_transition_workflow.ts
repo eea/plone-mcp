@@ -6,11 +6,11 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   path: z.string().describe("Path to the content"),
   transition: z.string().describe("Workflow transition to execute"),
   comment: z.string().optional().describe("Comment for the transition"),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_transition_workflow",

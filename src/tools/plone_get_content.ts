@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   path: z
     .string()
     .describe(
@@ -18,7 +18,7 @@ export const schema = z.object({
     .describe(
       "Components to expand (e.g., ['breadcrumbs', 'actions', 'workflow'])",
     ),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_get_content",

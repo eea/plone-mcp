@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   root_path: z
     .string()
     .optional()
@@ -16,7 +16,7 @@ export const schema = z.object({
     .optional()
     .default(2)
     .describe("How deep to traverse in the navigation tree"),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_get_navigation_tree",

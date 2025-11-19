@@ -6,9 +6,9 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   path: z.string().describe("Path to the content to delete"),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_delete_content",

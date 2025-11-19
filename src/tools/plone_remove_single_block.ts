@@ -7,10 +7,10 @@ import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   path: z.string().describe("Path to the content"),
   blockId: z.string().describe("ID of the block to remove"),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_remove_single_block",

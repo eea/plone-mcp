@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = z.object({
+export const schema = {
   query: z.string().optional().describe("Search query text"),
   portal_type: z
     .array(z.string())
@@ -32,7 +32,7 @@ export const schema = z.object({
     .optional()
     .describe("Batch size (number of results per page)"),
   b_start: z.number().optional().describe("Batch start (for pagination)"),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_search",

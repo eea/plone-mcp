@@ -1,5 +1,4 @@
-import { z } from "zod";
-import { type InferSchema, type ToolMetadata, type ToolSchema } from "xmcp";
+import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import {
@@ -17,7 +16,7 @@ import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
 // Define the schema for tool parameters
-export const schema = z.object({
+export const schema = {
   baseUrl: optionalNonEmpty(ENV_BASE_URL)
     .refine((val) => !val || isValidUrl(val), {
       message: "Must be a valid URL (e.g., https://example.com)",
@@ -34,7 +33,7 @@ export const schema = z.object({
   token: optionalNonEmpty(ENV_TOKEN).describe(
     "JWT token for authentication (alternative to username/password). Can be set via PLONE_TOKEN environment variable.",
   ),
-};// Define tool metadata
+};
 export const metadata: ToolMetadata = {
   name: "plone_configure",
   description:

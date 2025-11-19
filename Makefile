@@ -50,7 +50,7 @@ start: ## Start the HTTP server.
 	node dist/http.js
 
 dev: ## Start in development mode with hot reload.
-	$(PNPM_BIN)/xmcp dev
 
+	$(PNPM_BIN)/xmcp dev
 inspector: ## Run with MCP Inspector.
 	$(PNPM_BIN)/mcp-inspector

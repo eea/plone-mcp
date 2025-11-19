@@ -4,14 +4,14 @@ import { blockRegistry } from "../block-registry";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError, getBlockExample } from "../utils/block-utils";
 
-export const schema = z.object({
+export const schema = {
   blockType: z
     .enum(blockRegistry.getBlockTypesEnum())
     .optional()
     .describe(
       "Specific block type to get schema for (optional, returns all if not specified).",
     ),
-});
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_get_block_schemas",
