@@ -1,10 +1,5 @@
-interface Uri {
-  href: string;
-  // Add other properties if they are used and needed for type safety
-}
-
-import { z } from "zod"; // Not strictly needed for this resource, but good practice for consistency
-import { type ResourceMetadata } from "xmcp"; // ResourceMetadata is still used
+import { z } from "zod";
+import { type ResourceMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 
 import { sessionManager } from "../../session-manager";
@@ -17,13 +12,9 @@ export const metadata: ResourceMetadata = {
   title: "Plone Content Types",
   description:
     "Provides direct read-only access to the list of available content types.",
-  resourceTemplate: "plone://types", // Direct URI string
 };
 
-export default async function handler(
-  uri: Uri,
-  params: z.infer<typeof schema>,
-) {
+export default async function handler() {
   const sessionId = getSessionId(headers());
   const service = sessionManager.getSession(sessionId);
   const client = service.getClient();
@@ -37,12 +28,6 @@ export default async function handler(
   const types = await client.get("/@types");
 
   return {
-    contents: [
-      {
-        uri: uri.href,
-        text: JSON.stringify(types, null, 2),
-        mimeType: "application/json",
-      },
-    ],
+    structuredContent: types,
   };
 }

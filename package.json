@@ -2,18 +2,9 @@
   "name": "plone-mcp-server",
   "version": "1.0.0",
   "description": "Model Context Protocol server for Plone CMS REST API integration",
-  "main": "dist/index.js",
-  "type": "module",
-  "bin": {
-    "plone-mcp-server": "dist/index.js"
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "xmcp build && npm run copy-blocks-specs && chmod 755 dist/index.js",
+    "build": "xmcp build",
     "dev": "xmcp dev",
-    "copy-blocks-specs": "copyfiles -u 1 src/blocks.json dist/",
     "start": "node dist/http.js",
     "inspector:built": "npx @modelcontextprotocol/inspector node dist/http.js",
     "test": "vitest run",
