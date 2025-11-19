@@ -323,16 +323,21 @@ The following environment variables can be used to configure the Plone MCP serve
 
 ## Development
 
-```bash
-# Development mode with hot reload
-pnpm run dev
+This project uses `make` for common development tasks.
 
-# Test with MCP Inspector
-pnpm run inspector
-
-# Build for production
-pnpm run build
-```
+*   **`make all`**: Show help for all targets.
+*   **`make build`**: Builds the project for production.
+*   **`make dev`**: Starts the project in development mode with hot reload.
+*   **`make start`**: Starts the HTTP server.
+*   **`make format`**: Formats the code using Prettier.
+*   **`make inspector`**: Runs the project with the MCP Inspector.
+*   **`make test`**: Runs all tests.
+*   **`make test-watch`**: Runs tests in watch mode.
+*   **`make test-coverage`**: Runs tests with a coverage report.
+*   **`make test-unit`**: Runs unit tests only.
+*   **`make test-unit-only`**: Runs unit tests only with coverage.
+*   **`make type-check`**: Runs TypeScript type checking.
+*   **`make lint`**: Lints the code using ESLint.
 
 ## Troubleshooting
 

@@ -2,20 +2,6 @@
   "name": "plone-mcp-server",
   "version": "1.0.0",
   "description": "Model Context Protocol server for Plone CMS REST API integration",
-  "scripts": {
-    "build": "xmcp build",
-    "dev": "xmcp dev",
-    "start": "node dist/http.js",
-    "inspector:built": "npx @modelcontextprotocol/inspector node dist/http.js",
-    "test": "vitest run",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage",
-    "test:unit": "vitest run tests/unit",
-    "test:unit-only": "vitest tests/unit --coverage",
-    "format": "prettier --write \"src/**/*.{ts,js}\" \"tests/**/*.{ts,js}\"",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint \"{src,tests}/**/*.ts\""
-  },
   "keywords": [
     "mcp",
     "plone",
