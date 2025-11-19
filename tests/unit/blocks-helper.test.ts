@@ -16,7 +16,7 @@ describe("Block Helpers", () => {
   });
 
   describe("createSlateBlock", () => {
-    const createSlateBlock = (text: string, format: string = "plain") => {
+    const createSlateBlock = (text: string) => {
       return {
         "@type": "slate",
         value: [
@@ -30,7 +30,7 @@ describe("Block Helpers", () => {
     };
 
     it("should create plain text slate block", () => {
-      const result = createSlateBlock("Hello World", "plain");
+      const result = createSlateBlock("Hello World");
 
       expect(result).toEqual({
         "@type": "slate",
@@ -80,7 +80,7 @@ describe("Block Helpers", () => {
 
     it("should create teaser block data", () => {
       const createTeaserBlock = (href: string, title?: string) => {
-        const data: any = { "@type": "teaser", href };
+        const data: Record<string, unknown> = { "@type": "teaser", href };
         if (title) data.title = title;
         return data;
       };

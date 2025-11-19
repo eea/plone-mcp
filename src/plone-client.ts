@@ -80,9 +80,9 @@ export function resolveConfig(config: Config): Config & { baseUrl: string } {
 export interface PloneContent {
   "@type": string;
   title: string;
-  blocks?: Record<string, any>;
+  blocks?: Record<string, unknown>;
   blocks_layout?: { items: string[] };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -132,25 +132,25 @@ export class PloneClient {
     return normalized;
   }
 
-  async get(path: string, params?: Record<string, any>): Promise<any> {
+  async get(path: string, params?: Record<string, unknown>): Promise<unknown> {
     const normalizedPath = this.normalizePath(path);
     const response = await this.axios.get(normalizedPath, { params });
     return response.data;
   }
 
-  async post(path: string, data?: any): Promise<any> {
+  async post(path: string, data?: unknown): Promise<unknown> {
     const normalizedPath = this.normalizePath(path);
     const response = await this.axios.post(normalizedPath, data);
     return response.data;
   }
 
-  async patch(path: string, data?: any): Promise<any> {
+  async patch(path: string, data?: unknown): Promise<unknown> {
     const normalizedPath = this.normalizePath(path);
     const response = await this.axios.patch(normalizedPath, data);
     return response.data;
   }
 
-  async delete(path: string): Promise<any> {
+  async delete(path: string): Promise<unknown> {
     const normalizedPath = this.normalizePath(path);
     const response = await this.axios.delete(normalizedPath);
     return response.data;

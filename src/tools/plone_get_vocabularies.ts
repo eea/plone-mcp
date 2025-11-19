@@ -6,11 +6,11 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   vocabulary: z.string().describe("Vocabulary name"),
   title: z.string().optional().describe("Filter by title"),
   token: z.string().optional().describe("Filter by token"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_vocabularies",
@@ -35,7 +35,7 @@ export default async function ploneGetVocabularies(
     const client = service.getClient();
     const { vocabulary, title, token } = parsedArgs;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, unknown> = {};
     if (title) params.title = title;
     if (token) params.token = token;
 
@@ -44,13 +44,13 @@ export default async function ploneGetVocabularies(
       params,
     );
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(vocabularies, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(vocabularies, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetVocabularies", error);

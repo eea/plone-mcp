@@ -13,7 +13,7 @@ import {
 import { PreparedBlocks } from "../plone-service";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   blocks: z
     .array(
       z.object({
@@ -21,7 +21,7 @@ export const schema = {
           .enum(blockRegistry.getBlockTypesEnum())
           .describe("Type of block to create"),
         data: z
-          .record(z.any())
+          .record(z.unknown())
           .describe("Block-specific data following the block specification"),
         position: z
           .number()
@@ -34,7 +34,7 @@ export const schema = {
     .describe(
       "Array of block specifications to process. You MUST call plone_get_block_schemas first to see available block types and their required fields. You MUST follow the block specifications EXACTLY, DO NOT invent your own fields. DO NOT add the content object's title in a text block. To set the page title, use the 'title' field of the content object itself when calling plone_create_content or plone_update_content. A Title block will be automatically created by Plone.",
     ),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_create_blocks_layout",
@@ -50,14 +50,14 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneCreateBlocksLayout(
   args: InferSchema<typeof schema>,
-) {
+): Promise<CallToolResult> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
 
   try {
     const { blocks } = args;
-    const processedBlocks: Record<string, any> = {};
+    const processedBlocks: Record<string, unknown> = {};
     const blockIds: string[] = [];
     const blockInfo: Array<{ id: string; type: string }> = [];
 
@@ -90,17 +90,17 @@ export default async function ploneCreateBlocksLayout(
     };
     service.setPreparedBlocks(preparedBlocksData);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: `Successfully prepared ${
+        blocks.length
+      } blocks for next create / update operation(valid for 60 seconds).Blocks ready: ${blockInfo
+        .map((block) => `${block.type}:[${block.id}]`)
+        .join(", ")} `,
+    };
+
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: `Successfully prepared ${
-            blocks.length
-          } blocks for next create / update operation(valid for 60 seconds).Blocks ready: ${blockInfo
-            .map((block) => `${block.type}:[${block.id}]`)
-            .join(", ")} `,
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     // Clear prepared blocks on error

@@ -48,7 +48,7 @@ describe("plone_update_single_block", () => {
     mockServer = new PloneMockServer(testBaseUrl);
     vi.mocked(headers).mockReturnValue({
       "mcp-session-id": sessionId,
-    } as any);
+    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
@@ -62,7 +62,7 @@ describe("plone_update_single_block", () => {
     mockServer.mockContentGet(testPath, mockContentWithBlock);
     mockServer.mockContentUpdate(
       testPath,
-      (body: any) => {
+      (body: { blocks: Record<string, unknown> }) => {
         expect(body.blocks[blockToUpdateId].plaintext).toBe(
           updatedBlockData.plaintext,
         );

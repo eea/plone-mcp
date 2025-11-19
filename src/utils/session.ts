@@ -20,21 +20,21 @@ export function getHeaderValue(
   }
 
   const normalized = name.toLowerCase();
+  let value: string | null | undefined;
 
-  if (typeof (headers as any).get === "function") {
-    const value =
-      (headers as any).get(name) ??
-      (headers as any).get(normalized) ??
-      (headers as any).get(name.toUpperCase());
+  // Check if headers object has a 'get' method (like Headers or custom objects)
+  if (typeof headers.get === "function") {
+    value = headers.get(name) ?? headers.get(normalized) ?? headers.get(name.toUpperCase());
     if (typeof value === "string" && value.length > 0) {
       return value;
     }
   }
 
+  // Fallback to direct property access for plain objects
   const direct =
-    (headers as any)[name] ??
-    (headers as any)[normalized] ??
-    (headers as any)[name.toUpperCase()];
+    (headers as Record<string, unknown>)[name] ??
+    (headers as Record<string, unknown>)[normalized] ??
+    (headers as Record<string, unknown>)[name.toUpperCase()];
 
   return typeof direct === "string" && direct.length > 0 ? direct : undefined;
 }

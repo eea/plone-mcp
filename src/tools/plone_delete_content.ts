@@ -6,9 +6,9 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z.string().describe("Path to the content to delete"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_delete_content",
@@ -34,13 +34,13 @@ export default async function ploneDeleteContent(
 
     await client.delete(path);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: `Successfully deleted content at path: ${path} `,
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: `Successfully deleted content at path: ${path} `,
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("DeleteContent", error);

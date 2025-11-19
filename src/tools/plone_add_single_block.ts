@@ -3,7 +3,7 @@ import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+import { CallToolResult } from "@modelcontextprotocol/sdk/types";
 import {
   wrapError,
   generateBlockId,
@@ -18,7 +18,7 @@ export const schema = {
   blockType: z
     .enum(blockRegistry.getBlockTypesEnum())
     .describe("Type of block to add"),
-  blockData: z.record(z.any()).describe("Block-specific data"),
+  blockData: z.record(z.unknown()).describe("Block-specific data"),
   position: z
     .number()
     .optional()

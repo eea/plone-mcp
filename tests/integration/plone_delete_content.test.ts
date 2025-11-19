@@ -34,7 +34,7 @@ describe("plone_delete_content", () => {
     mockServer.mockContentDelete(testPath);
 
     const args = { path: testPath };
-    const result = await ploneDeleteContent(args as any);
+    const result = await ploneDeleteContent(args);
 
     expect(result.content[0].text).toContain(
       `Successfully deleted content at path: ${testPath}`,
@@ -55,7 +55,7 @@ describe("plone_delete_content", () => {
       .reply(404, "Not Found");
 
     const args = { path: testPath };
-    await expect(ploneDeleteContent(args as any)).rejects.toThrow(
+    await expect(ploneDeleteContent(args)).rejects.toThrow(
       "[DeleteContent] Request failed with status code 404",
     );
     expect(Nock.isDone()).toBe(true);
@@ -66,7 +66,7 @@ describe("plone_delete_content", () => {
     service.client = null;
 
     const args = { path: testPath };
-    await expect(ploneDeleteContent(args as any)).rejects.toThrow(
+    await expect(ploneDeleteContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

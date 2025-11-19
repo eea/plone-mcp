@@ -6,9 +6,9 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z.string().describe("Path to the content"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_workflow_info",
@@ -34,13 +34,13 @@ export default async function ploneGetWorkflowInfo(
 
     const workflow = await client.get(`${path}/@workflow`);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(workflow, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(workflow, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetWorkflowInfo", error);

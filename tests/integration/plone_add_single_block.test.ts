@@ -65,10 +65,10 @@ describe("plone_add_single_block", () => {
     const mockContentAfterAdd = { ...mockContent, message: "Block added" };
     mockServer.mockContentUpdate(
       testPath,
-      (body: any) => {
+      (body: { blocks: Record<string, { "@type": string; plaintext: string; url?: string; value?: unknown[] }>; blocks_layout: { items: string[] } }) => {
         // Assert that the new block is in the body
         const newBlockId = body.blocks_layout.items.find(
-          (id: string) => !(mockContent.blocks as any)[id],
+          (id: string) => !mockContent.blocks[id],
         );
         expect(newBlockId).toBeDefined();
         expect(body.blocks[newBlockId]["@type"]).toBe("slate"); // processBlock converts "text" to "slate"
@@ -85,7 +85,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "New paragraph" },
     };
 
-    const result = await ploneAddSingleBlock(args as any);
+    const result = await ploneAddSingleBlock(args);
 
     expect(result.content[0].text).toEqual(
       JSON.stringify(mockContentAfterAdd, null, 2),
@@ -104,9 +104,9 @@ describe("plone_add_single_block", () => {
     };
     mockServer.mockContentUpdate(
       testPath,
-      (body: any) => {
+      (body: { blocks: Record<string, unknown>; blocks_layout: { items: string[] } }) => {
         const newBlockId = body.blocks_layout.items.find(
-          (id: string) => !(mockContent.blocks as any)[id],
+          (id: string) => !mockContent.blocks[id],
         );
         expect(newBlockId).toBeDefined();
         expect(body.blocks[newBlockId]["@type"]).toBe("image");
@@ -124,7 +124,7 @@ describe("plone_add_single_block", () => {
       blockData: { url: "http://example.com/image.jpg", alt: "My Image" },
     };
 
-    const result = await ploneAddSingleBlock(args as any);
+    const result = await ploneAddSingleBlock(args);
 
     expect(result.content[0].text).toEqual(
       JSON.stringify(mockContentAfterImageAdd, null, 2),
@@ -147,7 +147,7 @@ describe("plone_add_single_block", () => {
       blockData: { url: "http://invalid.com/image.jpg", alt: "Invalid Image" },
     };
 
-    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       "[AddBlock] Invalid or inaccessible image URL: http://invalid.com/image.jpg",
     );
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
@@ -165,7 +165,7 @@ describe("plone_add_single_block", () => {
     };
     mockServer.mockContentUpdate(
       testPath,
-      (body: any) => {
+      (body: { blocks: Record<string, unknown>; blocks_layout: { items: string[] } }) => {
         const newBlockId = body.blocks_layout.items[1]; // Should be at index 1
         expect(body.blocks[newBlockId]["@type"]).toBe("slate");
         expect(body.blocks[newBlockId].plaintext).toBe("Inserted paragraph");
@@ -184,7 +184,7 @@ describe("plone_add_single_block", () => {
       position: 1,
     };
 
-    const result = await ploneAddSingleBlock(args as any);
+    const result = await ploneAddSingleBlock(args);
     expect(result.content[0].text).toEqual(
       JSON.stringify(mockContentAfterPositionAdd, null, 2),
     );
@@ -201,7 +201,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API calls should be made
@@ -218,7 +218,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       `[AddBlock] Request failed with status code 404`,
     );
     expect(Nock.isDone()).toBe(true);
@@ -236,7 +236,7 @@ describe("plone_add_single_block", () => {
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args as any)).rejects.toThrow(
+    await expect(ploneAddSingleBlock(args)).rejects.toThrow(
       `[AddBlock] Request failed with status code 500`,
     );
     expect(Nock.isDone()).toBe(true);

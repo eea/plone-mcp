@@ -38,7 +38,7 @@ describe("plone_get_content", () => {
     mockServer.mockContentGet(testPath, sampleDocument);
 
     const args = { path: testPath };
-    const result = await ploneGetContent(args as any);
+    const result = await ploneGetContent(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleDocument);
     expect(Nock.isDone()).toBe(true);
@@ -54,7 +54,7 @@ describe("plone_get_content", () => {
       .reply(200, sampleDocument);
 
     const args = { path: testPath, expand: expandParams };
-    await ploneGetContent(args as any);
+    await ploneGetContent(args);
 
     expect(Nock.isDone()).toBe(true);
   });
@@ -65,7 +65,7 @@ describe("plone_get_content", () => {
       .reply(404, "Not Found");
 
     const args = { path: testPath };
-    await expect(ploneGetContent(args as any)).rejects.toThrow(
+    await expect(ploneGetContent(args)).rejects.toThrow(
       "[GetContent] Request failed with status code 404",
     );
     expect(Nock.isDone()).toBe(true);
@@ -76,7 +76,7 @@ describe("plone_get_content", () => {
     service.client = null;
 
     const args = { path: testPath };
-    await expect(ploneGetContent(args as any)).rejects.toThrow(
+    await expect(ploneGetContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

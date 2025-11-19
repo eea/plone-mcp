@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { type ResourceMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 

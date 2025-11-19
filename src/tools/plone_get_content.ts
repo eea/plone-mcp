@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z
     .string()
     .describe(
@@ -18,7 +18,7 @@ export const schema = {
     .describe(
       "Components to expand (e.g., ['breadcrumbs', 'actions', 'workflow'])",
     ),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_content",
@@ -42,20 +42,20 @@ export default async function ploneGetContent(
     const service = sessionManager.getSession(sessionId);
     const client = service.getClient();
 
-    const params: Record<string, any> = {};
+    const params: Record<string, unknown> = {};
     if (expand && expand.length > 0) {
       params.expand = expand.join(",");
     }
 
     const content = await client.get(path, params);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(content, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(content, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetContent", error);

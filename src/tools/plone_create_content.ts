@@ -7,7 +7,7 @@ import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   parentPath: z
     .string()
     .describe(
@@ -27,24 +27,24 @@ export const schema = {
       "ID for the new content (optional, will be auto-generated if not provided)",
     ),
   blocks: z
-    .record(z.any())
+    .record(z.unknown())
     .optional()
     .describe(
       "Volto blocks structure for the content, it specifies the blocks data and content",
     ),
   blocks_layout: z
-    .record(z.any())
+    .record(z.unknown())
     .optional()
     .describe(
       "Volto blocks layout configuration, it specifies the order of blocks",
     ),
   additionalFields: z
-    .record(z.any())
+    .record(z.unknown())
     .optional()
     .describe(
       "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",
     ),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_create_content",
@@ -60,7 +60,7 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneCreateContent(
   args: InferSchema<typeof schema>,
-) {
+): Promise<CallToolResult> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
@@ -79,7 +79,7 @@ export default async function ploneCreateContent(
       additionalFields,
     } = parsedArgs;
 
-    const data: any = {
+    const data: Record<string, unknown> = {
       "@type": type,
       title,
     };
@@ -100,15 +100,15 @@ export default async function ploneCreateContent(
 
     if (additionalFields) Object.assign(data, additionalFields);
 
-    const content = await client.post(parentPath, data);
+    const content: PloneContent = (await client.post(parentPath, data)) as PloneContent;
+
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(content, null, 2),
+    };
 
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(content, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     // Ensure prepared blocks are cleared on any error

@@ -68,7 +68,7 @@ describe("plone_update_content", () => {
       description: updatedDescription,
     };
 
-    const result = await ploneUpdateContent(args as any);
+    const result = await ploneUpdateContent(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockUpdatedContent);
     expect(Nock.isDone()).toBe(true);
@@ -94,7 +94,7 @@ describe("plone_update_content", () => {
       blocks_layout: { items: ["mock-title-block-id", "block-1"] },
     };
 
-    const expectedPatchBody = (body: any) => {
+    const expectedPatchBody = (body: Record<string, unknown>) => {
       expect(body.blocks).toEqual({
         "mock-title-block-id": { "@type": "title" },
         "block-1": { "@type": "slate", plaintext: "Prepared text for update" },
@@ -113,7 +113,7 @@ describe("plone_update_content", () => {
 
     const args = { path: testPath }; // No inline blocks, should use prepared
 
-    await ploneUpdateContent(args as any);
+    await ploneUpdateContent(args);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
@@ -144,7 +144,7 @@ describe("plone_update_content", () => {
       blocks_layout: { items: ["mock-title-block-id", ...inlineLayout.items] },
     };
 
-    const expectedPatchBody = (body: any) => {
+    const expectedPatchBody = (body: Record<string, unknown>) => {
       expect(body.blocks).toEqual({
         "mock-title-block-id": { "@type": "title" },
         ...inlineBlocks,
@@ -167,7 +167,7 @@ describe("plone_update_content", () => {
       blocks_layout: inlineLayout,
     };
 
-    await ploneUpdateContent(args as any);
+    await ploneUpdateContent(args);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Prepared should still be cleared
     expect(Nock.isDone()).toBe(true);
@@ -189,14 +189,14 @@ describe("plone_update_content", () => {
 
     const args = { path: testPath, additionalFields: additionalFields };
 
-    await ploneUpdateContent(args as any);
+    await ploneUpdateContent(args);
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if no changes are specified", async () => {
     const args = { path: testPath }; // Only path, no title, description, blocks, or additionalFields
 
-    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
+    await expect(ploneUpdateContent(args)).rejects.toThrow(
       "No changes specified for update",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
@@ -204,7 +204,7 @@ describe("plone_update_content", () => {
 
   it("should throw an error if path is missing", async () => {
     const args = { title: "New title" }; // Missing path
-    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
+    await expect(ploneUpdateContent(args)).rejects.toThrow(
       "Path is required for updating content",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
@@ -234,7 +234,7 @@ describe("plone_update_content", () => {
 
     const args = { path: testPath, title: "Failing Update" };
 
-    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
+    await expect(ploneUpdateContent(args)).rejects.toThrow(
       "[UpdateContent] Request failed with status code 500",
     );
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
@@ -246,7 +246,7 @@ describe("plone_update_content", () => {
     service.client = null;
 
     const args = { path: testPath, title: "New Title" };
-    await expect(ploneUpdateContent(args as any)).rejects.toThrow(
+    await expect(ploneUpdateContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

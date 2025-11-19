@@ -7,10 +7,10 @@ import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z.string().describe("Path to the content"),
   blockId: z.string().describe("ID of the block to remove"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_remove_single_block",
@@ -26,7 +26,7 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneRemoveSingleBlock(
   args: InferSchema<typeof schema>,
-) {
+): Promise<CallToolResult> {
   try {
     const { path, blockId } = args;
     const requestHeaders = headers();
@@ -64,13 +64,13 @@ export default async function ploneRemoveSingleBlock(
       blocks_layout,
     });
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(updatedContent, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(updatedContent, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("RemoveBlock", error);

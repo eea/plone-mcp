@@ -15,10 +15,6 @@ describe("plone_get_site_info", () => {
     title: "Test Site",
     language: "en",
   };
-  const defaultReqHeaders = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
 
   const sessionId = "test-session-id";
 
@@ -26,7 +22,7 @@ describe("plone_get_site_info", () => {
     mockServer = new PloneMockServer(testBaseUrl);
     vi.mocked(headers).mockReturnValue({
       "mcp-session-id": sessionId,
-    } as any);
+    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });

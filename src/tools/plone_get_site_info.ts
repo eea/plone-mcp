@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {};
+export const schema = z.object({});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_site_info",
@@ -21,8 +21,9 @@ export const metadata: ToolMetadata = {
 };
 
 export default async function ploneGetSiteInfo(
-  args: InferSchema<typeof schema>,
-) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _args: InferSchema<typeof schema>,
+): Promise<CallToolResult> {
   try {
     const requestHeaders = headers();
     const sessionId = getSessionId(requestHeaders);
@@ -30,13 +31,13 @@ export default async function ploneGetSiteInfo(
     const client = service.getClient();
     const siteInfo = await client.get("/");
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(siteInfo, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(siteInfo, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetSiteInfo", error);

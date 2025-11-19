@@ -18,7 +18,7 @@ describe("plone_transition_workflow", () => {
     mockServer = new PloneMockServer(testBaseUrl);
     vi.mocked(headers).mockReturnValue({
       "mcp-session-id": sessionId,
-    } as any);
+    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });

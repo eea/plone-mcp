@@ -6,11 +6,11 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z.string().describe("Path to the content"),
   transition: z.string().describe("Workflow transition to execute"),
   comment: z.string().optional().describe("Comment for the transition"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_transition_workflow",
@@ -35,18 +35,18 @@ export default async function ploneTransitionWorkflow(
 
     const { path, transition, comment } = args;
 
-    const data: any = { transition };
+    const data: Record<string, unknown> = { transition };
     if (comment) data.comment = comment;
 
     const result = await client.post(`${path}/@workflow/${transition}`, data);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(result, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("TransitionWorkflow", error);

@@ -19,9 +19,9 @@ export const blocksSpecification = (() => {
  * BlockRegistry for centralizing block type management
  */
 export class BlockRegistry {
-  private specifications: Record<string, any>;
+  private specifications: Record<string, unknown>;
 
-  constructor(specs: Record<string, any>) {
+  constructor(specs: Record<string, unknown>) {
     this.specifications = specs;
   }
 
@@ -37,11 +37,11 @@ export class BlockRegistry {
     return types as [string, ...string[]];
   }
 
-  getSpecifications(): Record<string, any> {
+  getSpecifications(): Record<string, unknown> {
     return this.specifications;
   }
 
-  getSpecification(blockType: string): any {
+  getSpecification(blockType: string): unknown {
     return this.specifications[blockType];
   }
 }

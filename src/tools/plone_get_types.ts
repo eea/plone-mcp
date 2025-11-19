@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {};
+export const schema = z.object({});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_types",
@@ -20,7 +20,10 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default async function ploneGetTypes(args: InferSchema<typeof schema>) {
+export default async function ploneGetTypes(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _args: InferSchema<typeof schema>,
+): Promise<CallToolResult> {
   try {
     const requestHeaders = headers();
     const sessionId = getSessionId(requestHeaders);
@@ -28,13 +31,13 @@ export default async function ploneGetTypes(args: InferSchema<typeof schema>) {
     const client = service.getClient();
     const types = await client.get("/@types");
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(types, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(types, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetTypes", error);

@@ -6,25 +6,25 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z.string().describe("Path to the content to update"),
   title: z.string().optional().describe("New title"),
   description: z.string().optional().describe("New description"),
   blocks: z
-    .record(z.any())
+    .record(z.unknown())
     .optional()
     .describe("Volto blocks structure for the content"),
   blocks_layout: z
-    .record(z.any())
+    .record(z.unknown())
     .optional()
     .describe("Volto blocks layout configuration"),
   additionalFields: z
-    .record(z.any())
+    .record(z.unknown())
     .optional()
     .describe(
       "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",
     ),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_update_content",
@@ -61,7 +61,7 @@ export default async function ploneUpdateContent(
       throw new Error("Path is required for updating content");
     }
 
-    const data: any = {};
+    const data: Record<string, unknown> = {};
     if (title !== undefined) data.title = title;
     if (description !== undefined) data.description = description;
 
@@ -84,13 +84,13 @@ export default async function ploneUpdateContent(
 
     const content = await client.patch(path, data);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(content, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(content, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     const requestHeaders = headers();

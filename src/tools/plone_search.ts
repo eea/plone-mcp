@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   query: z.string().optional().describe("Search query text"),
   portal_type: z
     .array(z.string())
@@ -32,7 +32,7 @@ export const schema = {
     .optional()
     .describe("Batch size (number of results per page)"),
   b_start: z.number().optional().describe("Batch start (for pagination)"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_search",
@@ -46,7 +46,9 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default async function ploneSearch(args: InferSchema<typeof schema>) {
+export default async function ploneSearch(
+  args: InferSchema<typeof schema>,
+): Promise<CallToolResult> {
   try {
     const parsedArgs = args;
     const requestHeaders = headers();
@@ -64,7 +66,7 @@ export default async function ploneSearch(args: InferSchema<typeof schema>) {
       b_start,
     } = parsedArgs;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, unknown> = {};
 
     if (query) params.SearchableText = query;
     if (portal_type) params.portal_type = portal_type;
@@ -77,13 +79,13 @@ export default async function ploneSearch(args: InferSchema<typeof schema>) {
 
     const results = await client.get("/@search", params);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(results, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(results, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("Search", error);

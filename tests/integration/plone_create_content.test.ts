@@ -3,7 +3,7 @@ import { Nock } from "../utils/test-helpers";
 import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
 import ploneCreateContent from "../../src/tools/plone_create_content";
 import { sessionManager } from "../../src/session-manager";
-import { PloneClient } from "../../src/plone-client";
+import { PloneClient, PloneContent } from "../../src/plone-client";
 import * as BlockUtils from "../../src/utils/block-utils";
 import { PreparedBlocks } from "../../src/plone-service";
 import { headers } from "xmcp/headers";
@@ -29,7 +29,7 @@ describe("plone_create_content", () => {
     // Mock headers to return the test session ID
     vi.mocked(headers).mockReturnValue({
       get: (name: string) => (name === "mcp-session-id" ? sessionId : null),
-    } as any);
+    });
 
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
@@ -54,7 +54,7 @@ describe("plone_create_content", () => {
   it("should successfully create simple content", async () => {
     mockServer.mockContentCreate(
       parentPath,
-      (body: any) => {
+      (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
         expect(body.description).toBe("A description");
@@ -72,7 +72,7 @@ describe("plone_create_content", () => {
       description: "A description",
     };
 
-    const result = await ploneCreateContent(args as any);
+    const result = await ploneCreateContent(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockCreatedContent);
     expect(Nock.isDone()).toBe(true);
@@ -81,7 +81,7 @@ describe("plone_create_content", () => {
   it("should create content with a specified ID", async () => {
     mockServer.mockContentCreate(
       parentPath,
-      (body: any) => {
+      (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
         expect(body.id).toBe("custom-id");
@@ -99,7 +99,7 @@ describe("plone_create_content", () => {
       id: "custom-id",
     };
 
-    await ploneCreateContent(args as any);
+    await ploneCreateContent(args);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -119,7 +119,7 @@ describe("plone_create_content", () => {
 
     mockServer.mockContentCreate(
       parentPath,
-      (body: any) => {
+      (body: PloneContent) => {
         const titleBlockId = body.blocks_layout.items[0];
         expect(body.blocks).toEqual({
           [titleBlockId]: { "@type": "title" },
@@ -140,7 +140,7 @@ describe("plone_create_content", () => {
       title: "Page with Prepared Blocks",
     };
 
-    await ploneCreateContent(args as any);
+    await ploneCreateContent(args);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
@@ -167,7 +167,7 @@ describe("plone_create_content", () => {
 
     mockServer.mockContentCreate(
       parentPath,
-      (body: any) => {
+      (body: PloneContent) => {
         const titleBlockId = body.blocks_layout.items[0];
         expect(body.blocks).toEqual({
           [titleBlockId]: { "@type": "title" },
@@ -190,7 +190,7 @@ describe("plone_create_content", () => {
       blocks_layout: inlineLayout,
     };
 
-    await ploneCreateContent(args as any);
+    await ploneCreateContent(args);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Still cleared
     expect(Nock.isDone()).toBe(true);
@@ -204,7 +204,7 @@ describe("plone_create_content", () => {
 
     mockServer.mockContentCreate(
       parentPath,
-      (body: any) => {
+      (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("Page with Extra Fields");
         expect(body.effective).toBe(additionalFields.effective);
@@ -223,7 +223,7 @@ describe("plone_create_content", () => {
       additionalFields: additionalFields,
     };
 
-    await ploneCreateContent(args as any);
+    await ploneCreateContent(args);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -242,7 +242,7 @@ describe("plone_create_content", () => {
 
     mockServer.mockContentCreate(
       parentPath,
-      (body: any) => {
+      (body: PloneContent) => {
         const titleBlockId = body.blocks_layout.items[0];
         expect(body.blocks).toEqual({
           [titleBlockId]: { "@type": "title" },
@@ -264,7 +264,7 @@ describe("plone_create_content", () => {
       title: "Failing Page",
     };
 
-    await expect(ploneCreateContent(args as any)).rejects.toThrow(
+    await expect(ploneCreateContent(args)).rejects.toThrow(
       "[CreateContent] Request failed with status code 500",
     );
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
@@ -281,7 +281,7 @@ describe("plone_create_content", () => {
       title: "My New Page",
     };
 
-    await expect(ploneCreateContent(args as any)).rejects.toThrow(
+    await expect(ploneCreateContent(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

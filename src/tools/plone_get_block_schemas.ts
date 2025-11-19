@@ -1,20 +1,17 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
-import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { blockRegistry } from "../block-registry"; // Already imported
+import { blockRegistry } from "../block-registry";
 import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
-import { wrapError, getBlockExample } from "../utils/block-utils"; // Added getBlockExample
-import { getSessionId } from "../utils/session";
+import { wrapError, getBlockExample } from "../utils/block-utils";
 
-export const schema = {
+export const schema = z.object({
   blockType: z
     .enum(blockRegistry.getBlockTypesEnum())
     .optional()
     .describe(
       "Specific block type to get schema for (optional, returns all if not specified).",
     ),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_block_schemas",
@@ -31,9 +28,6 @@ export const metadata: ToolMetadata = {
 export default async function ploneGetBlockSchemas(
   args: InferSchema<typeof schema>,
 ): Promise<CallToolResult> {
-  const requestHeaders = headers();
-  const sessionId = getSessionId(requestHeaders);
-  const service = sessionManager.getSession(sessionId);
   try {
     const { blockType } = args;
 
@@ -47,45 +41,45 @@ export default async function ploneGetBlockSchemas(
         );
       }
 
-      return {
-        content: [
+      const textContent: TextContent = {
+        type: "text",
+        text: JSON.stringify(
           {
-            type: "text",
-            text: JSON.stringify(
-              {
-                blockType: blockType,
-                specification: spec,
-                example: getBlockExample(blockType),
-              },
-              null,
-              2,
-            ),
+            blockType: blockType,
+            specification: spec,
+            example: getBlockExample(blockType),
           },
-        ],
+          null,
+          2,
+        ),
+      };
+
+      return {
+        content: [textContent],
       };
     }
 
     // Return all block schemas with examples
-    const examples: Record<string, any> = {};
+    const examples: Record<string, unknown> = {};
     for (const type of blockRegistry.getBlockTypes()) {
       examples[type] = getBlockExample(type);
     }
 
-    return {
-      content: [
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(
         {
-          type: "text",
-          text: JSON.stringify(
-            {
-              availableTypes: blockRegistry.getBlockTypes(),
-              specifications: blockRegistry.getSpecifications(),
-              examples: examples,
-            },
-            null,
-            2,
-          ),
+          availableTypes: blockRegistry.getBlockTypes(),
+          specifications: blockRegistry.getSpecifications(),
+          examples: examples,
         },
-      ],
+        null,
+        2,
+      ),
+    };
+
+    return {
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetBlockSchemas", error);

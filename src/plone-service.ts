@@ -1,15 +1,8 @@
-import { PloneClient, PloneContent } from "./plone-client";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
-import {
-  wrapError,
-  generateBlockId,
-  validateImageURL,
-  processBlock,
-  getBlockExample,
-} from "./utils/block-utils";
+import { PloneClient } from "./plone-client";
+import { generateBlockId } from "./utils/block-utils";
 
 export type PreparedBlocks = {
-  blocks: Record<string, any>;
+  blocks: Record<string, unknown>;
   blocks_layout: { items: string[] };
   timestamp: number;
 };
@@ -65,11 +58,11 @@ export class PloneService {
    * @returns An object with final blocks and layout, or null if no block operations should occur.
    */
   public processBlocksForContent(
-    blocks: Record<string, any> | undefined,
-    blocks_layout: Record<string, any> | undefined,
+    blocks: Record<string, unknown> | undefined,
+    blocks_layout: Record<string, unknown> | undefined,
     isUpdate: boolean = false,
   ): {
-    blocks: Record<string, any>;
+    blocks: Record<string, unknown>;
     blocks_layout: { items: string[] };
   } | null {
     // Determine if we should process blocks at all
@@ -86,7 +79,7 @@ export class PloneService {
     }
 
     // Inline blocks take precedence over prepared ones
-    let finalBlocks: Record<string, any> = {};
+    let finalBlocks: Record<string, unknown> = {};
     let finalLayout: string[] = [];
 
     if (hasProvidedBlocks) {
@@ -106,7 +99,7 @@ export class PloneService {
 
     // Find the existing title block
     let titleBlockId = finalLayout.find(
-      (id: string) => finalBlocks[id]?.["@type"] === "title",
+      (id: string) => (finalBlocks[id] as { "@type"?: string })?.["@type"] === "title",
     );
 
     if (!titleBlockId) {

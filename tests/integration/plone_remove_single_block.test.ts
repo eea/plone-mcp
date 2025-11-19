@@ -49,7 +49,7 @@ describe("plone_remove_single_block", () => {
     mockServer = new PloneMockServer(testBaseUrl);
     vi.mocked(headers).mockReturnValue({
       "mcp-session-id": sessionId,
-    } as any);
+    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
@@ -63,7 +63,7 @@ describe("plone_remove_single_block", () => {
     mockServer.mockContentGet(testPath, mockContentWithBlock);
     mockServer.mockContentUpdate(
       testPath,
-      (body: any) => {
+      (body: { blocks: Record<string, unknown>; blocks_layout: { items: string[] } }) => {
         expect(body.blocks).not.toHaveProperty(blockToRemoveId);
         expect(body.blocks_layout.items).not.toContain(blockToRemoveId);
         expect(body.blocks_layout.items).toContain(remainingBlockId);

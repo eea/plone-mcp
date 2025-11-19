@@ -1,17 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "../utils/test-helpers"; // Use Nock from test-helpers
-import { PloneMockServer } from "../utils/test-helpers";
 import ploneConfigure from "../../src/tools/plone_configure";
 import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client"; // Import PloneClient to check its instance
 import { headers } from "xmcp/headers";
+import { schema } from "../../src/tools/plone_configure"; // Import schema for type inference
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
 }));
 
 describe("plone_configure", () => {
-  let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const sessionId = "test-session-id";
   const mockSiteRootResponse = {
@@ -24,7 +23,6 @@ describe("plone_configure", () => {
     vi.mocked(headers).mockReturnValue({
       "mcp-session-id": sessionId,
     });
-    mockServer = new PloneMockServer(testBaseUrl);
     // Ensure the session client is null before each test
     const service = sessionManager.getSession(sessionId);
     service.client = null;
@@ -52,7 +50,7 @@ describe("plone_configure", () => {
       password: "admin",
     };
 
-    const result = await ploneConfigure(args as any);
+    const result = await ploneConfigure(args);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
@@ -79,7 +77,7 @@ describe("plone_configure", () => {
       token: "test-token",
     };
 
-    const result = await ploneConfigure(args as any);
+    const result = await ploneConfigure(args);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
@@ -107,7 +105,7 @@ describe("plone_configure", () => {
       password: "badpassword",
     };
 
-    await expect(ploneConfigure(args as any)).rejects.toThrow(
+    await expect(ploneConfigure(args)).rejects.toThrow(
       "[Configure] Request failed with status code 401",
     );
     const service = sessionManager.getSession(sessionId);
@@ -122,7 +120,7 @@ describe("plone_configure", () => {
       password: "admin",
     };
 
-    await expect(ploneConfigure(args as any)).rejects.toThrow(
+    await expect(ploneConfigure(args)).rejects.toThrow(
       "[Configure] Invalid base URL: invalid-url",
     );
     const service = sessionManager.getSession(sessionId);
@@ -151,7 +149,7 @@ describe("plone_configure", () => {
       password: "argpass",
     };
 
-    const result = await ploneConfigure(args as any);
+    const result = await ploneConfigure(args);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
@@ -180,7 +178,9 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const result = await ploneConfigure({} as any);
+    const args: InferSchema<typeof schema> = {}; // Explicitly type args as empty object conforming to schema
+
+    const result = await ploneConfigure(args);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${process.env.PLONE_BASE_URL}`,

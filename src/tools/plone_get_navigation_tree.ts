@@ -6,7 +6,7 @@ import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   root_path: z
     .string()
     .optional()
@@ -16,7 +16,7 @@ export const schema = {
     .optional()
     .default(2)
     .describe("How deep to traverse in the navigation tree"),
-};
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_get_navigation_tree",
@@ -48,20 +48,20 @@ export default async function ploneGetNavigationTree(
       : "/@navigation";
 
     // Build query parameters for navigation
-    const params: Record<string, any> = {
+    const params: Record<string, unknown> = {
       depth: typeof depth === "number" ? depth : 2,
     };
 
     // Use the @navigation endpoint
     const navigation = await client.get(navigationPath, params);
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(navigation, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(navigation, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("GetNavigationTree", error);

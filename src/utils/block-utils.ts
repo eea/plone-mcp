@@ -1,6 +1,5 @@
 import "isomorphic-fetch";
 import { z } from "zod";
-import { blockRegistry } from "../block-registry";
 import { markdownParse } from "../markdown-parser";
 import { v4 as uuidv4 } from "uuid";
 
@@ -50,16 +49,16 @@ export async function validateImageURL(url: string): Promise<boolean> {
  */
 export function processBlock(
   blockType: string,
-  blockData: Record<string, any>,
-): Record<string, any> {
+  blockData: Record<string, unknown>,
+): Record<string, unknown> {
   if (blockType === "slate" || blockType === "text") {
     // Convert text block to Slate format
-    const textContent = blockData.text || "";
+    const textContent = (blockData.text as string) || "";
     return {
       "@type": "slate",
       plaintext: textContent,
       value: markdownParse(textContent),
-      theme: blockData.theme || "default",
+      theme: (blockData.theme as string) || "default",
     };
   } else if (blockType === "image") {
     // Basic validation for required fields
@@ -79,7 +78,7 @@ export function processBlock(
     };
   } else if (blockType === "teaser" || blockType === "__button") {
     // Transform href to required array format if it's a string
-    const processedData: Record<string, any> = {
+    const processedData: Record<string, unknown> = {
       ...blockData,
       "@type": blockType,
     };
@@ -111,8 +110,8 @@ export function processBlock(
 /**
  * Get example block data for documentation
  */
-export function getBlockExample(blockType: string): any {
-  const examples: Record<string, any> = {
+export function getBlockExample(blockType: string): unknown {
+  const examples: Record<string, unknown> = {
     teaser: {
       href: [
         {

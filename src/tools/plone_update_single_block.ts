@@ -7,11 +7,11 @@ import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
 import { getSessionId } from "../utils/session";
 
-export const schema = {
+export const schema = z.object({
   path: z.string().describe("Path to the content"),
   blockId: z.string().describe("ID of the block to update"),
-  blockData: z.record(z.any()).describe("New block data"),
-};
+  blockData: z.record(z.unknown()).describe("New block data"),
+});
 
 export const metadata: ToolMetadata = {
   name: "plone_update_single_block",
@@ -58,13 +58,13 @@ export default async function ploneUpdateSingleBlock(
     // Update the content
     const updatedContent = await client.patch(path, { blocks });
 
+    const textContent: TextContent = {
+      type: "text",
+      text: JSON.stringify(updatedContent, null, 2),
+    };
+
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(updatedContent, null, 2),
-        },
-      ],
+      content: [textContent],
     };
   } catch (error) {
     throw wrapError("UpdateBlock", error);

@@ -16,7 +16,7 @@ import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
 // Define the schema for tool parameters
-export const schema = {
+export const schema = z.object({
   baseUrl: optionalNonEmpty(ENV_BASE_URL)
     .refine((val) => !val || isValidUrl(val), {
       message: "Must be a valid URL (e.g., https://example.com)",
@@ -33,7 +33,7 @@ export const schema = {
   token: optionalNonEmpty(ENV_TOKEN).describe(
     "JWT token for authentication (alternative to username/password). Can be set via PLONE_TOKEN environment variable.",
   ),
-};
+});
 
 // Define tool metadata
 export const metadata: ToolMetadata = {

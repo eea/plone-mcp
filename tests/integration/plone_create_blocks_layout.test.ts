@@ -39,7 +39,7 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    const result = await ploneCreateBlocksLayout(args as any);
+    const result = await ploneCreateBlocksLayout(args);
     const service = sessionManager.getSession(sessionId);
     const preparedBlocks = service.getPreparedBlocks();
 
@@ -66,7 +66,7 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    const result = await ploneCreateBlocksLayout(args as any);
+    const result = await ploneCreateBlocksLayout(args);
     const service = sessionManager.getSession(sessionId);
     const preparedBlocks = service.getPreparedBlocks();
 
@@ -91,7 +91,7 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    await ploneCreateBlocksLayout(args as any);
+    await ploneCreateBlocksLayout(args);
     const service = sessionManager.getSession(sessionId);
     const preparedBlocks = service.getPreparedBlocks();
 
@@ -113,7 +113,7 @@ describe("plone_create_blocks_layout", () => {
       ],
     };
 
-    await expect(ploneCreateBlocksLayout(args as any)).rejects.toThrow(
+    await expect(ploneCreateBlocksLayout(args)).rejects.toThrow(
       "[CreateBlocksLayout] Invalid or inaccessible image URL: http://invalid.com/image.jpg",
     );
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
@@ -125,7 +125,7 @@ describe("plone_create_blocks_layout", () => {
 
   it("should prepare an empty layout if no blocks are provided", async () => {
     const args = { blocks: [] };
-    const result = await ploneCreateBlocksLayout(args as any);
+    const result = await ploneCreateBlocksLayout(args);
     const service = sessionManager.getSession(sessionId);
     const preparedBlocks = service.getPreparedBlocks();
 
@@ -144,7 +144,7 @@ describe("plone_create_blocks_layout", () => {
       blocks: [{ type: "text", data: { text: "This will fail" } }],
     };
 
-    await expect(ploneCreateBlocksLayout(args as any)).rejects.toThrow(
+    await expect(ploneCreateBlocksLayout(args)).rejects.toThrow(
       "[CreateBlocksLayout] Mock processing error",
     );
     const service = sessionManager.getSession(sessionId);

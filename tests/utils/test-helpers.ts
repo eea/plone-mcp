@@ -25,14 +25,14 @@ export class PloneMockServer {
   }
 
   mockSiteRoot(
-    response = { "@type": "Plone Site", id: "plone", title: "Test Site" },
+    response: Record<string, unknown> = { "@type": "Plone Site", id: "plone", title: "Test Site" },
   ) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++")
       .reply(200, response);
   }
 
-  mockContentGet(path: string, response: any) {
+  mockContentGet(path: string, response: unknown) {
     const normalizedPath = this.normalizePath(path);
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++${normalizedPath}`)
@@ -41,9 +41,9 @@ export class PloneMockServer {
 
   mockContentCreate(
     path: string,
-    requestMatcher: any,
-    responseOrStatus: any,
-    maybeBody?: any,
+    requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
+    responseOrStatus: unknown,
+    maybeBody?: unknown,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
@@ -58,9 +58,9 @@ export class PloneMockServer {
 
   mockContentUpdate(
     path: string,
-    requestMatcher: any,
-    responseOrStatus: any,
-    maybeBody?: any,
+    requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
+    responseOrStatus: unknown,
+    maybeBody?: unknown,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
@@ -73,15 +73,15 @@ export class PloneMockServer {
       .reply(status, body);
   }
 
-  mockContentDelete(path: string, status: number = 204, body?: any) {
+  mockContentDelete(path: string, status: number = 204, body?: unknown) {
     const normalizedPath = this.normalizePath(path);
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .delete(`/++api++${normalizedPath}`)
       .reply(status, body);
   }
 
-  mockSearch(query: any, response: any) {
-    const serializedQuery: Record<string, any> = {};
+  mockSearch(query: Record<string, string | string[] | number>, response: unknown) {
+    const serializedQuery: Record<string, unknown> = {};
 
     Object.entries(query).forEach(([key, value]) => {
       if (Array.isArray(value)) {
@@ -104,7 +104,7 @@ export class PloneMockServer {
       .reply(200, response);
   }
 
-  mockWorkflow(path: string, response: any) {
+  mockWorkflow(path: string, response: unknown) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++${path}/@workflow`)
       .reply(200, response);
@@ -113,7 +113,7 @@ export class PloneMockServer {
   mockWorkflowTransition(
     path: string,
     transition: string,
-    response: any,
+    response: unknown,
     bodyMatcher?: nock.RequestBodyMatcher,
   ) {
     const scope = nock(this.baseUrl, {
@@ -131,13 +131,13 @@ export class PloneMockServer {
       .reply(200, response);
   }
 
-  mockTypes(response: any) {
+  mockTypes(response: unknown) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++/@types")
       .reply(200, response);
   }
 
-  mockVocabularies(vocabulary: string, response: any) {
+  mockVocabularies(vocabulary: string, response: unknown) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++/@vocabularies/${vocabulary}`)
       .reply(200, response);

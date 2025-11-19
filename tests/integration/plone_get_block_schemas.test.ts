@@ -37,7 +37,7 @@ describe("plone_get_block_schemas", () => {
     vi.spyOn(BlockUtils, "getBlockExample").mockReturnValue(mockExample);
 
     const args = { blockType: mockBlockType };
-    const result = await ploneGetBlockSchemas(args as any);
+    const result = await ploneGetBlockSchemas(args);
     const parsedContent = JSON.parse(result.content[0].text);
 
     expect(parsedContent.blockType).toBe(mockBlockType);
@@ -54,7 +54,7 @@ describe("plone_get_block_schemas", () => {
       image: { properties: { url: { type: "string" } } },
       teaser: { properties: { title: { type: "string" } } },
     };
-    const mockExamples = {
+    const mockExamples: Record<string, unknown> = {
       text: { text: "Sample Text" },
       image: { url: "sample.jpg" },
       teaser: { title: "Sample Teaser" },
@@ -67,11 +67,11 @@ describe("plone_get_block_schemas", () => {
       mockSpecifications,
     );
     vi.spyOn(BlockUtils, "getBlockExample").mockImplementation(
-      (type) => (mockExamples as any)[type],
+      (type) => mockExamples[type],
     );
 
     const args = {}; // No blockType specified
-    const result = await ploneGetBlockSchemas(args as any);
+    const result = await ploneGetBlockSchemas(args);
     const parsedContent = JSON.parse(result.content[0].text);
 
     expect(parsedContent.availableTypes).toEqual(mockAvailableTypes);
@@ -90,7 +90,7 @@ describe("plone_get_block_schemas", () => {
     vi.spyOn(blockRegistry, "getBlockTypes").mockReturnValue(["text", "image"]);
 
     const args = { blockType: unknownBlockType };
-    await expect(ploneGetBlockSchemas(args as any)).rejects.toThrow(
+    await expect(ploneGetBlockSchemas(args)).rejects.toThrow(
       `Unknown block type: ${unknownBlockType}. Available types: text, image`,
     );
     expect(blockRegistry.getSpecification).toHaveBeenCalledWith(
@@ -104,7 +104,7 @@ describe("plone_get_block_schemas", () => {
     });
 
     const args = {};
-    await expect(ploneGetBlockSchemas(args as any)).rejects.toThrow(
+    await expect(ploneGetBlockSchemas(args)).rejects.toThrow(
       "[GetBlockSchemas] Mock block registry error",
     );
   });
