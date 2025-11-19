@@ -1,4 +1,4 @@
-// Simple unit tests for block creation helpers
+import { describe, it, expect } from "vitest";
 
 describe("Block Helpers", () => {
   describe("generateBlockId", () => {
