@@ -3,6 +3,7 @@ import { Nock } from "../utils/test-helpers"; // Use Nock from test-helpers
 import ploneConfigure from "../../src/tools/plone_configure";
 import { sessionManager } from "../../src/session-manager";
 import { PloneClient } from "../../src/plone-client"; // Import PloneClient to check its instance
+import { type InferSchema } from "xmcp";
 import { headers } from "xmcp/headers";
 import { schema } from "../../src/tools/plone_configure"; // Import schema for type inference
 
@@ -44,13 +45,13 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const args = {
+    const args: Partial<InferSchema<typeof schema>> = {
       baseUrl: testBaseUrl,
       username: "admin",
       password: "admin",
     };
 
-    const result = await ploneConfigure(args);
+    const result = await ploneConfigure(args as InferSchema<typeof schema>);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
@@ -72,12 +73,12 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const args = {
+    const args: Partial<InferSchema<typeof schema>> = {
       baseUrl: testBaseUrl,
       token: "test-token",
     };
 
-    const result = await ploneConfigure(args);
+    const result = await ploneConfigure(args as InferSchema<typeof schema>);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
@@ -99,13 +100,13 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(401, { error: "Unauthorized" });
 
-    const args = {
+    const args: Partial<InferSchema<typeof schema>> = {
       baseUrl: testBaseUrl,
       username: "baduser",
       password: "badpassword",
     };
 
-    await expect(ploneConfigure(args)).rejects.toThrow(
+    await expect(ploneConfigure(args as InferSchema<typeof schema>)).rejects.toThrow(
       "[Configure] Request failed with status code 401",
     );
     const service = sessionManager.getSession(sessionId);
@@ -114,13 +115,13 @@ describe("plone_configure", () => {
   });
 
   it("should throw an error if baseUrl is invalid", async () => {
-    const args = {
+    const args: Partial<InferSchema<typeof schema>> = {
       baseUrl: "invalid-url",
       username: "admin",
       password: "admin",
     };
 
-    await expect(ploneConfigure(args)).rejects.toThrow(
+    await expect(ploneConfigure(args as InferSchema<typeof schema>)).rejects.toThrow(
       "[Configure] Invalid base URL: invalid-url",
     );
     const service = sessionManager.getSession(sessionId);
@@ -143,13 +144,13 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const args = {
+    const args: Partial<InferSchema<typeof schema>> = {
       baseUrl: testBaseUrl,
       username: "arguser",
       password: "argpass",
     };
 
-    const result = await ploneConfigure(args);
+    const result = await ploneConfigure(args as InferSchema<typeof schema>);
 
     expect(result.content[0].text).toEqual(
       `Successfully configured connection to Plone site: ${testBaseUrl}`,
@@ -178,7 +179,7 @@ describe("plone_configure", () => {
       .get("/++api++")
       .reply(200, mockSiteRootResponse);
 
-    const args: InferSchema<typeof schema> = {}; // Explicitly type args as empty object conforming to schema
+    const args: Partial<InferSchema<typeof schema>> = {};
 
     const result = await ploneConfigure(args);
 

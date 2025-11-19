@@ -2,7 +2,7 @@ import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
@@ -37,7 +37,7 @@ interface PloneGetNavigationTreeArgs {
 
 export default async function ploneGetNavigationTree(
   args: InferSchema<typeof schema> & PloneGetNavigationTreeArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   try {
     const { root_path, depth } = args;
     const requestHeaders = headers();
@@ -60,8 +60,8 @@ export default async function ploneGetNavigationTree(
     // Use the @navigation endpoint
     const navigation = await client.get(navigationPath, params);
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(navigation, null, 2),
     };
 

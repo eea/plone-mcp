@@ -3,7 +3,7 @@ import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+
 import {
   wrapError,
   generateBlockId,
@@ -58,7 +58,7 @@ interface PloneCreateBlocksLayoutArgs {
 
 export default async function ploneCreateBlocksLayout(
   args: InferSchema<typeof schema> & PloneCreateBlocksLayoutArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
@@ -102,8 +102,8 @@ export default async function ploneCreateBlocksLayout(
     };
     service.setPreparedBlocks(preparedBlocksData);
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: `Successfully prepared ${
         blocks.length
       } blocks for next create / update operation(valid for 60 seconds).Blocks ready: ${blockInfo

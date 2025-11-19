@@ -2,7 +2,7 @@ import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
@@ -32,7 +32,7 @@ interface PloneGetVocabulariesArgs {
 
 export default async function ploneGetVocabularies(
   args: InferSchema<typeof schema> & PloneGetVocabulariesArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   try {
     const parsedArgs = args;
     const requestHeaders = headers();
@@ -50,8 +50,8 @@ export default async function ploneGetVocabularies(
       params,
     );
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(vocabularies, null, 2),
     };
 

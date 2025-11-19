@@ -11,7 +11,7 @@ import {
   optionalNonEmpty,
   Config,
 } from "../plone-client";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+
 import { wrapError } from "../utils/block-utils";
 import { getSessionId } from "../utils/session";
 
@@ -49,7 +49,7 @@ export const metadata: ToolMetadata = {
 // Tool implementation
 export default async function ploneConfigure(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   let client: PloneClient | null = null;
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
@@ -60,8 +60,8 @@ export default async function ploneConfigure(
     await client.get("/");
     service.client = client;
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
     };
     return { content: [textContent] };

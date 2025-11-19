@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { blockRegistry } from "../block-registry";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+
 import { wrapError, getBlockExample } from "../utils/block-utils";
 
 export const schema = {
@@ -31,7 +31,7 @@ interface PloneGetBlockSchemasArgs {
 
 export default async function ploneGetBlockSchemas(
   args: InferSchema<typeof schema> & PloneGetBlockSchemasArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   try {
     const { blockType } = args;
 
@@ -45,8 +45,8 @@ export default async function ploneGetBlockSchemas(
         );
       }
 
-      const textContent: TextContent = {
-        type: "text",
+      const textContent = {
+        type: "text" as const,
         text: JSON.stringify(
           {
             blockType: blockType,
@@ -69,8 +69,8 @@ export default async function ploneGetBlockSchemas(
       examples[type] = getBlockExample(type);
     }
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(
         {
           availableTypes: blockRegistry.getBlockTypes(),

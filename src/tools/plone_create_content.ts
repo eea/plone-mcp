@@ -2,7 +2,7 @@ import { z } from "zod";
 import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
+
 import { wrapError } from "../utils/block-utils";
 import { PloneContent } from "../plone-client";
 import { getSessionId } from "../utils/session";
@@ -71,7 +71,7 @@ interface PloneCreateContentArgs {
 
 export default async function ploneCreateContent(
   args: InferSchema<typeof schema> & PloneCreateContentArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
@@ -116,8 +116,8 @@ export default async function ploneCreateContent(
       data,
     )) as PloneContent;
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(content, null, 2),
     };
 

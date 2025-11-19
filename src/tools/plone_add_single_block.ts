@@ -3,7 +3,6 @@ import { type InferSchema, type ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "../session-manager";
 import { blockRegistry } from "../block-registry";
-import { CallToolResult } from "@modelcontextprotocol/sdk/types";
 import {
   wrapError,
   generateBlockId,
@@ -39,7 +38,7 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneAddSingleBlock(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
   try {
     const requestHeaders = headers();
     const sessionId = getSessionId(requestHeaders);

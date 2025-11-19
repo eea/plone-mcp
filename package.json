@@ -9,7 +9,11 @@
     "rest-api"
   ],
   "scripts": {
-    "build": "xmcp build"
+    "build": "xmcp build",
+    "type-check:src": "tsc --project tsconfig.json --noEmit",
+    "type-check:tests": "tsc --project tsconfig.test.json --noEmit",
+    "type-check": "pnpm run type-check:src && pnpm run type-check:tests",
+    "test": "vitest run"
   },
   "main": "dist/http.js",
   "author": "",

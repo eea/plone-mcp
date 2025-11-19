@@ -33,21 +33,21 @@ export class PloneMockServer {
   ) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++")
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 
-  mockContentGet(path: string, response: unknown) {
+  mockContentGet(path: string, response: Record<string, unknown>) {
     const normalizedPath = this.normalizePath(path);
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++${normalizedPath}`)
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 
   mockContentCreate(
     path: string,
     requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
-    responseOrStatus: unknown,
-    maybeBody?: unknown,
+    responseOrStatus: Record<string, unknown> | number,
+    maybeBody?: Record<string, unknown>,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
@@ -56,15 +56,15 @@ export class PloneMockServer {
         : { status: 201, body: responseOrStatus };
 
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
-      .post(`/++api++${normalizedPath}`, requestMatcher)
-      .reply(status, body);
+      .post(`/++api++${normalizedPath}`, requestMatcher as any)
+      .reply(status, body as nock.ReplyBody);
   }
 
   mockContentUpdate(
     path: string,
     requestMatcher: nock.RequestBodyMatcher | Record<string, unknown>,
-    responseOrStatus: unknown,
-    maybeBody?: unknown,
+    responseOrStatus: Record<string, unknown> | number,
+    maybeBody?: Record<string, unknown>,
   ) {
     const normalizedPath = this.normalizePath(path);
     const { status, body } =
@@ -73,32 +73,31 @@ export class PloneMockServer {
         : { status: 200, body: responseOrStatus };
 
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
-      .patch(`/++api++${normalizedPath}`, requestMatcher)
-      .reply(status, body);
+      .patch(`/++api++${normalizedPath}`, requestMatcher as any)
+      .reply(status, body as nock.ReplyBody);
   }
 
-  mockContentDelete(path: string, status = 204, body?: unknown) {
+  mockContentDelete(path: string, status = 204, body?: Record<string, unknown>) {
     const normalizedPath = this.normalizePath(path);
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .delete(`/++api++${normalizedPath}`)
-      .reply(status, body);
+      .reply(status, body as nock.ReplyBody);
   }
 
   mockSearch(
     query: Record<string, string | string[] | number>,
-    response: unknown,
+    response: Record<string, unknown>,
   ) {
-    const serializedQuery: Record<string, unknown> = {};
+    const serializedQuery: Record<string, string | number> = {};
 
     Object.entries(query).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        const targetKey = key.endsWith("[]") ? key : `${key}[]`;
-        serializedQuery[targetKey] = value.length === 1 ? value[0] : value;
+        serializedQuery[key] = value.join(","); // Join array values into a comma-separated string
         return;
       }
 
       if (typeof value === "number") {
-        serializedQuery[key] = value.toString();
+        serializedQuery[key] = value;
         return;
       }
 
@@ -108,19 +107,19 @@ export class PloneMockServer {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++/@search")
       .query(serializedQuery)
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 
-  mockWorkflow(path: string, response: unknown) {
+  mockWorkflow(path: string, response: Record<string, unknown>) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++${path}/@workflow`)
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 
   mockWorkflowTransition(
     path: string,
     transition: string,
-    response: unknown,
+    response: Record<string, unknown>,
     bodyMatcher?: nock.RequestBodyMatcher,
   ) {
     const scope = nock(this.baseUrl, {
@@ -130,24 +129,24 @@ export class PloneMockServer {
     if (bodyMatcher !== undefined) {
       return scope
         .post(`/++api++${path}/@workflow/${transition}`, bodyMatcher)
-        .reply(200, response);
+        .reply(200, response as nock.ReplyBody);
     }
 
     return scope
       .post(`/++api++${path}/@workflow/${transition}`)
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 
-  mockTypes(response: unknown) {
+  mockTypes(response: Record<string, unknown>) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get("/++api++/@types")
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 
-  mockVocabularies(vocabulary: string, response: unknown) {
+  mockVocabularies(vocabulary: string, response: Record<string, unknown>) {
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
       .get(`/++api++/@vocabularies/${vocabulary}`)
-      .reply(200, response);
+      .reply(200, response as nock.ReplyBody);
   }
 }
 

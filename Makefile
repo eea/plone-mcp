@@ -27,7 +27,7 @@ lint: ## Lint code using ESLint.
 	$(PNPM_BIN)/eslint "{src,tests}/**/*.ts"
 
 type-check: ## Run TypeScript type checking
-	$(PNPM_BIN)/tsc --noEmit
+	pnpm run type-check
 
 docker-build: ## Build the Docker image.
 	docker build -t plone-mcp .
