@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Nock } from "plone-mcp/tests/utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "plone-mcp/tests/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleDocument,
+} from "plone-mcp/tests/utils/test-helpers";
 import ploneAddSingleBlock from "plone-mcp/tools/plone_add_single_block";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
@@ -13,13 +16,20 @@ vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
 }));
 
+interface Block {
+  "@type": string;
+  plaintext: string;
+  url?: string;
+  string?: string;
+  value?: unknown[];
+}
+type Blocks = Record<string, Block>;
+
 describe("plone_add_single_block", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/my-page";
   const sessionId = "test-session-id";
-interface Block { "@type": string; plaintext: string; url?: string; string?: string; value?: unknown[]; }
-
 
   const mockContent: {
     "@id": string;
@@ -76,10 +86,7 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
     const mockContentAfterAdd = { ...mockContent, message: "Block added" };
     mockServer.mockContentUpdate(
       testPath,
-      (body: {
-        blocks: Blocks;
-        blocks_layout: { items: string[] };
-      }) => {
+      (body: { blocks: Blocks; blocks_layout: { items: string[] } }) => {
         // Assert that the new block is in the body
         const newBlockId = body.blocks_layout.items.find(
           (id: string) => !mockContent.blocks[id],
@@ -101,7 +108,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       blockData: { text: "New paragraph" },
     };
 
-    const result = await ploneAddSingleBlock(args as InferSchema<typeof schema>);
+    const result = await ploneAddSingleBlock(
+      args as InferSchema<typeof schema>,
+    );
 
     expect(result.content[0].text).toEqual(
       JSON.stringify(mockContentAfterAdd, null, 2),
@@ -120,12 +129,10 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
     };
     mockServer.mockContentUpdate(
       testPath,
-      (body: {
-        blocks: Blocks;
-        blocks_layout: { items: string[] };
-      }) => {
+      (body: { blocks: Blocks; blocks_layout: { items: string[] } }) => {
         const newBlockId = body.blocks_layout.items.find(
-          (id: string) => !mockContent.blocks[id as keyof typeof mockContent.blocks],
+          (id: string) =>
+            !mockContent.blocks[id as keyof typeof mockContent.blocks],
         );
         expect(newBlockId).toBeDefined();
         if (newBlockId !== undefined) {
@@ -145,7 +152,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       blockData: { url: "http://example.com/image.jpg", alt: "My Image" },
     };
 
-    const result = await ploneAddSingleBlock(args as InferSchema<typeof schema>);
+    const result = await ploneAddSingleBlock(
+      args as InferSchema<typeof schema>,
+    );
 
     expect(result.content[0].text).toEqual(
       JSON.stringify(mockContentAfterImageAdd, null, 2),
@@ -168,7 +177,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       blockData: { url: "http://invalid.com/image.jpg", alt: "Invalid Image" },
     };
 
-    await expect(ploneAddSingleBlock(args as InferSchema<typeof schema>)).rejects.toThrow(
+    await expect(
+      ploneAddSingleBlock(args as InferSchema<typeof schema>),
+    ).rejects.toThrow(
       "[AddBlock] Invalid or inaccessible image URL: http://invalid.com/image.jpg",
     );
     expect(BlockUtils.validateImageURL).toHaveBeenCalledWith(
@@ -186,10 +197,7 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
     };
     mockServer.mockContentUpdate(
       testPath,
-      (body: {
-        blocks: Blocks;
-        blocks_layout: { items: string[] };
-      }) => {
+      (body: { blocks: Blocks; blocks_layout: { items: string[] } }) => {
         const newBlockId = body.blocks_layout.items[1]; // Should be at index 1
         if (newBlockId !== undefined) {
           expect(body.blocks[newBlockId]["@type"]).toBe("slate");
@@ -210,7 +218,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       position: 1,
     };
 
-    const result = await ploneAddSingleBlock(args as InferSchema<typeof schema>);
+    const result = await ploneAddSingleBlock(
+      args as InferSchema<typeof schema>,
+    );
     expect(result.content[0].text).toEqual(
       JSON.stringify(mockContentAfterPositionAdd, null, 2),
     );
@@ -227,7 +237,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args as InferSchema<typeof schema>)).rejects.toThrow(
+    await expect(
+      ploneAddSingleBlock(args as InferSchema<typeof schema>),
+    ).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API calls should be made
@@ -244,9 +256,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args as InferSchema<typeof schema>)).rejects.toThrow(
-      `[AddBlock] Request failed with status code 404`,
-    );
+    await expect(
+      ploneAddSingleBlock(args as InferSchema<typeof schema>),
+    ).rejects.toThrow(`[AddBlock] Request failed with status code 404`);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -262,9 +274,9 @@ interface Block { "@type": string; plaintext: string; url?: string; string?: str
       blockData: { text: "Some text" },
     };
 
-    await expect(ploneAddSingleBlock(args as InferSchema<typeof schema>)).rejects.toThrow(
-      `[AddBlock] Request failed with status code 500`,
-    );
+    await expect(
+      ploneAddSingleBlock(args as InferSchema<typeof schema>),
+    ).rejects.toThrow(`[AddBlock] Request failed with status code 500`);
     expect(Nock.isDone()).toBe(true);
   });
 });

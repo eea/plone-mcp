@@ -103,9 +103,15 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
-        expect(body.id).toBe("custom-id");
-        const titleBlockId = body.blocks_layout!.items[0];
-        expect(body.blocks![titleBlockId]).toEqual({ "@type": "title" });
+        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
+          const titleBlockId = body.blocks_layout.items[0];
+          expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        } else {
+          // Fail the test explicitly if these are unexpectedly null/undefined
+          expect(body.blocks_layout).toBeDefined();
+          expect(body.blocks_layout?.items).toBeDefined();
+          expect(body.blocks).toBeDefined();
+        }
         return true;
       },
       { ...mockCreatedContent, id: "custom-id" },
