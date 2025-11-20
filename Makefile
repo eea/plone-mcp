@@ -28,6 +28,9 @@ test-unit-only: ## Run unit tests only with coverage.
 lint: ## Lint code using ESLint.
 	$(PNPM_BIN)/eslint "{src,tests}/**/*.ts"
 
+lint-fix: ## Auto-fix lint issues in source files with ESLint.
+	$(PNPM_BIN)/eslint --fix "{src,tests}/**/*.ts"
+
 type-check: ## Run TypeScript type checking
 	pnpm run type-check
 

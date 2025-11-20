@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
-import { PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneGetVocabularies from "plone-mcp/tools/plone_get_vocabularies";
+import { Nock , PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
+import ploneGetVocabularies, { schema } from "plone-mcp/tools/plone_get_vocabularies";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
 import type { InferSchema } from "xmcp";
-import { schema } from "plone-mcp/tools/plone_get_vocabularies";
 
 describe("plone_get_vocabularies", () => {
   let mockServer: PloneMockServer;
