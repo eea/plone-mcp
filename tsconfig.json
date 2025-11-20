@@ -16,7 +16,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["vitest/globals", "node"],
+    "types": ["vitest/globals", "vitest", "node"],
     "baseUrl": ".",
     "paths": {
       "plone-mcp/*": ["./src/*"]

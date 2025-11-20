@@ -243,9 +243,9 @@ describe("plone_update_content", () => {
       blocks_layout: undefined,
       additionalFields: undefined,
     };
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
-      "Path is required for updating content",
-    );
+    await expect(
+      ploneUpdateContent(args as Parameters<typeof ploneUpdateContent>[0]),
+    ).rejects.toThrow("Path is required for updating content");
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 

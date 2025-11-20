@@ -56,7 +56,10 @@ export class PloneMockServer {
         : { status: 201, body: responseOrStatus };
 
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
-      .post(`/++api++${normalizedPath}`, requestMatcher)
+      .post(
+        `/++api++${normalizedPath}`,
+        requestMatcher as nock.RequestBodyMatcher,
+      )
       .reply(status, body as nock.ReplyBody);
   }
 
@@ -73,7 +76,10 @@ export class PloneMockServer {
         : { status: 200, body: responseOrStatus };
 
     return nock(this.baseUrl, { reqheaders: this.defaultReqHeaders })
-      .patch(`/++api++${normalizedPath}`, requestMatcher)
+      .patch(
+        `/++api++${normalizedPath}`,
+        requestMatcher as nock.RequestBodyMatcher,
+      )
       .reply(status, body as nock.ReplyBody);
   }
 

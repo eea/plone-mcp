@@ -71,14 +71,18 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
-        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
-          const titleBlockId = body.blocks_layout.items[0];
-          expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        if (body.blocks_layout && body.blocks) {
+          if (!Array.isArray(body.blocks_layout.items)) {
+            expect.fail("blocks_layout.items was not an array");
+          }
+          const layout = body.blocks_layout;
+          const blocks = body.blocks;
+          const titleBlockId = layout.items[0];
+          expect(blocks[titleBlockId]).toEqual({ "@type": "title" });
         } else {
-          // Fail the test explicitly if these are unexpectedly null/undefined
-          expect(body.blocks_layout).toBeDefined();
-          expect(body.blocks_layout?.items).toBeDefined();
-          expect(body.blocks).toBeDefined();
+          expect.fail(
+            "blocks_layout or blocks were unexpectedly undefined/null",
+          );
         }
         return true;
       },
@@ -108,14 +112,18 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         expect(body["@type"]).toBe("Document");
         expect(body.title).toBe("My New Page");
-        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
-          const titleBlockId = body.blocks_layout.items[0];
-          expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        if (body.blocks_layout && body.blocks) {
+          if (!Array.isArray(body.blocks_layout.items)) {
+            expect.fail("blocks_layout.items was not an array");
+          }
+          const layout = body.blocks_layout;
+          const blocks = body.blocks;
+          const titleBlockId = layout.items[0];
+          expect(blocks[titleBlockId]).toEqual({ "@type": "title" });
         } else {
-          // Fail the test explicitly if these are unexpectedly null/undefined
-          expect(body.blocks_layout).toBeDefined();
-          expect(body.blocks_layout?.items).toBeDefined();
-          expect(body.blocks).toBeDefined();
+          expect.fail(
+            "blocks_layout or blocks were unexpectedly undefined/null",
+          );
         }
         return true;
       },
@@ -165,7 +173,7 @@ describe("plone_create_content", () => {
             preparedBlockId,
           ]);
         } else {
-          fail("blocks_layout or blocks were undefined");
+          expect.fail("blocks_layout or blocks were undefined");
         }
         return true;
       },
@@ -222,7 +230,7 @@ describe("plone_create_content", () => {
             ...inlineLayout.items,
           ]);
         } else {
-          fail("blocks_layout or blocks were undefined");
+          expect.fail("blocks_layout or blocks were undefined");
         }
         return true;
       },
@@ -259,8 +267,17 @@ describe("plone_create_content", () => {
         expect(body.title).toBe("Page with Extra Fields");
         expect(body.effective).toBe(additionalFields.effective);
         expect(body.creators).toEqual(additionalFields.creators);
-        const titleBlockId = body.blocks_layout.items[0];
-        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        if (body.blocks_layout && body.blocks) {
+          if (!Array.isArray(body.blocks_layout.items)) {
+            expect.fail("blocks_layout.items was not an array");
+          }
+          const titleBlockId = body.blocks_layout.items[0];
+          expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
+        } else {
+          expect.fail(
+            "blocks_layout or blocks were unexpectedly undefined/null",
+          );
+        }
         return true;
       },
       mockCreatedContent,
@@ -308,7 +325,7 @@ describe("plone_create_content", () => {
             preparedBlockId,
           ]);
         } else {
-          fail("blocks_layout or blocks were undefined");
+          expect.fail("blocks_layout or blocks were undefined");
         }
         return true;
       },
