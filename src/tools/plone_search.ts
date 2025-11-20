@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
-import { wrapError } from "../utils/block-utils";
-import { getSessionId } from "../utils/session";
+import { sessionManager } from "plone-mcp/session-manager";
+
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const schema = {
   query: z.string().optional().describe("Search query text"),
@@ -59,7 +59,7 @@ interface PloneSearchArgs {
 
 export default async function ploneSearch(
   args: InferSchema<typeof schema> & PloneSearchArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   try {
     const parsedArgs = args;
     const requestHeaders = headers();
@@ -90,8 +90,8 @@ export default async function ploneSearch(
 
     const results = await client.get("/@search", params);
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(results, null, 2),
     };
 

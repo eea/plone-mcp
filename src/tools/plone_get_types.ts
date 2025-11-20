@@ -1,9 +1,9 @@
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
-import { wrapError } from "../utils/block-utils";
-import { getSessionId } from "../utils/session";
+import { sessionManager } from "plone-mcp/session-manager";
+
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const schema = {};
 
@@ -22,7 +22,7 @@ export const metadata: ToolMetadata = {
 export default async function ploneGetTypes(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   try {
     const requestHeaders = headers();
     const sessionId = getSessionId(requestHeaders);
@@ -30,8 +30,8 @@ export default async function ploneGetTypes(
     const client = service.getClient();
     const types = await client.get("/@types");
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(types, null, 2),
     };
 

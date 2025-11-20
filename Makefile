@@ -6,7 +6,9 @@ help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 format: ## Format code using Prettier.
-	$(PNPM_BIN)/prettier --write "src/**/*.{ts,js}" "tests/**/*.{ts,js}"
+	$(PNPM_BIN)/prettier --write "src/**/*.{ts,js}" 
+
+#"tests/**/*.{ts,js}"
 
 test: ## Run all tests.
 	CI=true $(PNPM_BIN)/vitest run
@@ -27,7 +29,7 @@ lint: ## Lint code using ESLint.
 	$(PNPM_BIN)/eslint "{src,tests}/**/*.ts"
 
 type-check: ## Run TypeScript type checking
-	$(PNPM_BIN)/tsc --noEmit
+	pnpm run type-check
 
 docker-build: ## Build the Docker image.
 	docker build -t plone-mcp .

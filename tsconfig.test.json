@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "isolatedModules": true,
     "outDir": "./dist-test",
-    "rootDir": "./src"
+    "rootDir": "."
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]

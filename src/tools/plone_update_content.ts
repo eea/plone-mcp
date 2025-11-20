@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
-import { wrapError } from "../utils/block-utils";
-import { getSessionId } from "../utils/session";
+import { sessionManager } from "plone-mcp/session-manager";
+
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content to update"),
@@ -49,7 +49,7 @@ interface PloneUpdateContentArgs {
 
 export default async function ploneUpdateContent(
   args: InferSchema<typeof schema> & PloneUpdateContentArgs,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
   const service = sessionManager.getSession(sessionId);
@@ -93,8 +93,8 @@ export default async function ploneUpdateContent(
 
     const content = await client.patch(path, data);
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: JSON.stringify(content, null, 2),
     };
 

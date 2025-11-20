@@ -1,8 +1,8 @@
-import { type ResourceMetadata } from "xmcp";
+import type { ResourceMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 
-import { sessionManager } from "../../session-manager";
-import { getSessionId } from "../../utils/session";
+import { sessionManager } from "plone-mcp/session-manager";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const metadata: ResourceMetadata = {
   name: "plone-types",

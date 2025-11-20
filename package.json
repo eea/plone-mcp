@@ -9,7 +9,11 @@
     "rest-api"
   ],
   "scripts": {
-    "build": "xmcp build"
+    "build": "xmcp build",
+    "type-check:src": "tsc --project tsconfig.json --noEmit",
+    "type-check:tests": "tsc --project tsconfig.test.json --noEmit",
+    "type-check": "pnpm run type-check:src && pnpm run type-check:tests",
+    "test": "vitest run"
   },
   "main": "dist/http.js",
   "author": "",
@@ -44,6 +48,8 @@
     "path": "^0.12.7",
     "prettier": "^3.6.2",
     "supertest": "^6.3.0",
+    "ts-morph": "^27.0.2",
+    "ts-node": "^10.9.2",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.47.0",

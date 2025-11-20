@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import ploneGetBlockSchemas from "../../src/tools/plone_get_block_schemas";
-import { blockRegistry } from "../../src/block-registry";
-import * as BlockUtils from "../../src/utils/block-utils"; // Import BlockUtils for mocking getBlockExample
+import ploneGetBlockSchemas from "plone-mcp/tools/plone_get_block_schemas";
+import { blockRegistry } from "plone-mcp/block-registry";
+import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import BlockUtils for mocking getBlockExample
 import { headers } from "xmcp/headers";
+import type { InferSchema } from "xmcp";
+import { schema } from "plone-mcp/tools/plone_get_block_schemas";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),
@@ -36,7 +38,7 @@ describe("plone_get_block_schemas", () => {
     vi.spyOn(blockRegistry, "getSpecification").mockReturnValue(mockSpec);
     vi.spyOn(BlockUtils, "getBlockExample").mockReturnValue(mockExample);
 
-    const args = { blockType: mockBlockType };
+    const args: InferSchema<typeof schema> = { blockType: mockBlockType };
     const result = await ploneGetBlockSchemas(args);
     const parsedContent = JSON.parse(result.content[0].text);
 
@@ -70,7 +72,7 @@ describe("plone_get_block_schemas", () => {
       (type) => mockExamples[type],
     );
 
-    const args = {}; // No blockType specified
+    const args: InferSchema<typeof schema> = { blockType: undefined }; // No blockType specified
     const result = await ploneGetBlockSchemas(args);
     const parsedContent = JSON.parse(result.content[0].text);
 
@@ -89,7 +91,7 @@ describe("plone_get_block_schemas", () => {
     vi.spyOn(blockRegistry, "getSpecification").mockReturnValue(undefined); // Simulate unknown block
     vi.spyOn(blockRegistry, "getBlockTypes").mockReturnValue(["text", "image"]);
 
-    const args = { blockType: unknownBlockType };
+    const args: InferSchema<typeof schema> = { blockType: unknownBlockType };
     await expect(ploneGetBlockSchemas(args)).rejects.toThrow(
       `Unknown block type: ${unknownBlockType}. Available types: text, image`,
     );
@@ -103,7 +105,7 @@ describe("plone_get_block_schemas", () => {
       throw new Error("Mock block registry error");
     });
 
-    const args = {};
+    const args: InferSchema<typeof schema> = { blockType: undefined };
     await expect(ploneGetBlockSchemas(args)).rejects.toThrow(
       "[GetBlockSchemas] Mock block registry error",
     );

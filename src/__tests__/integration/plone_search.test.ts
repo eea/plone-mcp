@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer, sampleSearchResults } from "../utils/test-helpers";
-import ploneSearch from "../../src/tools/plone_search";
-import { PloneClient } from "../../src/plone-client";
-import { sessionManager } from "../../src/session-manager";
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleSearchResults,
+} from "plone-mcp/__tests__/utils/test-helpers";
+import ploneSearch from "plone-mcp/tools/plone_search";
+import { PloneClient } from "plone-mcp/plone-client";
+import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
+import type { InferSchema } from "xmcp";
+import { schema } from "plone-mcp/tools/plone_search";
 
 describe("plone_search", () => {
   let mockServer: PloneMockServer;
@@ -30,7 +35,16 @@ describe("plone_search", () => {
     const query = "annual report";
     mockServer.mockSearch({ SearchableText: query }, sampleSearchResults);
 
-    const args = { query: query };
+    const args: InferSchema<typeof schema> = {
+      query: query,
+      portal_type: undefined,
+      path: undefined,
+      review_state: undefined,
+      sort_on: undefined,
+      sort_order: undefined,
+      b_size: undefined,
+      b_start: undefined,
+    };
     const result = await ploneSearch(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleSearchResults);
@@ -38,7 +52,16 @@ describe("plone_search", () => {
   });
 
   it("should perform search with all filters", async () => {
-    const filters = {
+    const filters: {
+      query: string;
+      portal_type: string[];
+      path: string;
+      review_state: string[];
+      sort_on: string;
+      sort_order: "ascending" | "descending"; // Explicitly define literal type
+      b_size: number;
+      b_start: number;
+    } = {
       query: "filtered search",
       portal_type: ["Document", "Folder"],
       path: "/docs",
@@ -63,7 +86,7 @@ describe("plone_search", () => {
       sampleSearchResults,
     );
 
-    const args = filters;
+    const args: InferSchema<typeof schema> = filters;
     await ploneSearch(args);
 
     expect(Nock.isDone()).toBe(true);
@@ -76,7 +99,16 @@ describe("plone_search", () => {
       .query({ SearchableText: query })
       .reply(500, "Server Error");
 
-    const args = { query: query };
+    const args: InferSchema<typeof schema> = {
+      query: query,
+      portal_type: undefined,
+      path: undefined,
+      review_state: undefined,
+      sort_on: undefined,
+      sort_order: undefined,
+      b_size: undefined,
+      b_start: undefined,
+    };
     await expect(ploneSearch(args)).rejects.toThrow(
       "[Search] Request failed with status code 500",
     );
@@ -87,7 +119,16 @@ describe("plone_search", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args = { query: "any" };
+    const args: InferSchema<typeof schema> = {
+      query: "any",
+      portal_type: undefined,
+      path: undefined,
+      review_state: undefined,
+      sort_on: undefined,
+      sort_order: undefined,
+      b_size: undefined,
+      b_start: undefined,
+    };
     await expect(ploneSearch(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );

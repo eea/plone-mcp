@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "allowJs": true,
@@ -16,7 +16,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["vitest/globals", "vitest", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "plone-mcp/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.ts", "xmcp-env.d.ts"],
   "exclude": ["node_modules", "dist"]

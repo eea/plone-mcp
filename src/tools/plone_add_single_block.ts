@@ -1,17 +1,16 @@
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
-import { blockRegistry } from "../block-registry";
-import { CallToolResult } from "@modelcontextprotocol/sdk/types";
+import { sessionManager } from "plone-mcp/session-manager";
+import { blockRegistry } from "plone-mcp/block-registry";
 import {
   wrapError,
   generateBlockId,
   processBlock,
   validateImageURL,
-} from "../utils/block-utils";
-import { PloneContent } from "../plone-client";
-import { getSessionId } from "../utils/session";
+} from "plone-mcp/utils/block-utils";
+import { PloneContent } from "plone-mcp/plone-client";
+import { getSessionId } from "plone-mcp/utils/session";
 
 export const schema = {
   path: z.string().describe("Path to the content"),
@@ -39,7 +38,7 @@ export const metadata: ToolMetadata = {
 
 export default async function ploneAddSingleBlock(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+) {
   try {
     const requestHeaders = headers();
     const sessionId = getSessionId(requestHeaders);

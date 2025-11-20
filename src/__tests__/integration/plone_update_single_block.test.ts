@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
-import ploneUpdateSingleBlock from "../../src/tools/plone_update_single_block";
-import { PloneClient } from "../../src/plone-client";
-import { sessionManager } from "../../src/session-manager";
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleDocument,
+} from "plone-mcp/__tests__/utils/test-helpers";
+import ploneUpdateSingleBlock from "plone-mcp/tools/plone_update_single_block";
+import { PloneClient } from "plone-mcp/plone-client";
+import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
 
 describe("plone_update_single_block", () => {
@@ -63,9 +66,9 @@ describe("plone_update_single_block", () => {
     mockServer.mockContentUpdate(
       testPath,
       (body: { blocks: Record<string, unknown> }) => {
-        expect(body.blocks[blockToUpdateId].plaintext).toBe(
-          updatedBlockData.plaintext,
-        );
+        expect(
+          (body.blocks[blockToUpdateId] as { plaintext: string }).plaintext,
+        ).toBe(updatedBlockData.plaintext);
         return true;
       },
       mockContentAfterUpdate,

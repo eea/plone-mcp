@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "../utils/test-helpers";
-import ploneRemoveSingleBlock from "../../src/tools/plone_remove_single_block";
-import { PloneClient } from "../../src/plone-client";
-import { sessionManager } from "../../src/session-manager";
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleDocument,
+} from "plone-mcp/__tests__/utils/test-helpers";
+import ploneRemoveSingleBlock from "plone-mcp/tools/plone_remove_single_block";
+import { PloneClient } from "plone-mcp/plone-client";
+import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
 
 describe("plone_remove_single_block", () => {

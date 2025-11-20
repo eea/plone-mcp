@@ -1,6 +1,6 @@
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
-import { sessionManager } from "../session-manager";
+import { sessionManager } from "plone-mcp/session-manager";
 import {
   ENV_BASE_URL,
   ENV_USERNAME,
@@ -10,10 +10,10 @@ import {
   PloneClient,
   optionalNonEmpty,
   Config,
-} from "../plone-client";
-import { CallToolResult, TextContent } from "@modelcontextprotocol/sdk/types";
-import { wrapError } from "../utils/block-utils";
-import { getSessionId } from "../utils/session";
+} from "plone-mcp/plone-client";
+
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { getSessionId } from "plone-mcp/utils/session";
 
 // Define the schema for tool parameters
 export const schema = {
@@ -49,7 +49,7 @@ export const metadata: ToolMetadata = {
 // Tool implementation
 export default async function ploneConfigure(
   args: InferSchema<typeof schema>,
-): Promise<CallToolResult> {
+): Promise<{ content: { type: "text"; text: string }[] }> {
   let client: PloneClient | null = null;
   const requestHeaders = headers();
   const sessionId = getSessionId(requestHeaders);
@@ -60,8 +60,8 @@ export default async function ploneConfigure(
     await client.get("/");
     service.client = client;
 
-    const textContent: TextContent = {
-      type: "text",
+    const textContent = {
+      type: "text" as const,
       text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
     };
     return { content: [textContent] };

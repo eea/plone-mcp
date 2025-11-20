@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "../utils/test-helpers";
-import { PloneMockServer } from "../utils/test-helpers";
-import ploneGetVocabularies from "../../src/tools/plone_get_vocabularies";
-import { PloneClient } from "../../src/plone-client";
-import { sessionManager } from "../../src/session-manager";
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
+import { PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
+import ploneGetVocabularies from "plone-mcp/tools/plone_get_vocabularies";
+import { PloneClient } from "plone-mcp/plone-client";
+import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
+import type { InferSchema } from "xmcp";
+import { schema } from "plone-mcp/tools/plone_get_vocabularies";
 
 describe("plone_get_vocabularies", () => {
   let mockServer: PloneMockServer;
@@ -37,7 +39,11 @@ describe("plone_get_vocabularies", () => {
   it("should successfully retrieve vocabulary values", async () => {
     mockServer.mockVocabularies(testVocabulary, mockVocabularyResponse);
 
-    const args = { vocabulary: testVocabulary };
+    const args: InferSchema<typeof schema> = {
+      vocabulary: testVocabulary,
+      title: undefined,
+      token: undefined,
+    };
     const result = await ploneGetVocabularies(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockVocabularyResponse);
@@ -51,7 +57,11 @@ describe("plone_get_vocabularies", () => {
       .query({ title: titleFilter })
       .reply(200, mockVocabularyResponse);
 
-    const args = { vocabulary: testVocabulary, title: titleFilter };
+    const args: InferSchema<typeof schema> = {
+      vocabulary: testVocabulary,
+      title: titleFilter,
+      token: undefined,
+    };
     await ploneGetVocabularies(args);
 
     expect(Nock.isDone()).toBe(true);
@@ -64,7 +74,11 @@ describe("plone_get_vocabularies", () => {
       .query({ token: tokenFilter })
       .reply(200, mockVocabularyResponse);
 
-    const args = { vocabulary: testVocabulary, token: tokenFilter };
+    const args: InferSchema<typeof schema> = {
+      vocabulary: testVocabulary,
+      token: tokenFilter,
+      title: undefined,
+    };
     await ploneGetVocabularies(args);
 
     expect(Nock.isDone()).toBe(true);
@@ -76,7 +90,11 @@ describe("plone_get_vocabularies", () => {
       .get(`/++api++/@vocabularies/${nonExistentVocabulary}`)
       .reply(404, "Not Found");
 
-    const args = { vocabulary: nonExistentVocabulary };
+    const args: InferSchema<typeof schema> = {
+      vocabulary: nonExistentVocabulary,
+      title: undefined,
+      token: undefined,
+    };
     await expect(ploneGetVocabularies(args)).rejects.toThrow(
       "[GetVocabularies] Request failed with status code 404",
     );
@@ -87,7 +105,11 @@ describe("plone_get_vocabularies", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args = { vocabulary: testVocabulary };
+    const args: InferSchema<typeof schema> = {
+      vocabulary: testVocabulary,
+      title: undefined,
+      token: undefined,
+    };
     await expect(ploneGetVocabularies(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );

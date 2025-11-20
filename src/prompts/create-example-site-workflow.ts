@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type InferSchema, type PromptMetadata } from "xmcp";
+import type { InferSchema, PromptMetadata } from "xmcp";
 
 export const schema = {
   contentTypes: z
