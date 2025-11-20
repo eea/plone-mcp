@@ -4,7 +4,7 @@ import ploneGetNavigationTree from "plone-mcp/tools/plone_get_navigation_tree";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
-import { type InferSchema } from "xmcp";
+import type { InferSchema } from "xmcp";
 import { schema } from "plone-mcp/tools/plone_get_navigation_tree";
 
 describe("plone_get_navigation_tree", () => {

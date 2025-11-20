@@ -3,7 +3,7 @@ import { Nock } from "plone-mcp/tests/utils/test-helpers"; // Use Nock from test
 import ploneConfigure from "plone-mcp/tools/plone_configure";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client"; // Import PloneClient to check its instance
-import { type InferSchema } from "xmcp";
+import type { InferSchema } from "xmcp";
 import { headers } from "xmcp/headers";
 import { schema } from "plone-mcp/tools/plone_configure"; // Import schema for type inference
 

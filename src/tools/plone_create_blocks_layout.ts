@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "plone-mcp/session-manager";
 import { blockRegistry } from "plone-mcp/block-registry";

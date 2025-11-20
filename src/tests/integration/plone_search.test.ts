@@ -8,7 +8,7 @@ import ploneSearch from "plone-mcp/tools/plone_search";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
-import { type InferSchema } from "xmcp";
+import type { InferSchema } from "xmcp";
 import { schema } from "plone-mcp/tools/plone_search";
 
 describe("plone_search", () => {

@@ -10,7 +10,7 @@ import { PloneClient, PloneContent } from "plone-mcp/plone-client";
 import * as BlockUtils from "plone-mcp/utils/block-utils";
 import { PreparedBlocks } from "plone-mcp/plone-service";
 import { headers } from "xmcp/headers";
-import { type InferSchema } from "xmcp";
+import type { InferSchema } from "xmcp";
 import { schema } from "plone-mcp/tools/plone_create_content";
 
 vi.mock("xmcp/headers", () => ({

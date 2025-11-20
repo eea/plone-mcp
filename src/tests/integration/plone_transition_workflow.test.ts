@@ -8,7 +8,7 @@ import ploneTransitionWorkflow from "plone-mcp/tools/plone_transition_workflow";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
-import { type InferSchema } from "xmcp";
+import type { InferSchema } from "xmcp";
 import { schema } from "plone-mcp/tools/plone_transition_workflow";
 
 describe("plone_transition_workflow", () => {

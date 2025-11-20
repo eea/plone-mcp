@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import type { InferSchema, ToolMetadata } from "xmcp";
 import { blockRegistry } from "plone-mcp/block-registry";
 
 import { wrapError, getBlockExample } from "plone-mcp/utils/block-utils";

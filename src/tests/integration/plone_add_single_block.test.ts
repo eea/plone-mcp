@@ -9,7 +9,7 @@ import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
 import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import all from block-utils
 import { headers } from "xmcp/headers";
-import { type InferSchema } from "xmcp";
+import type { InferSchema } from "xmcp";
 import { schema } from "plone-mcp/tools/plone_add_single_block";
 
 vi.mock("xmcp/headers", () => ({
