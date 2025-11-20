@@ -1,48 +1,46 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "plone-mcp/tests/utils/test-helpers";
-import { PloneMockServer } from "plone-mcp/tests/utils/test-helpers";
-import ploneDeleteContent from "plone-mcp/tools/plone_delete_content";
-import { sessionManager } from "plone-mcp/session-manager";
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleWorkflowInfo,
+} from "plone-mcp/__tests__/utils/test-helpers";
+import ploneGetWorkflowInfo from "plone-mcp/tools/plone_get_workflow_info";
 import { PloneClient } from "plone-mcp/plone-client";
+import { sessionManager } from "plone-mcp/session-manager";
 import { headers } from "xmcp/headers";
 
-vi.mock("xmcp/headers", () => ({
-  headers: vi.fn(),
-}));
-
-describe("plone_delete_content", () => {
+describe("plone_get_workflow_info", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
-  const testPath = "/my-old-page";
+  const testPath = "/my-document";
+
   const sessionId = "test-session-id";
 
   beforeEach(() => {
+    mockServer = new PloneMockServer(testBaseUrl);
     vi.mocked(headers).mockReturnValue({
       "mcp-session-id": sessionId,
     });
-    mockServer = new PloneMockServer(testBaseUrl);
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
 
   afterEach(() => {
     Nock.cleanAll();
-    vi.clearAllMocks();
+    sessionManager.clearSession(sessionId);
   });
 
-  it("should successfully delete content", async () => {
-    mockServer.mockContentDelete(testPath);
+  it("should successfully retrieve workflow information", async () => {
+    mockServer.mockWorkflow(testPath, sampleWorkflowInfo);
 
     const args = { path: testPath };
-    const result = await ploneDeleteContent(args);
+    const result = await ploneGetWorkflowInfo(args);
 
-    expect(result.content[0].text).toContain(
-      `Successfully deleted content at path: ${testPath}`,
-    );
+    expect(JSON.parse(result.content[0].text)).toEqual(sampleWorkflowInfo);
     expect(Nock.isDone()).toBe(true);
   });
 
-  it("should throw an error if content deletion fails (e.g., 404 Not Found)", async () => {
+  it("should throw an error if workflow information retrieval fails", async () => {
     Nock(testBaseUrl, {
       reqheaders: {
         Accept: "application/json",
@@ -51,12 +49,12 @@ describe("plone_delete_content", () => {
         "accept-encoding": /.*/,
       },
     })
-      .delete(`/++api++${testPath}`)
+      .get(`/++api++${testPath}/@workflow`)
       .reply(404, "Not Found");
 
     const args = { path: testPath };
-    await expect(ploneDeleteContent(args)).rejects.toThrow(
-      "[DeleteContent] Request failed with status code 404",
+    await expect(ploneGetWorkflowInfo(args)).rejects.toThrow(
+      "[GetWorkflowInfo] Request failed with status code 404",
     );
     expect(Nock.isDone()).toBe(true);
   });
@@ -66,7 +64,7 @@ describe("plone_delete_content", () => {
     service.client = null;
 
     const args = { path: testPath };
-    await expect(ploneDeleteContent(args)).rejects.toThrow(
+    await expect(ploneGetWorkflowInfo(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
