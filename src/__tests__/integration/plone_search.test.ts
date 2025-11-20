@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "plone-mcp/tests/utils/test-helpers";
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
 import {
   PloneMockServer,
   sampleSearchResults,
-} from "plone-mcp/tests/utils/test-helpers";
+} from "plone-mcp/__tests__/utils/test-helpers";
 import ploneSearch from "plone-mcp/tools/plone_search";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";

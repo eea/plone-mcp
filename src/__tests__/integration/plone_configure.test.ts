@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { Nock } from "plone-mcp/tests/utils/test-helpers"; // Use Nock from test-helpers
+import { Nock } from "plone-mcp/__tests__/utils/test-helpers"; // Use Nock from test-helpers
 import ploneConfigure from "plone-mcp/tools/plone_configure";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client"; // Import PloneClient to check its instance
