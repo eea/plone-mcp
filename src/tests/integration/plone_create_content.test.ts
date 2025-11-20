@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Nock } from "plone-mcp/tests/utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "plone-mcp/tests/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleDocument,
+} from "plone-mcp/tests/utils/test-helpers";
 import ploneCreateContent from "plone-mcp/tools/plone_create_content";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient, PloneContent } from "plone-mcp/plone-client";
@@ -34,7 +37,9 @@ describe("plone_create_content", () => {
 
     // Mock headers to return the test session ID
     const mockedHeaders = {
-      get: vi.fn((name: string) => (name === "mcp-session-id" ? sessionId : undefined)),
+      get: vi.fn((name: string) =>
+        name === "mcp-session-id" ? sessionId : undefined,
+      ),
     };
 
     vi.mocked(headers).mockReturnValue(
@@ -149,15 +154,19 @@ describe("plone_create_content", () => {
     mockServer.mockContentCreate(
       parentPath,
       (body: PloneContent) => {
-        const titleBlockId = body.blocks_layout!.items[0];
-        expect(body.blocks!).toEqual({
-          [titleBlockId]: { "@type": "title" },
-          [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
-        });
-        expect(body.blocks_layout!.items).toEqual([
-          titleBlockId,
-          preparedBlockId,
-        ]);
+        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
+          const titleBlockId = body.blocks_layout.items[0];
+          expect(body.blocks).toEqual({
+            [titleBlockId]: { "@type": "title" },
+            [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+          });
+          expect(body.blocks_layout.items).toEqual([
+            titleBlockId,
+            preparedBlockId,
+          ]);
+        } else {
+          fail("blocks_layout or blocks were undefined");
+        }
         return true;
       },
       mockCreatedContent,
@@ -202,15 +211,19 @@ describe("plone_create_content", () => {
     mockServer.mockContentCreate(
       parentPath,
       (body: PloneContent) => {
-        const titleBlockId = body.blocks_layout!.items[0];
-        expect(body.blocks!).toEqual({
-          [titleBlockId]: { "@type": "title" },
-          ...inlineBlocks,
-        });
-        expect(body.blocks_layout!.items).toEqual([
-          titleBlockId,
-          ...inlineLayout.items,
-        ]);
+        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
+          const titleBlockId = body.blocks_layout.items[0];
+          expect(body.blocks).toEqual({
+            [titleBlockId]: { "@type": "title" },
+            ...inlineBlocks,
+          });
+          expect(body.blocks_layout.items).toEqual([
+            titleBlockId,
+            ...inlineLayout.items,
+          ]);
+        } else {
+          fail("blocks_layout or blocks were undefined");
+        }
         return true;
       },
       mockCreatedContent,
@@ -246,8 +259,8 @@ describe("plone_create_content", () => {
         expect(body.title).toBe("Page with Extra Fields");
         expect(body.effective).toBe(additionalFields.effective);
         expect(body.creators).toEqual(additionalFields.creators);
-        const titleBlockId = body.blocks_layout!.items[0];
-        expect(body.blocks![titleBlockId]).toEqual({ "@type": "title" });
+        const titleBlockId = body.blocks_layout.items[0];
+        expect(body.blocks[titleBlockId]).toEqual({ "@type": "title" });
         return true;
       },
       mockCreatedContent,
@@ -284,15 +297,19 @@ describe("plone_create_content", () => {
     mockServer.mockContentCreate(
       parentPath,
       (body: PloneContent) => {
-        const titleBlockId = body.blocks_layout!.items[0];
-        expect(body.blocks!).toEqual({
-          [titleBlockId]: { "@type": "title" },
-          [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
-        });
-        expect(body.blocks_layout!.items).toEqual([
-          titleBlockId,
-          preparedBlockId,
-        ]);
+        if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
+          const titleBlockId = body.blocks_layout.items[0];
+          expect(body.blocks).toEqual({
+            [titleBlockId]: { "@type": "title" },
+            [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
+          });
+          expect(body.blocks_layout.items).toEqual([
+            titleBlockId,
+            preparedBlockId,
+          ]);
+        } else {
+          fail("blocks_layout or blocks were undefined");
+        }
         return true;
       },
       500,

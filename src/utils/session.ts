@@ -40,7 +40,9 @@ export function getHeaderValue(
     (headers as Record<string, unknown>)[normalized] ??
     (headers as Record<string, unknown>)[name.toUpperCase()];
 
-  return normalizeValue(directCandidate as string | string[] | null | undefined);
+  return normalizeValue(
+    directCandidate as string | string[] | null | undefined,
+  );
 }
 
 /**

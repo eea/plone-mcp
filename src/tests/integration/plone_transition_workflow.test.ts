@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Nock } from "plone-mcp/tests/utils/test-helpers";
-import { PloneMockServer, sampleWorkflowInfo } from "plone-mcp/tests/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleWorkflowInfo,
+} from "plone-mcp/tests/utils/test-helpers";
 import ploneTransitionWorkflow from "plone-mcp/tools/plone_transition_workflow";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
@@ -37,7 +40,11 @@ describe("plone_transition_workflow", () => {
       sampleWorkflowInfo,
     );
 
-    const args: InferSchema<typeof schema> = { path: testPath, transition: transitionName, comment: undefined };
+    const args: InferSchema<typeof schema> = {
+      path: testPath,
+      transition: transitionName,
+      comment: undefined,
+    };
     const result = await ploneTransitionWorkflow(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleWorkflowInfo);
@@ -78,7 +85,11 @@ describe("plone_transition_workflow", () => {
       .post(`/++api++${testPath}/@workflow/${transitionName}`)
       .reply(400, "Bad Request");
 
-    const args: InferSchema<typeof schema> = { path: testPath, transition: transitionName, comment: undefined };
+    const args: InferSchema<typeof schema> = {
+      path: testPath,
+      transition: transitionName,
+      comment: undefined,
+    };
     await expect(ploneTransitionWorkflow(args)).rejects.toThrow(
       "[TransitionWorkflow] Request failed with status code 400",
     );
@@ -89,7 +100,11 @@ describe("plone_transition_workflow", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args: InferSchema<typeof schema> = { path: testPath, transition: transitionName, comment: undefined };
+    const args: InferSchema<typeof schema> = {
+      path: testPath,
+      transition: transitionName,
+      comment: undefined,
+    };
     await expect(ploneTransitionWorkflow(args)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );

@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Nock } from "plone-mcp/tests/utils/test-helpers";
-import { PloneMockServer, sampleDocument } from "plone-mcp/tests/utils/test-helpers";
+import {
+  PloneMockServer,
+  sampleDocument,
+} from "plone-mcp/tests/utils/test-helpers";
 import ploneUpdateContent from "plone-mcp/tools/plone_update_content";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
@@ -232,7 +235,14 @@ describe("plone_update_content", () => {
   });
 
   it("should throw an error if path is missing", async () => {
-    const args = { title: "New title" } as any; // Missing path, cast to any to bypass type check
+    type ArgsWithoutPath = Omit<InferSchema<typeof schema>, "path">;
+    const args: ArgsWithoutPath = {
+      title: "New title",
+      description: undefined,
+      blocks: undefined,
+      blocks_layout: undefined,
+      additionalFields: undefined,
+    };
     await expect(ploneUpdateContent(args)).rejects.toThrow(
       "Path is required for updating content",
     );

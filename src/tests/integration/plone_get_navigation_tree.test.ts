@@ -64,7 +64,10 @@ describe("plone_get_navigation_tree", () => {
       .query({ depth: customDepth })
       .reply(200, mockNavigationTree);
 
-    const args: InferSchema<typeof schema> = { root_path: customPath, depth: customDepth };
+    const args: InferSchema<typeof schema> = {
+      root_path: customPath,
+      depth: customDepth,
+    };
     const result = await ploneGetNavigationTree(args);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockNavigationTree);
@@ -78,7 +81,10 @@ describe("plone_get_navigation_tree", () => {
       .query({ depth: 2 })
       .reply(500, "Server Error");
 
-    const args: InferSchema<typeof schema> = { root_path: customPath, depth: 2 }; // Explicitly set depth to its default
+    const args: InferSchema<typeof schema> = {
+      root_path: customPath,
+      depth: 2,
+    }; // Explicitly set depth to its default
     await expect(ploneGetNavigationTree(args)).rejects.toThrow(
       "[GetNavigationTree] Request failed with status code 500",
     );

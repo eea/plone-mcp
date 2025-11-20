@@ -33,7 +33,6 @@ interface TestPreparedBlocks extends PreparedBlocks {
   blocks: Record<string, Block>;
 }
 
-
 describe("plone_create_blocks_layout", () => {
   const sessionId = "test-session-id";
 
@@ -70,15 +69,18 @@ describe("plone_create_blocks_layout", () => {
     const preparedBlocks = service.getPreparedBlocks();
 
     expect(preparedBlocks).not.toBeNull();
-    if (preparedBlocks) { // Type guard to narrow type
+    if (preparedBlocks) {
+      // Type guard to narrow type
       const typedPreparedBlocks = preparedBlocks as TestPreparedBlocks;
       expect(typedPreparedBlocks.blocks_layout.items.length).toBe(2);
       expect(typedPreparedBlocks.blocks["mock-id-1"]["@type"]).toBe("slate"); // 'text' type becomes 'slate'
-      expect((typedPreparedBlocks.blocks["mock-id-1"] as SlateBlock).plaintext).toBe("Hello World");
+      expect(
+        (typedPreparedBlocks.blocks["mock-id-1"] as SlateBlock).plaintext,
+      ).toBe("Hello World");
       expect(typedPreparedBlocks.blocks["mock-id-2"]["@type"]).toBe("slate");
-      expect((typedPreparedBlocks.blocks["mock-id-2"] as SlateBlock).plaintext).toBe(
-        "Another paragraph",
-      );
+      expect(
+        (typedPreparedBlocks.blocks["mock-id-2"] as SlateBlock).plaintext,
+      ).toBe("Another paragraph");
     }
   });
 
@@ -98,16 +100,21 @@ describe("plone_create_blocks_layout", () => {
     const preparedBlocks = service.getPreparedBlocks();
 
     expect(preparedBlocks).not.toBeNull();
-    if (preparedBlocks) { // Type guard
+    if (preparedBlocks) {
+      // Type guard
       const typedPreparedBlocks = preparedBlocks as TestPreparedBlocks;
       expect(typedPreparedBlocks.blocks_layout.items.length).toBe(2);
       expect(typedPreparedBlocks.blocks["mock-id-1"]["@type"]).toBe("slate");
-      expect((typedPreparedBlocks.blocks["mock-id-1"] as SlateBlock).plaintext).toBe("Intro");
+      expect(
+        (typedPreparedBlocks.blocks["mock-id-1"] as SlateBlock).plaintext,
+      ).toBe("Intro");
       expect(typedPreparedBlocks.blocks["mock-id-2"]["@type"]).toBe("teaser");
-      expect((typedPreparedBlocks.blocks["mock-id-2"] as TeaserBlock).title).toBe("My Teaser");
-      expect((typedPreparedBlocks.blocks["mock-id-2"] as TeaserBlock).href[0]["@id"]).toBe(
-        "/some-path",
-      );
+      expect(
+        (typedPreparedBlocks.blocks["mock-id-2"] as TeaserBlock).title,
+      ).toBe("My Teaser");
+      expect(
+        (typedPreparedBlocks.blocks["mock-id-2"] as TeaserBlock).href[0]["@id"],
+      ).toBe("/some-path");
     }
   });
 
@@ -124,7 +131,8 @@ describe("plone_create_blocks_layout", () => {
     const preparedBlocks = service.getPreparedBlocks();
 
     expect(preparedBlocks).not.toBeNull();
-    if (preparedBlocks) { // Type guard
+    if (preparedBlocks) {
+      // Type guard
       const typedPreparedBlocks = preparedBlocks as TestPreparedBlocks;
       expect(typedPreparedBlocks.blocks["mock-id-1"]["@type"]).toBe("image");
       expect((typedPreparedBlocks.blocks["mock-id-1"] as ImageBlock).url).toBe(

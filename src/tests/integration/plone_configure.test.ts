@@ -106,9 +106,9 @@ describe("plone_configure", () => {
       password: "badpassword",
     };
 
-    await expect(ploneConfigure(args as InferSchema<typeof schema>)).rejects.toThrow(
-      "[Configure] Request failed with status code 401",
-    );
+    await expect(
+      ploneConfigure(args as InferSchema<typeof schema>),
+    ).rejects.toThrow("[Configure] Request failed with status code 401");
     const service = sessionManager.getSession(sessionId);
     expect(service.client).toBeNull(); // Client should not be set on failure
     expect(Nock.isDone()).toBe(true); // Use Nock.isDone()
@@ -121,9 +121,9 @@ describe("plone_configure", () => {
       password: "admin",
     };
 
-    await expect(ploneConfigure(args as InferSchema<typeof schema>)).rejects.toThrow(
-      "[Configure] Invalid base URL: invalid-url",
-    );
+    await expect(
+      ploneConfigure(args as InferSchema<typeof schema>),
+    ).rejects.toThrow("[Configure] Invalid base URL: invalid-url");
     const service = sessionManager.getSession(sessionId);
     expect(service.client).toBeNull();
     expect(Nock.pendingMocks()).toHaveLength(0); // Use Nock.pendingMocks()
