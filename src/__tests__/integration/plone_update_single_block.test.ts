@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleDocument,
@@ -6,7 +7,6 @@ import { Nock ,
 import ploneUpdateSingleBlock from "plone-mcp/tools/plone_update_single_block";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import { headers } from "xmcp/headers";
 
 describe("plone_update_single_block", () => {
   let mockServer: PloneMockServer;

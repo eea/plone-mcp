@@ -1,9 +1,9 @@
 import { z } from "zod";
-import type { InferSchema, ResourceMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 
 import { sessionManager } from "plone-mcp/session-manager";
 import { getSessionId } from "plone-mcp/utils/session";
+import type { InferSchema, ResourceMetadata } from "xmcp";
 
 // Define the input schema for the resource
 export const schema = {

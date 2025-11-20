@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "plone-mcp/session-manager";
 import { blockRegistry } from "plone-mcp/block-registry";
@@ -12,6 +11,7 @@ import {
 } from "plone-mcp/utils/block-utils";
 import { PreparedBlocks } from "plone-mcp/plone-service";
 import { getSessionId } from "plone-mcp/utils/session";
+import type { InferSchema, ToolMetadata } from "xmcp";
 
 export const schema = {
   blocks: z

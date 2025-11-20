@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { headers } from "xmcp/headers";
 import {
   Nock,
   PloneMockServer,
@@ -10,7 +11,6 @@ import ploneAddSingleBlock, {
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
 import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import all from block-utils
-import { headers } from "xmcp/headers";
 import type { InferSchema } from "xmcp";
 
 vi.mock("xmcp/headers", () => ({

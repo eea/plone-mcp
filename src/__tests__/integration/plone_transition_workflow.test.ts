@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleWorkflowInfo,
@@ -6,7 +7,6 @@ import { Nock ,
 import ploneTransitionWorkflow, { schema } from "plone-mcp/tools/plone_transition_workflow";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import { headers } from "xmcp/headers";
 import type { InferSchema } from "xmcp";
 
 describe("plone_transition_workflow", () => {

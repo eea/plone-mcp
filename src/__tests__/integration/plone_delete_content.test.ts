@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock , PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
 import ploneDeleteContent from "plone-mcp/tools/plone_delete_content";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
-import { headers } from "xmcp/headers";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),

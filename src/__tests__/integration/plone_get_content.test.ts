@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleDocument,
@@ -6,7 +7,6 @@ import { Nock ,
 import ploneGetContent, { schema } from "plone-mcp/tools/plone_get_content";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
-import { headers } from "xmcp/headers";
 import type { InferSchema } from "xmcp";
 
 vi.mock("xmcp/headers", () => ({

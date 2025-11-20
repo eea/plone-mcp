@@ -1,11 +1,11 @@
 import { z } from "zod";
-import type { InferSchema, ToolMetadata } from "xmcp";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "plone-mcp/session-manager";
 
 import { wrapError } from "plone-mcp/utils/block-utils";
 import { PloneContent } from "plone-mcp/plone-client";
 import { getSessionId } from "plone-mcp/utils/session";
+import type { InferSchema, ToolMetadata } from "xmcp";
 
 export const schema = {
   parentPath: z

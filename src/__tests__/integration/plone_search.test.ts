@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleSearchResults,
@@ -6,7 +7,6 @@ import { Nock ,
 import ploneSearch, { schema } from "plone-mcp/tools/plone_search";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import { headers } from "xmcp/headers";
 import type { InferSchema } from "xmcp";
 
 describe("plone_search", () => {

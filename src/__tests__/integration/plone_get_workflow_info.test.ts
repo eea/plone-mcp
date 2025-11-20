@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleWorkflowInfo,
@@ -6,7 +7,6 @@ import { Nock ,
 import ploneGetWorkflowInfo from "plone-mcp/tools/plone_get_workflow_info";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import { headers } from "xmcp/headers";
 
 describe("plone_get_workflow_info", () => {
   let mockServer: PloneMockServer;

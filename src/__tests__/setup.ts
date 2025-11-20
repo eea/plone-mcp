@@ -1,6 +1,6 @@
 // Global test setup
-import { cleanupNock, Nock } from "plone-mcp/__tests__/utils/test-helpers";
 import { beforeAll, afterAll, afterEach, vi } from "vitest";
+import { cleanupNock, Nock } from "plone-mcp/__tests__/utils/test-helpers";
 
 // Disable actual HTTP requests during tests
 beforeAll(() => {

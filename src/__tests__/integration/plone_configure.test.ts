@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock } from "plone-mcp/__tests__/utils/test-helpers"; // Use Nock from test-helpers
 import ploneConfigure, { schema } from "plone-mcp/tools/plone_configure";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client"; // Import PloneClient to check its instance
 import type { InferSchema } from "xmcp";
-import { headers } from "xmcp/headers";
 
 vi.mock("xmcp/headers", () => ({
   headers: vi.fn(),

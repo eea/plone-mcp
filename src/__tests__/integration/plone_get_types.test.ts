@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { headers } from "xmcp/headers";
 import { Nock , PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
 import ploneGetTypes from "plone-mcp/tools/plone_get_types";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import { headers } from "xmcp/headers";
 
 describe("plone_get_types", () => {
   let mockServer: PloneMockServer;
