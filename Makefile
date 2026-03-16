@@ -1,4 +1,4 @@
-.PHONY: all format test type-check docker-build docker-run docker-clean build dev start inspector test-watch test-coverage test-unit test-unit-only lint
+.PHONY: all format test type-check docker-build docker-run docker-clean build dev start inspector test-watch test-coverage test-unit test-unit-only lint sanity-check-dev-server
 
 PNPM_BIN = $(shell pnpm root)/.bin
 
@@ -55,10 +55,18 @@ start: ## Start the HTTP server.
 	node dist/http.js
 
 dev: ## Start in development mode with hot reload.
-
 	$(PNPM_BIN)/xmcp dev
-inspector: ## Run with MCP Inspector.
-	$(PNPM_BIN)/mcp-inspector
+
+sanity-check-dev-server: ## Test if dev server is running on localhost:3001/mcp.
+	@echo "Testing dev server at http://localhost:3001/mcp..."
+	@curl -s -X POST http://localhost:3001/mcp \
+		-H "Content-Type: application/json" \
+		-H "Accept: application/json" \
+		-d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"sanity-check","version":"1.0.0"}}}' \
+		-w "\nHTTP Status: %{http_code}\n" | grep -E '"jsonrpc":"2.0"|HTTP Status: 200' && echo "✓ Dev server is responding correctly" || echo "✗ Dev server is not responding"
+
+inspector: ## Run with MCP Inspector on ports 4000/4001.
+	CLIENT_PORT=4000 SERVER_PORT=4001 npx @modelcontextprotocol/inspector node dist/http.js
 
 ci:	## teste, type-check, lint and format
 	make test

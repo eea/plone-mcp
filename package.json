@@ -18,9 +18,11 @@
   "main": "dist/http.js",
   "author": "",
   "license": "MIT",
+  "unused": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
   "dependencies": {
     "@modelcontextprotocol/inspector": "^0.17.2",
-    "@modelcontextprotocol/sdk": "^1.0.0",
     "axios": "^1.6.0",
     "isomorphic-fetch": "^3.0.0",
     "remark-gfm": "^4.0.1",
@@ -29,7 +31,7 @@
     "unified": "^11.0.5",
     "uuid": "^11.1.0",
     "xmcp": "^0.6.5",
-    "zod": "^3.25.76"
+    "zod": "^4.0.10"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

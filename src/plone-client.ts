@@ -7,15 +7,6 @@ export const ENV_USERNAME = "PLONE_USERNAME";
 export const ENV_PASSWORD = "PLONE_PASSWORD";
 export const ENV_TOKEN = "PLONE_TOKEN";
 
-// Helper for optional non-empty strings with environment variable fallback
-export const optionalNonEmpty = (envVar: string) =>
-  z
-    .string()
-    .optional()
-    .refine((val) => !val || val.trim() !== "", {
-      message: `Cannot be empty string. Omit field to use ${envVar} environment variable.`,
-    });
-
 // Helper to validate URL format
 export const isValidUrl = (url: string): boolean => {
   try {
@@ -27,16 +18,13 @@ export const isValidUrl = (url: string): boolean => {
 };
 
 // Configuration schema - all fields are optional to allow environment variable fallback
+// Note: Using simple optional() without refine() to avoid Zod version compatibility issues
+// with xmcp's bundled Zod. Validation is done in resolveConfig() instead.
 export const ConfigSchema = z.object({
-  baseUrl: optionalNonEmpty(ENV_BASE_URL).refine(
-    (val) => !val || isValidUrl(val),
-    {
-      message: "Must be a valid URL (e.g., https://example.com)",
-    },
-  ),
-  username: optionalNonEmpty(ENV_USERNAME),
-  password: optionalNonEmpty(ENV_PASSWORD),
-  token: optionalNonEmpty(ENV_TOKEN),
+  baseUrl: z.string().optional(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  token: z.string().optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -52,6 +40,28 @@ export type Config = z.infer<typeof ConfigSchema>;
  * - PLONE_TOKEN: JWT token for authentication
  */
 export function resolveConfig(config: Config): Config & { baseUrl: string } {
+  // Validate that string values are not empty
+  if (config.baseUrl !== undefined && config.baseUrl.trim() === "") {
+    throw new Error(
+      "baseUrl cannot be an empty string. Omit the parameter to use PLONE_BASE_URL environment variable.",
+    );
+  }
+  if (config.username !== undefined && config.username.trim() === "") {
+    throw new Error(
+      "username cannot be an empty string. Omit the parameter to use PLONE_USERNAME environment variable.",
+    );
+  }
+  if (config.password !== undefined && config.password.trim() === "") {
+    throw new Error(
+      "password cannot be an empty string. Omit the parameter to use PLONE_PASSWORD environment variable.",
+    );
+  }
+  if (config.token !== undefined && config.token.trim() === "") {
+    throw new Error(
+      "token cannot be an empty string. Omit the parameter to use PLONE_TOKEN environment variable.",
+    );
+  }
+
   const baseUrl = config.baseUrl || process.env[ENV_BASE_URL];
   const username = config.username || process.env[ENV_USERNAME];
   const password = config.password || process.env[ENV_PASSWORD];

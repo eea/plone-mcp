@@ -5,7 +5,9 @@ import { wrapError } from "plone-mcp/utils/block-utils";
 import { getSessionId } from "plone-mcp/utils/session";
 import type { InferSchema, ToolMetadata } from "xmcp";
 
-export const schema = {};
+export const schema = {
+  // No parameters required
+};
 
 export const metadata: ToolMetadata = {
   name: "plone_get_types",

@@ -1,16 +1,8 @@
 /// <reference types="node" />
-import { readFileSync } from "fs";
-import { join } from "path";
+import blocksJson from "./blocks.json";
 
 // Load block specifications from JSON
-export const blocksSpecification = (() => {
-  try {
-    return JSON.parse(readFileSync(join(__dirname, "blocks.json"), "utf-8"));
-  } catch (error) {
-    console.error("Error loading blocks specification:", error);
-    return;
-  }
-})();
+export const blocksSpecification = blocksJson;
 
 /**
  * BlockRegistry for centralizing block type management
