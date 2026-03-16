@@ -7,7 +7,7 @@ This project was created with [create-xmcp-app](https://github.com/basementstudi
 First, run the development server:
 
 ```bash
-pnpm xmcp-dev
+pnpm dev
 ```
 
 This will start the MCP server with the selected transport method.
@@ -16,9 +16,38 @@ This will start the MCP server with the selected transport method.
 
 This project uses the structured approach where tools, prompts, and resources are automatically discovered from their respective directories:
 
+```
+my-project/
+├── src/
+│   ├── middleware.ts   # Middleware for http request/response processing
+│   └── tools/          # Tool files are auto-discovered here
+│       ├── greet.ts
+│       ├── search.ts
+│   └── prompts/        # Prompt files are auto-discovered here
+│       ├── review-code.ts
+│       ├── team-greeting.ts
+│   └── resources/      # Resource files are auto-discovered here
+│       ├── (config)/app.ts
+│       ├── (users)/[userId]/profile.ts
+├── dist/               # Built output (generated)
+├── package.json
+├── tsconfig.json
+└── xmcp.config.ts      # Configuration file for xmcp
+```
+
 - `src/tools` - Tool definitions
 - `src/prompts` - Prompt templates
 - `src/resources` - Resource handlers
+
+## Scripts
+
+The following scripts are available:
+
+- `xmcp dev` - Starts the development server. This listens for changes and automatically reloads the server.
+- `xmcp build` - Builds the application for production. This will create a `dist` directory with the compiled code.
+- `node dist/[transport].js` - Starts the production server. This is the server that will be used in production.
+
+Based on the transport you've chosen when bootstrapping your project, the `[transport]` placeholder will be replaced with the appropriate one (`http` or `stdio`).
 
 ### Tools
 
@@ -26,13 +55,15 @@ Each tool is defined in its own file with the following structure:
 
 ```typescript
 import { z } from "zod";
-import { type InferSchema, type ToolMetadata } from "xmcp";
+import { type InferSchema } from "xmcp";
 
+// Define the schema for tool parameters
 export const schema = {
   name: z.string().describe("The name of the user to greet"),
 };
 
-export const metadata: ToolMetadata = {
+// Define tool metadata
+export const metadata = {
   name: "greet",
   description: "Greet the user",
   annotations: {
@@ -43,7 +74,20 @@ export const metadata: ToolMetadata = {
   },
 };
 
-export default function greet({ name }: InferSchema<typeof schema>) {
+// Tool implementation
+export default async function greet({ name }: InferSchema<typeof schema>) {
+  const result = `Hello, ${name}!`;
+
+  return {
+    content: [{ type: "text", text: result }],
+  };
+}
+```
+
+If you're returning a string or number only, you can shortcut the return value:
+
+```typescript
+export default async function greet({ name }: InferSchema<typeof schema>) {
   return `Hello, ${name}!`;
 }
 ```
@@ -130,7 +174,7 @@ To add a new resource:
 To build your project for production:
 
 ```bash
-pnpm build-xmcp
+pnpm build
 ```
 
 This will compile your TypeScript code and output it to the `dist` directory.
@@ -147,13 +191,96 @@ Given the selected transport method, you will have a custom start script added t
 For HTTP:
 
 ```bash
-pnpm start-xmcp
+pnpm dev
 ```
 
 For STDIO:
 
 ```bash
-pnpm start-stdio
+pnpm start
+```
+
+Or directly:
+
+```bash
+node dist/stdio.js
+```
+
+## Connecting to Your Server
+
+### HTTP Transport
+
+By default, xmcp will use port `3001`. If you're using a different port, you can change it in your `xmcp.config.ts` file.
+
+**Cursor:**
+
+```json
+{
+  "mcpServers": {
+    "my-project": {
+      "url": "http://localhost:3001/mcp"
+    }
+  }
+}
+```
+
+**Claude Desktop:**
+
+```json
+{
+  "mcpServers": {
+    "my-project": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:3001/mcp"]
+    }
+  }
+}
+```
+
+### STDIO Transport
+
+For STDIO transport with local development:
+
+```json
+{
+  "mcpServers": {
+    "my-project": {
+      "command": "node",
+      "args": ["/ABSOLUTE/PATH/TO/my-project/dist/stdio.js"]
+    }
+  }
+}
+```
+
+## Troubleshooting
+
+If you encounter issues when running the built server, make sure the transport is matching the configured one in `xmcp.config.ts`.
+
+If you're working with HTTP, your configuration should look like this:
+
+```typescript title="xmcp.config.ts"
+const config: XmcpConfig = {
+  http: true,
+};
+```
+
+If you're working with STDIO, your configuration should look like this:
+
+```typescript title="xmcp.config.ts"
+const config: XmcpConfig = {
+  stdio: true,
+};
+```
+
+You can have both transports configured, but you'll need to update the scripts to match them. For example:
+
+```json title="package.json"
+{
+  "scripts": {
+    "start:http": "node dist/http.js",
+    "start:stdio": "node dist/stdio.js"
+  }
+}
 ```
 
 ## Learn More
