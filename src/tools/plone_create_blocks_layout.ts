@@ -21,7 +21,7 @@ export const schema = {
           .enum(blockRegistry.getBlockTypesEnum())
           .describe("Type of block to create"),
         data: z
-          .record(z.unknown())
+          .record(z.string(), z.unknown())
           .describe("Block-specific data following the block specification"),
         position: z
           .number()

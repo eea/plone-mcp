@@ -11,15 +11,15 @@ export const schema = {
   title: z.string().optional().describe("New title"),
   description: z.string().optional().describe("New description"),
   blocks: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe("Volto blocks structure for the content"),
   blocks_layout: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe("Volto blocks layout configuration"),
   additionalFields: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe(
       "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",

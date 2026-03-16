@@ -27,19 +27,19 @@ export const schema = {
       "ID for the new content (optional, will be auto-generated if not provided)",
     ),
   blocks: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe(
       "Volto blocks structure for the content, it specifies the blocks data and content",
     ),
   blocks_layout: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe(
       "Volto blocks layout configuration, it specifies the order of blocks",
     ),
   additionalFields: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .describe(
       "Additional fields to update. For preview images, include preview_image_link: { '@id': 'image-url' } in this object (if you get a 400 error, make sure the image URL is accessible).",

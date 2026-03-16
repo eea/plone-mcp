@@ -10,7 +10,7 @@ import type { InferSchema, ToolMetadata } from "xmcp";
 export const schema = {
   path: z.string().describe("Path to the content"),
   blockId: z.string().describe("ID of the block to update"),
-  blockData: z.record(z.unknown()).describe("New block data"),
+  blockData: z.record(z.string(), z.unknown()).describe("New block data"),
 };
 
 export const metadata: ToolMetadata = {

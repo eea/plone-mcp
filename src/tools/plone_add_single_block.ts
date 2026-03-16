@@ -17,7 +17,7 @@ export const schema = {
   blockType: z
     .enum(blockRegistry.getBlockTypesEnum())
     .describe("Type of block to add"),
-  blockData: z.record(z.unknown()).describe("Block-specific data"),
+  blockData: z.record(z.string(), z.unknown()).describe("Block-specific data"),
   position: z
     .number()
     .optional()
