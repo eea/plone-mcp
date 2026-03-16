@@ -28,7 +28,7 @@
     "remark-supersub": "^1.0.0",
     "unified": "^11.0.5",
     "uuid": "^11.1.0",
-    "xmcp": "^0.4.0",
+    "xmcp": "^0.6.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -56,5 +56,5 @@
     "typescript-eslint": "^8.47.0",
     "vitest": "^4.0.8"
   },
-  "packageManager": "pnpm@10.22.0"
+  "packageManager": "pnpm@10.32.1"
 }
