@@ -13,7 +13,7 @@ export const schema = {
   home_page: z.string().optional().describe("New home page URL"),
   location: z.string().optional().describe("New location"),
   roles: z
-    .record(z.boolean())
+    .record(z.string(), z.boolean())
     .optional()
     .describe(
       "Roles to add or remove, as an object mapping role names to booleans (e.g., {Contributor: true, Editor: false})",

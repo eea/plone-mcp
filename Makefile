@@ -66,7 +66,7 @@ sanity-check-dev-server: ## Test if dev server is running on localhost:3001/mcp.
 		-w "\nHTTP Status: %{http_code}\n" | grep -E '"jsonrpc":"2.0"|HTTP Status: 200' && echo "✓ Dev server is responding correctly" || echo "✗ Dev server is not responding"
 
 inspector: ## Run with MCP Inspector on ports 4000/4001.
-	CLIENT_PORT=4000 SERVER_PORT=4001 npx @modelcontextprotocol/inspector node dist/http.js
+	DANGEROUSLY_OMIT_AUTH=true CLIENT_PORT=4000 SERVER_PORT=4001 npx @modelcontextprotocol/inspector node dist/http.js
 
 ci:	## teste, type-check, lint and format
 	make test
