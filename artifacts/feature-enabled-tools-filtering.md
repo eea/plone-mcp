@@ -1,6 +1,6 @@
-# Feature Specification: Enabled Tools Filtering (`ENABLED_TOOLS`)
+# Feature: Enabled Tools Filtering (IMPLEMENTED)
 
-This document describes the implementation of the tool filtering feature in the Plone MCP Server, allowing users to restrict which tools are advertised to MCP clients (like Claude Desktop).
+This feature allows administrators to restrict the set of tools exposed by the MCP server to clients. It is useful for security, simplifying the AI's action space, or tailoring the server for specific use cases.
 
 ## Overview
 
@@ -20,51 +20,53 @@ The feature is controlled by the `ENABLED_TOOLS` environment variable:
 ## Implementation Details
 
 ### The Challenge
-The server is built with the `xmcp` framework, which automatically discovers all tools in the `src/tools/` directory and registers them with the underlying `@modelcontextprotocol/sdk` server. Because this discovery happens during the build/initialization phase, filtering the tools "at the source" would require modifying the framework or the project's file structure.
+The server is built with the `xmcp` framework, which uses a specialized `StatelessStreamableHTTPTransport`. This transport writes directly to the Node.js `res.writeHead` and `res.end` methods, bypassing standard Express `res.send` or `res.json` hooks in many cases.
 
-### The Solution: JSON-RPC Interception
-To make tools truly disappear from the client's perspective (including the LLM's context), we intercept the MCP `tools/list` response before it is sent over the HTTP transport.
+### The Solution: Low-Level Interception
+The implementation uses a robust "Response Interceptor" pattern in `src/middleware.ts` that works at the Node.js `http.ServerResponse` level.
 
-#### 1. Framework Integration
-The `xmcp` framework provides a hook for custom Express-style middlewares via the `./src/middleware.ts` file. If this file exists, the `xmcp` compiler automatically bundles and injects it into the server's request-handling pipeline.
+#### 1. Middleware Injection
+The `xmcp` framework automatically bundles `./src/middleware.ts` and injects it into the server's request-handling pipeline if the file exists.
 
-#### 2. Filtering Middleware (`src/middleware.ts`)
-The implementation uses a "Response Interceptor" pattern:
+#### 2. Robust Interception (`src/middleware.ts`)
+The middleware overrides the core methods of the `res` object:
 
-1.  **Read Environment:** It reads and parses the `ENABLED_TOOLS` environment variable.
-2.  **Intercept `res.send`:** It wraps the standard Express `res.send` method.
-3.  **Identify JSON-RPC:** It checks if the outgoing response is an `application/json` payload.
-4.  **Filter `tools/list`:**
-    - It parses the response body to identify the MCP `tools/list` JSON-RPC result.
-    - It filters the `result.tools` array, removing any tool whose name is not in the allowed list.
-    - It updates the `Content-Length` header to match the new, smaller payload.
-5.  **Transparent Passthrough:** All other requests and responses pass through unchanged.
+1.  **`res.writeHead`**: Intercepted to remove `Content-Length` headers. Since the middleware might modify the body size (by filtering out tools), the original `Content-Length` would be incorrect and cause the client to hang or error.
+2.  **`res.write`**: Intercepted to buffer response chunks.
+3.  **`res.end`**: Intercepted to:
+    - Collect all chunks into a complete body string.
+    - Parse the body as JSON.
+    - Identify if it's an MCP `tools/list` response.
+    - Filter the `result.tools` array based on the `ENABLED_TOOLS` whitelist.
+    - Call the original `res.end` with the modified (or original) body.
 
-### Code Structure
+## Verification
 
-```typescript
-// src/middleware.ts logic (simplified)
-export default function toolsFilterMiddleware(req, res, next) {
-  const enabledToolsEnv = process.env.ENABLED_TOOLS;
-  if (!enabledToolsEnv) return next();
+The feature has been verified with the following steps:
 
-  const originalSend = res.send;
-  res.send = function (body) {
-    // 1. Detect JSON-RPC response
-    // 2. Parse body
-    // 3. Filter result.tools based on enabledTools + "plone_configure"
-    // 4. Update Content-Length and call originalSend
-  };
-  next();
-}
+1.  **Start Server with Filter**:
+    ```bash
+    ENABLED_TOOLS=plone_configure,plone_get_content,plone_search node dist/http.js
+    ```
+2.  **Query Tool List**:
+    ```bash
+    curl -s -X POST http://localhost:3001/mcp \
+      -H "Content-Type: application/json" \
+      -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}' | jq .result.tools[].name
+    ```
+3.  **Expected Output**:
+    ```
+    "plone_configure"
+    "plone_get_content"
+    "plone_search"
+    ```
+
+## Makefile Integration
+
+The following target is available for development testing:
+
+```bash
+make dev-filtered
 ```
 
-## Benefits of this Approach
-- **Zero-Config required for Tools:** No changes are needed to individual tool files.
-- **Client Agnostic:** Works with any MCP client (Claude Desktop, MCP Inspector, etc.) because it operates at the protocol level.
-- **LLM Safety:** Since the tools are not advertised, the LLM will never attempt to call them, as they do not exist in its "tool belt."
-- **Performance:** Reduces the size of the initial handshake/context window by only sending relevant tool definitions.
-
-## Maintenance Notes
-- This implementation relies on the fact that `xmcp` uses Express for its HTTP transport.
-- If the transport is changed to STDIO, this specific middleware will not run (as it's an Express middleware). However, the current project is optimized for HTTP transport.
+This target runs the development server with a limited toolset (`plone_configure`, `plone_get_content`, `plone_search`).

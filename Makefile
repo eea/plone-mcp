@@ -58,7 +58,7 @@ dev: ## Start in development mode with hot reload.
 	$(PNPM_BIN)/xmcp dev
 
 dev-filtered: ## Start in development mode with only basic tools enabled (configure, get, search).
-	ENABLED_TOOLS=plone_configure,plone_get_content,plone_search $(PNPM_BIN)/xmcp dev
+	export ENABLED_TOOLS=plone_configure,plone_get_content,plone_search; $(PNPM_BIN)/xmcp dev
 
 sanity-check-dev-server: ## Test if dev server is running on localhost:3001/mcp.
 	@echo "Testing dev server at http://localhost:3001/mcp..."
