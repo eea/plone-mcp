@@ -37,4 +37,4 @@ export const clientBundles = {
 
 };
 
-
+export const middleware = () => import("../src/middleware.ts");
