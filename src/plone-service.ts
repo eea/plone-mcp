@@ -1,5 +1,8 @@
 import { PloneClient } from "plone-mcp/plone-client";
-import { generateBlockId } from "plone-mcp/utils/block-utils";
+import {
+  generateBlockId,
+  processBlock,
+} from "plone-mcp/utils/block-utils";
 
 export interface PreparedBlocks {
   blocks: Record<string, unknown>;
@@ -83,12 +86,21 @@ export class PloneService {
     let finalLayout: string[] = [];
 
     if (hasProvidedBlocks) {
-      finalBlocks = {
-        ...(blocks || {}),
-      };
+      const rawBlocks = blocks || {};
+      finalBlocks = {};
       const layoutItems = (blocks_layout as { items?: string[] } | undefined)
         ?.items;
-      finalLayout = layoutItems ? [...layoutItems] : Object.keys(finalBlocks);
+      finalLayout = layoutItems ? [...layoutItems] : Object.keys(rawBlocks);
+
+      // Process each provided block
+      const baseUrl = this.client?.config.baseUrl;
+      for (const id of finalLayout) {
+        if (rawBlocks[id]) {
+          const blockData = rawBlocks[id] as Record<string, unknown>;
+          const blockType = (blockData["@type"] as string) || "text";
+          finalBlocks[id] = processBlock(blockType, blockData, baseUrl);
+        }
+      }
     } else if (hasPreparedBlocks && preparedBlocks) {
       finalBlocks = { ...preparedBlocks.blocks };
       finalLayout = [...preparedBlocks.blocks_layout.items];

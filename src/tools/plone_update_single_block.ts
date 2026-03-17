@@ -2,7 +2,10 @@ import { z } from "zod";
 import { headers } from "xmcp/headers";
 import { sessionManager } from "plone-mcp/session-manager";
 
-import { wrapError } from "plone-mcp/utils/block-utils";
+import {
+  wrapError,
+  processBlock,
+} from "plone-mcp/utils/block-utils";
 import { PloneContent } from "plone-mcp/plone-client";
 import { getSessionId } from "plone-mcp/utils/session";
 import type { InferSchema, ToolMetadata } from "xmcp";
@@ -56,10 +59,16 @@ export default async function ploneUpdateSingleBlock(
     }
 
     // Update the specific block
-    blocks[blockId] = {
-      ...blocks[blockId],
-      ...blockData,
-    };
+    const existingBlock = blocks[blockId] as Record<string, unknown>;
+    const blockType =
+      (blockData["@type"] as string) || (existingBlock["@type"] as string);
+    const mergedData = { ...existingBlock, ...blockData };
+
+    blocks[blockId] = processBlock(
+      blockType,
+      mergedData,
+      client.config.baseUrl,
+    );
 
     // Update the content
     const updatedContent = (await client.patch(path, {

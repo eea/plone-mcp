@@ -17,6 +17,9 @@ export const tools = {
 "src/tools/plone_transition_workflow.ts": () => import("../src/tools/plone_transition_workflow.ts"),
 "src/tools/plone_update_content.ts": () => import("../src/tools/plone_update_content.ts"),
 "src/tools/plone_update_single_block.ts": () => import("../src/tools/plone_update_single_block.ts"),
+"src/tools/plone_create_user.ts": () => import("../src/tools/plone_create_user.ts"),
+"src/tools/plone_update_user.ts": () => import("../src/tools/plone_update_user.ts"),
+"src/tools/plone_get_type_schema.ts": () => import("../src/tools/plone_get_type_schema.ts"),
 };
 
 export const prompts = {

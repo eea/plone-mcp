@@ -3,6 +3,21 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { markdownParse } from "plone-mcp/markdown-parser";
 
+export interface BlockProcessingContext {
+  processBlock: (
+    type: string,
+    data: Record<string, unknown>,
+  ) => Record<string, unknown>;
+  normalizeHref: (href: any, blockType: string) => Array<{ "@id": string }>;
+  generateBlockId: () => string;
+  wrapError: (operation: string, error: unknown) => Error;
+}
+
+export type BlockProcessor = (
+  blockData: Record<string, unknown>,
+  context: BlockProcessingContext,
+) => Record<string, unknown>;
+
 export function wrapError(operation: string, error: unknown): Error {
   if (error instanceof z.ZodError) {
     return new Error(`[${operation}] Invalid parameters: ${error.message}`);
@@ -14,6 +29,48 @@ export function wrapError(operation: string, error: unknown): Error {
 
 export function generateBlockId(): string {
   return uuidv4();
+}
+
+/**
+ * Normalize relative URLs to absolute URLs using the configured base URL
+ * Note: Since this is in utils, we'd need to pass the base URL or have access to it.
+ * For now, we'll keep it as-is or pass it in context.
+ */
+export function normalizeUrl(url: string, baseUrl?: string): string {
+  if (baseUrl && url.startsWith("/") && !url.startsWith("//")) {
+    return `${baseUrl}${url}`;
+  }
+  return url;
+}
+
+/**
+ * Normalize href values to the required array format and convert relative URLs to absolute
+ */
+export function normalizeHref(
+  href: any,
+  blockType: string,
+  baseUrl?: string,
+): Array<{ "@id": string }> {
+  if (typeof href === "string") {
+    return [{ "@id": normalizeUrl(href, baseUrl) }];
+  }
+
+  if (Array.isArray(href)) {
+    if (href.length === 0) {
+      throw wrapError("ProcessBlock", `href cannot be empty for ${blockType} block`);
+    }
+
+    if (href[0]?.["@id"]) {
+      return [{ ...href[0], "@id": normalizeUrl(href[0]["@id"], baseUrl) }];
+    }
+
+    return href;
+  }
+
+  throw wrapError(
+    "ProcessBlock",
+    `Invalid href format for ${blockType} block. Expected string or array, got: ${typeof href}`,
+  );
 }
 
 // Validate if the url is an image address, to avoid creation of blank image blocks
@@ -44,67 +101,230 @@ export async function validateImageURL(url: string): Promise<boolean> {
   }
 }
 
+// =============================================================================
+// Block Processors
+// =============================================================================
+
 /**
- * Process a block
+ * Process slate/text block
+ */
+function processSlateBlock(
+  blockData: Record<string, unknown>,
+  _context: BlockProcessingContext,
+): Record<string, unknown> {
+  // If 'text' is provided, always derive value from it.
+  if (blockData.text !== undefined) {
+    const textContent = (blockData.text as string) || "";
+    return {
+      "@type": "slate",
+      ...blockData,
+      plaintext: textContent,
+      value: markdownParse(textContent),
+    };
+  }
+
+  // If 'value' is already provided, trust it
+  if (blockData.value !== undefined) {
+    return {
+      "@type": "slate",
+      ...blockData,
+    };
+  }
+
+  // If 'plaintext' is provided, derive value from it
+  if (blockData.plaintext !== undefined) {
+    const textContent = (blockData.plaintext as string) || "";
+    return {
+      "@type": "slate",
+      ...blockData,
+      value: markdownParse(textContent),
+    };
+  }
+
+  return {
+    "@type": "slate",
+    ...blockData,
+    plaintext: "",
+    value: markdownParse(""),
+  };
+}
+
+
+/**
+ * Process image block
+ */
+function processImageBlock(
+  blockData: Record<string, unknown>,
+  context: BlockProcessingContext,
+): Record<string, unknown> {
+  if (
+    !blockData?.url ||
+    typeof blockData.url !== "string" ||
+    !blockData.url.trim()
+  ) {
+    throw context.wrapError(
+      "ProcessBlock",
+      `Missing or invalid image URL: ${String(blockData?.url)}`,
+    );
+  }
+  return { ...blockData, "@type": "image" };
+}
+
+/**
+ * Process teaser block
+ */
+function processTeaserBlock(
+  blockData: Record<string, unknown>,
+  context: BlockProcessingContext,
+): Record<string, unknown> {
+  const processedData: Record<string, unknown> = {
+    ...blockData,
+    "@type": "teaser",
+  };
+
+  if (blockData.href) {
+    processedData.href = context.normalizeHref(blockData.href, "teaser");
+  }
+
+  return processedData;
+}
+
+/**
+ * Process button block
+ */
+function processButtonBlock(
+  blockData: Record<string, unknown>,
+  context: BlockProcessingContext,
+): Record<string, unknown> {
+  const processedData: Record<string, unknown> = {
+    ...blockData,
+    "@type": "__button",
+  };
+
+  if (blockData.href) {
+    processedData.href = context.normalizeHref(blockData.href, "__button");
+  }
+
+  return processedData;
+}
+
+/**
+ * Process child blocks within a container (used by gridBlock, Accordion, etc.)
+ */
+function processChildBlocks(
+  blocks: Record<string, unknown>,
+  blockOrder: string[],
+  parentBlockType: string,
+  context: BlockProcessingContext,
+): { blocks: Record<string, unknown>; blockIds: string[] } {
+  const processedBlocks: Record<string, unknown> = {};
+  const blockIds: string[] = [];
+
+  // Process blocks in the order specified by blockOrder
+  for (const originalBlockId of blockOrder) {
+    const childBlockData = blocks[originalBlockId] as Record<string, unknown>;
+    if (!childBlockData) {
+      continue; // Skip if block doesn't exist
+    }
+
+    const childType = childBlockData["@type"] as string;
+
+    if (!childType) {
+      throw context.wrapError(
+        "ProcessBlock",
+        `${parentBlockType} child blocks must have an @type field`,
+      );
+    }
+
+    const newBlockId = context.generateBlockId();
+    processedBlocks[newBlockId] = context.processBlock(
+      childType,
+      childBlockData,
+    );
+    blockIds.push(newBlockId);
+  }
+
+  return { blocks: processedBlocks, blockIds };
+}
+
+/**
+ * Process gridBlock
+ */
+function processGridBlock(
+  blockData: Record<string, unknown>,
+  context: BlockProcessingContext,
+): Record<string, unknown> {
+  const processedData: Record<string, unknown> = {
+    ...blockData,
+    "@type": "gridBlock",
+  };
+
+  if (!blockData.blocks || typeof blockData.blocks !== "object") {
+    return processedData;
+  }
+
+  const innerBlocks = blockData.blocks as Record<string, unknown>;
+  const blocksLayout = blockData.blocks_layout as
+    | { items?: string[] }
+    | undefined;
+
+  // Get block order from blocks_layout if available, otherwise use object keys
+  const blockOrder: string[] = blocksLayout?.items || Object.keys(innerBlocks);
+
+  const { blocks, blockIds } = processChildBlocks(
+    innerBlocks,
+    blockOrder,
+    "gridBlock",
+    context,
+  );
+  processedData.blocks = blocks;
+  processedData.blocks_layout = { items: blockIds };
+
+  return processedData;
+}
+
+/**
+ * Default processor for blocks without specific handlers
+ */
+export function processDefaultBlock(
+  blockData: Record<string, unknown>,
+  blockType: string,
+): Record<string, unknown> {
+  return { ...blockData, "@type": blockType };
+}
+
+/**
+ * Registry mapping block types to their handlers
+ */
+const blockProcessors: Record<string, BlockProcessor> = {
+  slate: processSlateBlock,
+  text: processSlateBlock,
+  image: processImageBlock,
+  teaser: processTeaserBlock,
+  __button: processButtonBlock,
+  gridBlock: processGridBlock,
+};
+
+/**
+ * Process a block using the registry and providing context
  */
 export function processBlock(
   blockType: string,
   blockData: Record<string, unknown>,
+  baseUrl?: string,
 ): Record<string, unknown> {
-  if (blockType === "slate" || blockType === "text") {
-    // Convert text block to Slate format
-    const textContent = (blockData.text as string) || "";
-    return {
-      "@type": "slate",
-      plaintext: textContent,
-      value: markdownParse(textContent),
-      theme: (blockData.theme as string) || "default",
-    };
-  } else if (blockType === "image") {
-    // Basic validation for required fields
-    if (
-      !blockData ||
-      typeof blockData.url !== "string" ||
-      blockData.url.trim() === ""
-    ) {
-      throw wrapError(
-        "ProcessBlock",
-        `Missing or invalid image URL: ${String(blockData?.url)}`,
-      );
-    }
-    return {
-      ...blockData,
-      "@type": "image",
-    };
-  } else if (blockType === "teaser" || blockType === "__button") {
-    // Transform href to required array format if it's a string
-    const processedData: Record<string, unknown> = {
-      ...blockData,
-      "@type": blockType,
-    };
+  const context: BlockProcessingContext = {
+    processBlock: (type, data) => processBlock(type, data, baseUrl),
+    normalizeHref: (href, type) => normalizeHref(href, type, baseUrl),
+    generateBlockId,
+    wrapError,
+  };
 
-    if (blockData.href) {
-      if (typeof blockData.href === "string") {
-        // Convert string href to required array format
-        processedData.href = [{ "@id": blockData.href }];
-      } else if (Array.isArray(blockData.href)) {
-        // Already in array format, keep as-is
-        processedData.href = blockData.href;
-      } else {
-        throw wrapError(
-          "ProcessBlock",
-          `Invalid href format for ${blockType} block. Expected string or array, got: ${typeof blockData.href}`,
-        );
-      }
-    }
-
-    return processedData;
-  } else {
-    return {
-      ...blockData,
-      "@type": blockType,
-    };
+  const processor = blockProcessors[blockType];
+  if (processor) {
+    return processor(blockData, context);
   }
+  return processDefaultBlock(blockData, blockType);
 }
 
 /**
@@ -165,6 +385,35 @@ export function getBlockExample(blockType: string): unknown {
     image: {
       url: "https:/example.com/images/logo.png",
       alt: "Logo",
+    },
+    gridBlock: {
+      blocks: {
+        "block-1": {
+          "@type": "teaser",
+          href: "https://example.com/teaser-1",
+        },
+        "block-2": {
+          "@type": "image",
+          url: "https://example.com/image.png",
+        },
+      },
+      blocks_layout: {
+        items: ["block-1", "block-2"],
+      },
+    },
+    listing: {
+      variation: "grid",
+      querystring: {
+        query: [
+          {
+            i: "portal_type",
+            o: "plone.app.querystring.operation.selection.any",
+            v: ["News Item"],
+          },
+        ],
+        sort_on: "effective",
+        sort_order: "descending",
+      },
     },
   };
 

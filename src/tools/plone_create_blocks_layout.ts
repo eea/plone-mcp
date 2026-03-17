@@ -87,7 +87,12 @@ export default async function ploneCreateBlocksLayout(
       }
 
       const blockId = generateBlockId();
-      const processedBlock = processBlock(blockSpec.type, blockSpec.data);
+      const baseUrl = service.client?.config.baseUrl;
+      const processedBlock = processBlock(
+        blockSpec.type,
+        blockSpec.data,
+        baseUrl,
+      );
 
       processedBlocks[blockId] = processedBlock;
       blockIds.push(blockId);

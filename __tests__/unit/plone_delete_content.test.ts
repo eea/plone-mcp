@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import ploneDeleteContent, {
   schema,
   metadata,
-} from "../../tools/plone_delete_content";
-import { sessionManager } from "../../session-manager";
-import { headers } from "../mocks/xmcp-headers";
-import { getSessionId } from "../../utils/session";
-import { wrapError } from "../../utils/block-utils";
-import { PloneMockServer } from "../utils/test-helpers";
+} from "plone-mcp/tools/plone_delete_content";
+import { sessionManager } from "plone-mcp/session-manager";
+import { headers } from "xmcp/headers";
+import { getSessionId } from "plone-mcp/utils/session";
+import { wrapError } from "plone-mcp/utils/block-utils";
+import { PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
 
 // Mock dependencies
 vi.mock("xmcp/headers", () => ({
