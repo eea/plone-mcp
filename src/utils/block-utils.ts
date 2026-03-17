@@ -57,7 +57,10 @@ export function normalizeHref(
 
   if (Array.isArray(href)) {
     if (href.length === 0) {
-      throw wrapError("ProcessBlock", `href cannot be empty for ${blockType} block`);
+      throw wrapError(
+        "ProcessBlock",
+        `href cannot be empty for ${blockType} block`,
+      );
     }
 
     if (href[0]?.["@id"]) {
@@ -148,7 +151,6 @@ function processSlateBlock(
     value: markdownParse(""),
   };
 }
-
 
 /**
  * Process image block

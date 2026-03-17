@@ -6,7 +6,9 @@ import { getSessionId } from "plone-mcp/utils/session";
 import type { InferSchema, ToolMetadata } from "xmcp";
 
 export const schema = {
-  contentType: z.string().describe("Content type to get the schema for (e.g., 'Document')"),
+  contentType: z
+    .string()
+    .describe("Content type to get the schema for (e.g., 'Document')"),
 };
 
 export const metadata: ToolMetadata = {
