@@ -8,7 +8,7 @@ export interface BlockProcessingContext {
     type: string,
     data: Record<string, unknown>,
   ) => Record<string, unknown>;
-  normalizeHref: (href: any, blockType: string) => Array<{ "@id": string }>;
+  normalizeHref: (href: unknown, blockType: string) => { "@id": string }[];
   generateBlockId: () => string;
   wrapError: (operation: string, error: unknown) => Error;
 }
@@ -47,10 +47,10 @@ export function normalizeUrl(url: string, baseUrl?: string): string {
  * Normalize href values to the required array format and convert relative URLs to absolute
  */
 export function normalizeHref(
-  href: any,
+  href: unknown,
   blockType: string,
   baseUrl?: string,
-): Array<{ "@id": string }> {
+): { "@id": string }[] {
   if (typeof href === "string") {
     return [{ "@id": normalizeUrl(href, baseUrl) }];
   }
@@ -63,11 +63,17 @@ export function normalizeHref(
       );
     }
 
-    if (href[0]?.["@id"]) {
-      return [{ ...href[0], "@id": normalizeUrl(href[0]["@id"], baseUrl) }];
+    const firstItem = href[0] as Record<string, unknown> | undefined;
+    if (firstItem?.["@id"] && typeof firstItem["@id"] === "string") {
+      return [
+        {
+          ...firstItem,
+          "@id": normalizeUrl(firstItem["@id"], baseUrl),
+        } as { "@id": string },
+      ];
     }
 
-    return href;
+    return href as { "@id": string }[];
   }
 
   throw wrapError(
@@ -113,7 +119,7 @@ export async function validateImageURL(url: string): Promise<boolean> {
  */
 function processSlateBlock(
   blockData: Record<string, unknown>,
-  _context: BlockProcessingContext,
+  // _context: BlockProcessingContext,
 ): Record<string, unknown> {
   // If 'text' is provided, always derive value from it.
   if (blockData.text !== undefined) {
