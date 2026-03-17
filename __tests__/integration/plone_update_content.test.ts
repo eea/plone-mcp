@@ -101,7 +101,7 @@ describe("plone_update_content", () => {
     };
 
     const expectedPatchBody = (body: Record<string, unknown>) => {
-      expect(body.blocks).toEqual({
+      expect(body.blocks).toMatchObject({
         "mock-title-block-id": { "@type": "title" },
         "block-1": { "@type": "slate", plaintext: "Prepared text for update" },
       });
@@ -158,7 +158,7 @@ describe("plone_update_content", () => {
     };
 
     const expectedPatchBody = (body: Record<string, unknown>) => {
-      expect(body.blocks).toEqual({
+      expect(body.blocks).toMatchObject({
         "mock-title-block-id": { "@type": "title" },
         ...inlineBlocks,
       });

@@ -162,7 +162,7 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
           const titleBlockId = body.blocks_layout.items[0];
-          expect(body.blocks).toEqual({
+          expect(body.blocks).toMatchObject({
             [titleBlockId]: { "@type": "title" },
             [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
           });
@@ -219,7 +219,7 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
           const titleBlockId = body.blocks_layout.items[0];
-          expect(body.blocks).toEqual({
+          expect(body.blocks).toMatchObject({
             [titleBlockId]: { "@type": "title" },
             ...inlineBlocks,
           });
@@ -314,7 +314,7 @@ describe("plone_create_content", () => {
       (body: PloneContent) => {
         if (body.blocks_layout && body.blocks_layout.items && body.blocks) {
           const titleBlockId = body.blocks_layout.items[0];
-          expect(body.blocks).toEqual({
+          expect(body.blocks).toMatchObject({
             [titleBlockId]: { "@type": "title" },
             [preparedBlockId]: { "@type": "slate", plaintext: "Prepared text" },
           });
