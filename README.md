@@ -1,16 +1,16 @@
 # Plone MCP Server
 
-A Model Context Protocol (MCP) server for integrating MCP clients with Plone CMS via REST API. It is built with the `xmcp` framework and enables content management, search, workflow operations, and Volto blocks management.
+A Model Context Protocol (MCP) server for integrating MCP clients with Plone CMS via REST API. Built with the `xmcp` framework, it enables content management, advanced search, workflow operations, and sophisticated Volto blocks management.
 
 ## Prerequisites
 
-- **Node.js 18+** - Required to run the server (install: `brew install node` on macOS or from [nodejs.org](https://nodejs.org))
-- **pnpm 8+** - Package manager (install: `npm install -g pnpm` or `brew install pnpm` on macOS)
-- **Plone 6.0+** site with REST API - The CMS you'll be connecting to
+- **Node.js 18+** - Required to run the server
+- **pnpm 8+** - Recommended package manager
+- **Plone 6.0+** site with REST API (`plone.restapi` 8.0+)
 
-## Quick Start using Claude Desktop as an example
+## Quick Start using Claude Desktop
 
-1. **Install**
+1. **Install and Build**
 
 ```bash
 git clone https://github.com/plone/plone-mcp.git
@@ -19,20 +19,17 @@ pnpm install
 pnpm run build
 ```
 
-2. **Start the HTTP Server**
+2. **Start the Server**
 
 ```bash
 pnpm start
 ```
 
-The server will start on `http://localhost:3001/mcp` by default.
+The server starts on `http://localhost:3001/mcp` by default.
 
 3. **Configure Claude Desktop**
 
-Add to Claude's configuration file:
-
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -43,362 +40,164 @@ Add to Claude's configuration file:
       "env": {
         "PLONE_BASE_URL": "https://demo.plone.org",
         "PLONE_USERNAME": "admin",
-        "PLONE_PASSWORD": "admin",
-        "ENABLED_TOOLS": "plone_get_content,plone_create_content"
+        "PLONE_PASSWORD": "admin"
       }
     }
   }
 }
 ```
 
-4. **Restart Claude Desktop**
+*Note: You can also run the server directly via STDIO by pointing to the build output, but HTTP is the recommended transport for this project.*
 
-5. **Connect to Plone**
+4. **Connect to Plone**
 
-Call `plone_configure` once per session:
+Run `plone_configure` once per session to authenticate:
 
 ```javascript
-// Using environment variables
+// Using environment variables already set in config
 plone_configure({});
 
-// OR providing credentials/token directly to the LLM
+// OR providing credentials directly
 plone_configure({
   baseUrl: "https://demo.plone.org",
   username: "admin",
-  password: "admin",
+  password: "admin"
 });
 
+// OR providing a JWT token
 plone_configure({
   baseUrl: "https://demo.plone.org",
-  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 });
 ```
-
-**Note:** Arguments take precedence over environment variables.
 
 ## Core Features
 
-- **Content Management**: CRUD operations on all Plone content types
-- **Block System**: Create and manage Volto blocks
-- **Search**: Full-text search with filtering and sorting
-- **Workflow**: Manage publication states and transitions
-- **Site Info**: Access content types, vocabularies, and site configuration
+- **Content Management**: Full CRUD operations for all Plone content types.
+- **Advanced Block System**: Support for Volto blocks (Slate, Teaser, Grid, Image, Listing, etc.) with automatic layout management.
+- **Slate Support**: Automatic conversion from Markdown to Plone's Slate JSON format.
+- **Search**: Powerful full-text search with filtering by content type, path, and workflow state.
+- **Workflow**: Manage publication states and transitions.
+- **Schema Discovery**: Explore content types, block schemas, and vocabularies.
 
 ## Available Tools
 
-This section provides a comprehensive list of all tools available in the Plone MCP server, along with their descriptions and example usage.
-
 ### Configuration
 
-- **`plone_configure`**
-  - **Description:** Establishes and authenticates the connection to a Plone CMS. **Must be called once per session** before other tools can be used. Configuration can be provided via arguments or environment variables (PLONE_BASE_URL, PLONE_USERNAME, PLONE_PASSWORD, PLONE_TOKEN). Arguments take precedence over environment variables. To use environment variables only, call with an empty object: `plone_configure({})`.
-  - **Example:**
-    ```javascript
-    plone_configure({
-      baseUrl: "https://demo.plone.org",
-      username: "admin",
-      password: "secret",
-    });
-    ```
+- **`plone_configure`**: Authenticates with Plone. **Must be called once per session.** Supports `baseUrl`, `username`, `password`, and `token`. Environment variables (`PLONE_BASE_URL`, `PLONE_USERNAME`, `PLONE_PASSWORD`, `PLONE_TOKEN`) are used as fallbacks.
 
 ### Content Management
 
-- **`plone_get_content`**
-  - **Description:** Retrieves the full JSON data for a single content item from Plone using its path.
-  - **Example:**
-    ```javascript
-    plone_get_content({ path: "/news/latest-update" });
-    ```
-- **`plone_create_content`**
-  - **Description:** Creates a new content item (e.g., a page or news article) in Plone. To add complex block-based content, first prepare the structure with `plone_create_blocks_layout`, then call this tool.
-  - **Example:**
-    ```javascript
-    plone_create_content({
-      parentPath: "/",
-      type: "Document",
-      title: "My Page",
-      description: "A sample page",
-    });
-    ```
-- **`plone_update_content`**
-  - **Description:** Modifies an existing content item in Plone. Can update metadata (like title) and/or replace the entire block structure. Use `plone_create_blocks_layout` to prepare complex block updates.
-  - **Example:**
-    ```javascript
-    plone_update_content({ path: "/my-page", title: "Updated Title" });
-    ```
-- **`plone_delete_content`**
-  - **Description:** Permanently deletes a content item from Plone using its path.
-  - **Example:**
-    ```javascript
-    plone_delete_content({ path: "/old-content" });
-    ```
+- **`plone_get_content`**: Retrieves JSON data for a content item by path.
+- **`plone_create_content`**: Creates new content. Handles block structures prepared via `plone_create_blocks_layout`.
+- **`plone_update_content`**: Modifies existing content.
+- **`plone_delete_content`**: Permanently removes content.
 
 ### Search and Discovery
 
-- **`plone_search`**
-  - **Description:** Performs a detailed search for content items, allowing filters by text, content type, path, and workflow state.
-  - **Example:**
-    ```javascript
-    plone_search({
-      query: "annual report",
-      portal_type: ["Document"],
-      review_state: ["published"],
-    });
-    ```
-- **`plone_get_site_info`**
-  - **Description:** Retrieves top-level information and metadata about the connected Plone site, such as available languages and Plone version.
-  - **Example:**
-    ```javascript
-    plone_get_site_info({});
-    ```
-- **`plone_get_types`**
-  - **Description:** Lists all available content types that can be created in the Plone site (e.g., 'Document', 'Event').
-  - **Example:**
-    ```javascript
-    plone_get_types({});
-    ```
-- **`plone_get_vocabularies`**
-  - **Description:** Fetches the allowed values for a specific field, such as a list of categories or tags. Useful for finding valid inputs for content fields.
-  - **Example:**
-    ```javascript
-    plone_get_vocabularies({ vocabulary: "plone.app.vocabularies.Keywords" });
-    ```
+- **`plone_search`**: Detailed search with filters (`portal_type`, `path`, `review_state`) and sorting.
+- **`plone_get_site_info`**: Metadata about the Plone site.
+- **`plone_get_types`**: List of available content types.
+- **`plone_get_type_schema`**: Detailed JSON schema for a specific content type.
+- **`plone_get_vocabularies`**: Fetch allowed values for fields (e.g., tags, categories).
 
-### Workflow Management
+### Workflow
 
-- **`plone_get_workflow_info`**
-  - **Description:** Shows the current workflow state (e.g., 'Published', 'Private') and available transitions for a content item.
-  - **Example:**
-    ```javascript
-    plone_get_workflow_info({ path: "/my-document" });
-    ```
-- **`plone_transition_workflow`**
-  - **Description:** Changes the workflow state of a content item by executing a specific transition, like 'publish' or 'submit'.
-  - **Example:**
-    ```javascript
-    plone_transition_workflow({ path: "/my-document", transition: "publish" });
-    ```
+- **`plone_get_workflow_info`**: Current state and available transitions.
+- **`plone_transition_workflow`**: Change workflow state (e.g., 'publish', 'submit').
 
 ### Block Management
 
-- **`plone_get_block_schemas`**
-  - **Description:** Lists all available Volto block types (e.g., 'slate', 'teaser', 'button') and their required data schemas. **Essential for understanding how to construct blocks.**
-  - **Example:**
-    ```javascript
-    plone_get_block_schemas({ blockType: "teaser" });
-    ```
-- **`plone_create_blocks_layout`**
-  - **Description:** Prepares a complete block structure in memory (valid for 60 seconds). This structure is then used by the **next immediate call** to `plone_create_content` or `plone_update_content`. Use `plone_get_block_schemas` to learn what data each block type needs. The text displayed by the Title block is automatically managed by Plone, DO NOT add it in the block's data.
-  - **Example:**
-    ```javascript
-    plone_create_blocks_layout({
-      blocks: [
-        { type: "title" },
-        { type: "slate", data: { text: "Hello World" } },
-      ],
-    });
-    ```
-- **`plone_add_single_block`**
-  - **Description:** Adds a single new block to an existing content item without replacing other blocks. Specify the block type, data, and optional position.
-  - **Example:**
-    ```javascript
-    plone_add_single_block({
-      path: "/my-page",
-      blockType: "text",
-      blockData: { text: "New paragraph" },
-    });
-    ```
-- **`plone_update_single_block`**
-  - **Description:** Modifies the data of a single, existing block within a content item, identified by its block ID.
-  - **Example:**
-    ```javascript
-    plone_update_single_block({
-      path: "/my-page",
-      blockId: "abc123",
-      blockData: { text: "Updated text" },
-    });
-    ```
-- **`plone_remove_single_block`**
-  - **Description:** Deletes a single block from a content item, identified by its block ID.
-  - **Example:**
-    ```javascript
-    plone_remove_single_block({ path: "/my-page", blockId: "abc123" });
-    ```
+- **`plone_get_block_schemas`**: Get schema definitions for Volto blocks.
+- **`plone_create_blocks_layout`**: Prepares a complete block structure in memory (60s TTL). Used immediately before `plone_create_content` or `plone_update_content`.
+- **`plone_add_single_block`**: Insert a block into existing content.
+- **`plone_update_single_block`**: Modify an existing block by ID.
+- **`plone_remove_single_block`**: Delete a block by ID.
 
-## Block Management
+## Volto Block System
 
-### Creating Content with Blocks
+The server uses a specialized workflow for creating rich content with blocks:
+
+1. **Learn**: Use `plone_get_block_schemas` to understand block data structures.
+2. **Prepare**: Call `plone_create_blocks_layout` with an array of blocks.
+3. **Commit**: Call `plone_create_content` or `plone_update_content` to apply the layout.
+
+### Supported Block Types
+
+- **`slate` / `text`**: Rich text blocks. Input is **Markdown**, which is automatically converted to Slate JSON.
+- **`teaser`**: Link previews. Use `href` to point to content; set `overwrite: true` to customize title/image.
+- **`image`**: Display images. Supports `url`, `alt`, `align`, and `size`.
+- **`gridBlock`**: Multi-column layouts (up to 4 columns) containing other blocks.
+- **`listing`**: Dynamic lists of content based on queries (variations: `default`, `summary`, `grid`, `imageGallery`).
+- **`__button`**: Call-to-action buttons.
+- **`separator`**: Visual horizontal dividers.
+
+### Example: Creating a Page with Grid and Teasers
 
 ```javascript
-// 1. Prepare blocks (60-second TTL - meant to be used inmediatly before content creation/editing)
 plone_create_blocks_layout({
   blocks: [
-    {
-      type: "text",
-      data: { text: "Welcome to our site!" },
-    },
-    {
-      type: "teaser",
+    { type: "slate", data: { text: "## Welcome to our Grid Layout" } },
+    { 
+      type: "gridBlock", 
       data: {
-        href: "/about",
-        title: "Learn More",
-        description: "Discover what we do",
-      },
-    },
-  ],
+        blocks: {
+          "col1": { "@type": "teaser", href: "/news/item-1" },
+          "col2": { "@type": "teaser", href: "/news/item-2" }
+        },
+        blocks_layout: { items: ["col1", "col2"] }
+      }
+    }
+  ]
 });
 
-// 2. Create content (within 60 seconds), the previously prepared blocks will automatically be included in the request
 plone_create_content({
   parentPath: "/",
   type: "Document",
-  title: "Homepage",
+  title: "Modern Landing Page"
 });
 ```
 
-### Managing Individual Blocks
+## Resources and Prompts
 
-```javascript
-// Add a single block
-plone_add_single_block({
-  path: "/homepage",
-  blockType: "text",
-  blockData: { text: "New paragraph" },
-  position: 1,
-});
+This MCP server provides additional capabilities beyond tools:
 
-// Update a block
-plone_update_single_block({
-  path: "/homepage",
-  blockId: "51176ead-7b59-402d-9412-baed46821b36", // Get ID from plone_get_content
-  blockData: { text: "Updated text" },
-});
+### Resources
+- **`plone-content`**: Direct access to content JSON (`mcp://plone-content/{path}`)
+- **`plone-site`**: Site-level information (`mcp://plone-site`)
+- **`plone-types`**: List of all content types (`mcp://plone-types`)
 
-// Remove a block
-plone_remove_single_block({
-  path: "/homepage",
-  blockId: "51176ead-7b59-402d-9412-baed46821b36",
-});
-```
+### Prompts
+- **`create-page-workflow`**: Guided workflow for creating a new page with content.
+- **`create-example-site-workflow`**: Template for scaffolding a basic site structure.
 
-## Available Block Types
+## Configuration & Environment
 
-- **text**: Rich text content
-- **teaser**: Link preview card with image
-- **\_\_button**: Call-to-action button
-- **separator**: Visual divider line
-
-Use `plone_get_block_schemas()` to see all block types and their properties.
-
-## Common Workflows
-
-### Create and Publish a Page
-
-```javascript
-// Configure connection
-plone_configure({
-  baseUrl: "https://mysite.com",
-  username: "editor",
-  password: "secret",
-});
-
-// Create with blocks
-plone_create_blocks_layout({
-  blocks: [{ type: "text", data: { text: "Article content..." } }],
-});
-plone_create_content({
-  parentPath: "/news",
-  type: "News Item",
-  title: "Breaking News",
-});
-
-// Publish
-plone_transition_workflow({
-  path: "/news/breaking-news",
-  transition: "publish",
-});
-```
-
-### Search and Filter
-
-```javascript
-plone_search({
-  query: "annual report",
-  portal_type: ["Document", "File"],
-  review_state: ["published"],
-  sort_on: "modified",
-  sort_order: "descending",
-  b_size: 10,
-});
-```
-
-## Important Notes
-
-⚠️ **Prepared blocks expire after 60 seconds** - Always call `plone_create_blocks_layout` immediately before creating/updating content.
-
-⚠️ **Configure once per session** - Run `plone_configure` once at the start of each session before using other tools. Once configured, you can use all other tools without reconfiguring. The `plone_configure` tool is always enabled and does not require explicit enabling via `ENABLED_TOOLS`.
-
-## Environment Variables
-
-The following environment variables can be used to configure the Plone MCP server:
-
-- **`PLONE_BASE_URL`**: The base URL of your Plone site (e.g., `https://demo.plone.org`).
-- **`PLONE_USERNAME`**: The username for authenticating with the Plone site.
-- **`PLONE_PASSWORD`**: The password for the specified username.
-- **`PLONE_TOKEN`**: A JWT token for authentication (alternative to username/password).
-- **`ENABLED_TOOLS`**: (Optional) A comma-separated list of tool names to explicitly enable (e.g., `plone_get_content,plone_create_content`). If this variable is not set, all tools (except `plone_configure`, which is always enabled) will be available by default.
+| Variable | Description |
+|----------|-------------|
+| `PLONE_BASE_URL` | Base URL of the Plone site (e.g., `https://demo.plone.org`) |
+| `PLONE_USERNAME` | Username for authentication |
+| `PLONE_PASSWORD` | Password for authentication |
+| `PLONE_TOKEN` | JWT Token (alternative to user/pass) |
+| `ENABLED_TOOLS` | Optional: Comma-separated list of tool names to enable (e.g., `plone_get_content,plone_search`). `plone_configure` is always enabled. Tools not in the list will be completely hidden from the MCP client. |
 
 ## Development
 
-This project uses `make` for common development tasks and is built with the `xmcp` framework using HTTP transport.
+The project includes a `Makefile` for common tasks:
 
-- **`make all`**: Show help for all targets.
-- **`make build`**: Builds the project for production.
-- **`make dev`**: Starts the project in development mode with hot reload on `http://localhost:3001/mcp`.
-- **`make start`**: Starts the HTTP server for production.
-- **`make format`**: Formats the code using Prettier.
-- **`make inspector`**: Runs the project with the MCP Inspector.
-- **`make test`**: Runs all tests.
-- **`make test-watch`**: Runs tests in watch mode.
-- **`make test-coverage`**: Runs tests with a coverage report.
-- **`make test-unit`**: Runs unit tests only.
-- **`make test-unit-only`**: Runs unit tests only with coverage.
-- **`make type-check`**: Runs TypeScript type checking.
-- **`make lint`**: Lints the code using ESLint.
-- **`make ci`**: Runs tests, type-check, lint, and format checks.
-
-### HTTP Transport Configuration
-
-The server runs on HTTP transport by default. You can customize the server configuration in `xmcp.config.ts`:
-
-```typescript
-const config: XmcpConfig = {
-  http: {
-    port: 3001,
-    host: "127.0.0.1",
-    endpoint: "/mcp",
-    // ... other options
-  },
-};
-```
+- `make build`: Build the project.
+- `make dev`: Start development server with hot reload.
+- `make start`: Start production server.
+- `make test`: Run all tests.
+- `make type-check`: Run TypeScript validation.
+- `make format`: Format code with Prettier.
+- `make inspector`: Open MCP Inspector.
 
 ## Troubleshooting
 
-| Issue                          | Solution                                                                     |
-| ------------------------------ | ---------------------------------------------------------------------------- |
-| "Plone client not configured"  | Run `plone_configure` once at the start of your session                      |
-| "Block not found"              | Use `plone_get_content` to get valid block IDs                               |
-| Connection errors              | Verify Plone URL and credentials are correct                                 |
-| Blocks not applied             | Call `plone_create_blocks_layout` immediately before create/update (60s TTL) |
-| TypeScript errors during build | Run `pnpm install` to ensure all dependencies are installed                  |
-| Server not responding          | Ensure HTTP server is running with `make start` or `make dev`                |
-| MCP connection failed          | Check Claude Desktop configuration uses `mcp-remote` with correct URL        |
-
-## Resources
-
-- [Plone REST API Documentation](https://plonerestapi.readthedocs.io/)
-- [xmcp Documentation](https://xmcp.dev/docs)
-- [MCP Remote Tool](https://github.com/modelcontextprotocol/servers/tree/main/src/remote) - Used for HTTP transport with Claude Desktop
+- **Auth Errors**: Ensure `plone_configure` is called at the start of every session.
+- **Block Expiry**: Prepared blocks last only 60 seconds. Always call `plone_create_blocks_layout` immediately before the content tool.
+- **Markdown Conversion**: Only standard GFM is supported in Slate blocks. Complex HTML in Markdown may be ignored.
 
 ## License
 
