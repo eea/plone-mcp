@@ -9,6 +9,7 @@ import type { InferSchema, ResourceMetadata } from "xmcp";
 export const schema = {
   path: z
     .union([z.string(), z.array(z.string())])
+    .optional()
     .describe("The path to the Plone content item."),
 };
 
@@ -32,12 +33,32 @@ export default async function handler(params: InferSchema<typeof schema>) {
     );
   }
 
-  const normalizedPath = client.normalizePath(
-    typeof params.path === "string" ? params.path : params.path[0] || "",
-  );
-  const content = await client.get(normalizedPath);
+  // Robust path extraction from params
+  let rawPath: string = "/";
+  if (params && params.path) {
+    if (typeof params.path === "string") {
+      rawPath = params.path;
+    } else if (Array.isArray(params.path) && params.path.length > 0) {
+      rawPath = params.path[0];
+    }
+  }
 
-  return {
-    structuredContent: content,
-  };
+  const normalizedPath = client.normalizePath(rawPath);
+  
+  try {
+    const content = await client.get(normalizedPath);
+    // xmcp requires ReadResourceResult format with a 'contents' array
+    return {
+      contents: [
+        {
+          uri: `plone://content${normalizedPath}`,
+          mimeType: "application/json",
+          text: JSON.stringify(content, null, 2),
+        },
+      ],
+    };
+  } catch (error: any) {
+    console.error(`[Resource: plone-content] Error fetching path "${normalizedPath}":`, error.message);
+    throw new Error(`Failed to fetch content at "${normalizedPath}": ${error.message}`);
+  }
 }

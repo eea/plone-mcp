@@ -24,6 +24,12 @@ export default async function read() {
   const siteInfo = await client.get("/");
 
   return {
-    structuredContent: siteInfo,
+    contents: [
+      {
+        uri: "plone://site",
+        mimeType: "application/json",
+        text: JSON.stringify(siteInfo, null, 2),
+      },
+    ],
   };
 }

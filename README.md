@@ -193,6 +193,30 @@ The project includes a `Makefile` for common tasks:
 - `make format`: Format code with Prettier.
 - `make inspector`: Open MCP Inspector.
 
+### Manual Testing with `curl`
+
+When testing the MCP server via HTTP using `curl`, you **must** include both `Content-Type: application/json` and `Accept: application/json` headers.
+
+**Test Website:** You can use `https://demo.plone.org` for testing (credentials: `admin`/`admin`).
+
+**Example: Configure and List Tools**
+
+```bash
+# 1. Configure session
+curl -X POST http://localhost:3001/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "mcp-session-id: my-test-session" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "plone_configure", "arguments": {"baseUrl": "https://demo.plone.org"}}}'
+
+# 2. List tools (filtered by ENABLED_TOOLS if set)
+curl -X POST http://localhost:3001/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "mcp-session-id: my-test-session" \
+  -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}'
+```
+
 ## Troubleshooting
 
 - **Auth Errors**: Ensure `plone_configure` is called at the start of every session.

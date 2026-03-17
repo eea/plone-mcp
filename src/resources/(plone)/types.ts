@@ -25,6 +25,12 @@ export default async function handler() {
   const types = await client.get("/@types");
 
   return {
-    structuredContent: types,
+    contents: [
+      {
+        uri: "plone://types",
+        mimeType: "application/json",
+        text: JSON.stringify(types, null, 2),
+      },
+    ],
   };
 }
