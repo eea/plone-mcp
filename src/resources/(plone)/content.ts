@@ -44,7 +44,7 @@ export default async function handler(params: InferSchema<typeof schema>) {
   }
 
   const normalizedPath = client.normalizePath(rawPath);
-  
+
   try {
     const content = await client.get(normalizedPath);
     // xmcp requires ReadResourceResult format with a 'contents' array
@@ -58,7 +58,12 @@ export default async function handler(params: InferSchema<typeof schema>) {
       ],
     };
   } catch (error: any) {
-    console.error(`[Resource: plone-content] Error fetching path "${normalizedPath}":`, error.message);
-    throw new Error(`Failed to fetch content at "${normalizedPath}": ${error.message}`);
+    console.error(
+      `[Resource: plone-content] Error fetching path "${normalizedPath}":`,
+      error.message,
+    );
+    throw new Error(
+      `Failed to fetch content at "${normalizedPath}": ${error.message}`,
+    );
   }
 }

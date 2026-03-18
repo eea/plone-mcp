@@ -121,12 +121,15 @@ function processSlateBlock(
   blockData: Record<string, unknown>,
   // _context: BlockProcessingContext,
 ): Record<string, unknown> {
+  // Always set type to slate, but allow overriding by putting blockData first
+  // Actually, we want to enforce @type: slate
+  const baseData = { ...blockData, "@type": "slate" };
+
   // If 'text' is provided, always derive value from it.
   if (blockData.text !== undefined) {
     const textContent = (blockData.text as string) || "";
     return {
-      "@type": "slate",
-      ...blockData,
+      ...baseData,
       plaintext: textContent,
       value: markdownParse(textContent),
     };
@@ -134,25 +137,20 @@ function processSlateBlock(
 
   // If 'value' is already provided, trust it
   if (blockData.value !== undefined) {
-    return {
-      "@type": "slate",
-      ...blockData,
-    };
+    return baseData;
   }
 
   // If 'plaintext' is provided, derive value from it
   if (blockData.plaintext !== undefined) {
     const textContent = (blockData.plaintext as string) || "";
     return {
-      "@type": "slate",
-      ...blockData,
+      ...baseData,
       value: markdownParse(textContent),
     };
   }
 
   return {
-    "@type": "slate",
-    ...blockData,
+    ...baseData,
     plaintext: "",
     value: markdownParse(""),
   };

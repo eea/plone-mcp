@@ -133,7 +133,7 @@ export class PloneClient {
 
   // IMPROVEMENT: Centralize path normalization
   normalizePath(path: string): string {
-    if (!path) return "/";
+    if (!path || path === "/") return "";
     // Remove trailing slash, ensure leading slash
     let normalized = path.replace(/\/$/, "");
     if (!normalized.startsWith("/") && normalized !== "") {

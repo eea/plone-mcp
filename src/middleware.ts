@@ -3,11 +3,7 @@
  * This middleware intercepts JSON-RPC responses for 'tools/list' and removes
  * any tools not explicitly listed in the ENABLED_TOOLS comma-separated string.
  */
-export default function toolsFilterMiddleware(
-  req: any,
-  res: any,
-  next: any,
-) {
+export default function toolsFilterMiddleware(req: any, res: any, next: any) {
   const enabledToolsEnv = process.env.ENABLED_TOOLS;
 
   // If no filtering is requested, proceed normally
@@ -21,7 +17,7 @@ export default function toolsFilterMiddleware(
       .map((t) => t.trim())
       .filter(Boolean),
   );
-  
+
   // plone_configure is essential for authentication and cannot be disabled
   enabledTools.add("plone_configure");
 
@@ -47,7 +43,7 @@ export default function toolsFilterMiddleware(
         if (item && item.result && Array.isArray(item.result.tools)) {
           const originalCount = item.result.tools.length;
           item.result.tools = item.result.tools.filter((tool: any) =>
-            enabledTools.has(tool.name)
+            enabledTools.has(tool.name),
           );
           if (item.result.tools.length !== originalCount) {
             filtered = true;
@@ -72,31 +68,31 @@ export default function toolsFilterMiddleware(
   };
 
   // Intercept writeHead to remove Content-Length, as we might change the body size
-  res.writeHead = function(statusCode: number, ...args: any[]) {
+  res.writeHead = function (statusCode: number, ...args: any[]) {
     if (statusCode === 200) {
       const headers = args[args.length - 1];
-      if (typeof headers === 'object' && headers !== null) {
-        delete headers['Content-Length'];
-        delete headers['content-length'];
+      if (typeof headers === "object" && headers !== null) {
+        delete headers["Content-Length"];
+        delete headers["content-length"];
       }
-      if (typeof res.removeHeader === 'function') {
-        res.removeHeader('Content-Length');
-        res.removeHeader('content-length');
+      if (typeof res.removeHeader === "function") {
+        res.removeHeader("Content-Length");
+        res.removeHeader("content-length");
       }
     }
     return originalWriteHead.call(this, statusCode, ...args);
   };
 
   // Buffer all chunks
-  res.write = function(chunk: any, encoding?: any, callback?: any) {
+  res.write = function (chunk: any, encoding?: any, callback?: any) {
     if (chunk) chunks.push(chunk);
-    return true; 
+    return true;
   };
 
   // Process the complete response on end
-  res.end = function(chunk: any, encoding?: any, callback?: any) {
+  res.end = function (chunk: any, encoding?: any, callback?: any) {
     if (chunk) chunks.push(chunk);
-    
+
     let body = "";
     for (const c of chunks) {
       if (typeof c === "string") {
@@ -107,7 +103,7 @@ export default function toolsFilterMiddleware(
     }
 
     const filteredBody = filterTools(body);
-    
+
     // Call the original end with the (potentially) modified body
     return originalEnd.call(this, filteredBody, "utf8", callback);
   };
