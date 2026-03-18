@@ -16,6 +16,12 @@
     "test": "vitest run"
   },
   "main": "dist/http.js",
+  "bin": {
+    "plone-mcp-server": "dist/stdio.js"
+  },
+  "files": [
+    "dist"
+  ],
   "author": "",
   "license": "MIT",
   "unused": {
