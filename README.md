@@ -204,6 +204,7 @@ This MCP server provides additional capabilities beyond tools:
 | `PLONE_USERNAME` | Username for authentication |
 | `PLONE_PASSWORD` | Password for authentication |
 | `PLONE_TOKEN` | JWT Token (alternative to user/pass) |
+| `PLONE_PREPARED_BLOCKS_TTL` | Optional: Time-to-live for prepared blocks in milliseconds (default: `60000`) |
 | `ENABLED_TOOLS` | Optional: Comma-separated list of tool names to enable (e.g., `plone_configure,plone_get_content,plone_search`). `plone_configure` is always enabled. |
 
 ## Development
@@ -240,12 +241,11 @@ curl -X POST http://localhost:3001/mcp \
   -H "Accept: application/json" \
   -H "mcp-session-id: my-test-session" \
   -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}'
-```
 
 ## Troubleshooting
 
 - **Auth Errors**: Ensure `plone_configure` is called at the start of every session.
-- **Block Expiry**: Prepared blocks last only 60 seconds. Always call `plone_create_blocks_layout` immediately before the content tool.
+- **Block Expiry**: Prepared blocks last only 60 seconds by default. Always call `plone_create_blocks_layout` immediately before the content tool. This can be adjusted via `PLONE_PREPARED_BLOCKS_TTL`.
 - **Markdown Conversion**: Only standard GFM is supported in Slate blocks. Complex HTML in Markdown may be ignored.
 
 ## License
