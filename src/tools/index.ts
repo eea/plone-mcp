@@ -54,7 +54,8 @@ export function registerTools(server: McpServer) {
   ];
 
   for (const tool of tools) {
-    if (!enabledTools || enabledTools.has(tool.config.name)) {
+    const isConfigure = tool.config.name === "plone_configure";
+    if (isConfigure || !enabledTools || enabledTools.has(tool.config.name)) {
       server.registerTool(
         tool.config.name,
         {
