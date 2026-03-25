@@ -1,46 +1,45 @@
-# Fork Overview: Enhanced Plone MCP Server
+# Fork Overview: EEA Enhanced Plone MCP Server
 
-This branch (`eea_no_xmcp`) aligns the `plone-mcp` server back with the official [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) while retaining and expanding upon the advanced features developed during the EEA fork.
+This branch (`eea_no_xmcp`) is a specialized fork of the official [plone/plone-mcp](https://github.com/plone/plone-mcp) repository. It maintains the core architectural alignment with the official MCP SDK while introducing several critical features required for high-availability and multi-user environments.
 
-While an intermediate stage of this fork used the `xmcp` framework, this branch has **completely removed `xmcp`** to return to the standard MCP SDK, ensuring better compatibility with the official ecosystem.
+## Relationship with Upstream (`plone/main`)
 
-## Key Enhancements over Upstream (`plone/plone-mcp`)
+This fork is **upstream-compatible** but functionally extended. While an intermediate stage of this fork experimented with the `xmcp` framework (stored in the `eea` branch), this `eea_no_xmcp` branch has **fully reverted to the official @modelcontextprotocol/sdk**, matching the upstream's choice of library.
 
-Compared to the original `plone/plone-mcp` main branch, this fork provides the following additional capabilities:
+## Key Enhancements in this Fork
 
-### 1. Stateful HTTP Transport
-- **Upstream**: Primarily focused on STDIO transport.
-- **This Fork**: Implements a full **Express-based HTTP server** with **Stateful Sessions**.
-    - Uses SSE (Server-Sent Events) for MCP notifications.
-    - Persists authentication (`PloneClient`) per `mcp-session-id`, allowing a single `plone_configure` call to authenticate an entire session.
+The following features are unique to this EEA fork and are not currently present in the upstream `plone/main` branch:
 
-### 2. Advanced Volto Block System
-- **Expanded Tools**: Includes specialized tools for managing Volto blocks:
-    - `plone_create_blocks_layout`: Prepares complex multi-block layouts in memory.
-    - `plone_add_single_block`, `plone_update_single_block`, `plone_remove_single_block`: Granular block manipulation.
-    - `plone_get_block_schemas`: Dynamic discovery of block data structures.
-- **Slate & Markdown**: Automatic conversion of Markdown text to Plone's Slate JSON format.
-- **Grid Support**: First-class support for `gridBlock` (multi-column) layouts.
+### 1. Stateful HTTP Server & Multi-Transport Support
+- **Upstream**: Provides a single `src/index.ts` entry point primarily designed for the STDIO transport (standard CLI/Claude Desktop local integration).
+- **This Fork**: Splits the server into dedicated entry points for different environments:
+    - **`src/http-server.ts`**: A robust **Express-based HTTP server** that enables remote deployment.
+    - **Stateful Sessions**: Introduces `mcp-session-id` header support. This allows multiple concurrent users to have their own isolated authentication states (`PloneClient`) on a single shared server instance.
+    - **SSE Notifications**: Implements Server-Sent Events for real-time MCP notifications over HTTP.
+    - **`src/stdio-server.ts`**: Retains full compatibility with local STDIO integration.
 
-### 3. Robust Schema Validation
-- **Zod Integration**: Every tool and resource uses `zod` for strict input validation, providing clear error messages and type safety.
-- **Schema Discovery**: Added `plone_get_type_schema` and `plone_get_vocabularies` to help LLMs understand the Plone site's specific configuration.
+### 2. Enterprise-Grade Tool Filtering
+- **`ENABLED_TOOLS` Support**: Introduces a security-focused environment variable (`ENABLED_TOOLS`) to whitelist only specific MCP tools at startup.
+- **Hardened Defaults**: Ensures that `plone_configure` is always available for authentication, while other potentially destructive tools (like `plone_delete_content`) can be disabled for public-facing deployments.
 
-### 4. Comprehensive Test Suite
-- **170+ Tests**: Replaced the basic test setup with a massive suite of integration and unit tests using `vitest`.
-- **Mocking**: Advanced mocking of the Plone REST API to ensure reliable CI/CD.
+### 3. Modernized Development & CI Environment
+- **Vitest Integration**: Replaced `jest` with `vitest` for significantly faster test execution and better ESM support.
+- **Unified ESLint**: Upgraded to a modern, flat-file ESLint configuration (`eslint.config.mjs`) with strict TypeScript rules.
+- **Enhanced Documentation**: Provides comprehensive `make` commands and `curl` examples for testing remote HTTP deployments.
+- **Modular Refactoring**: Decoupled the monolithic `index.ts` into a maintainable directory structure:
+    - `src/tools/`: Individual files per tool.
+    - `src/resources/`: Individual files per resource.
+    - `src/prompts/`: Individual files per prompt.
+    - `src/utils/`: Shared logic for block processing and session management.
 
-### 5. Production Ready
-- **Dockerized**: Includes a multi-stage `Dockerfile` optimized for production.
-- **Filtered Tools**: Support for `ENABLED_TOOLS` environment variable to restrict the server's capabilities at runtime.
-
-## Summary of Architectural Differences
+## Summary of Differences
 
 | Feature | Upstream (`plone/main`) | EEA Fork (`eea_no_xmcp`) |
 |---------|-------------------------|--------------------------|
-| **Transport** | STDIO | HTTP (Stateful) + STDIO |
-| **Blocks** | Basic | Advanced (Layouts, Grids, Slate) |
-| **Validation** | Minimal | Strict Zod Schemas |
-| **Content** | Basic CRUD | Advanced Workflow + Search |
-| **Tests** | Minimal | 170+ Integration/Unit Tests |
-| **Dependencies**| Standard | Optimized (removed xmcp artifacts) |
+| **Transports** | STDIO only | **HTTP (SSE)** + STDIO |
+| **Concurrency** | Single-user (local) | **Multi-session (remote)** |
+| **Tool Filtering** | No | **Yes (`ENABLED_TOOLS`)** |
+| **Test Runner** | Jest | **Vitest** |
+| **Code Structure** | Monolithic (`index.ts`) | **Modular (src/tools/ etc.)** |
+| **SDK Version** | ^1.0.0 | **^1.27.1** |
+| **Linting** | Standard | **Strict @typescript-eslint** |
