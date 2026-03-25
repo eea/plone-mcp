@@ -3,6 +3,7 @@ import express, { Request, Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { createServer } from "./server.js";
+import { sessionManager } from "./session-manager.js";
 
 /**
  * Entry point for the Plone MCP Server running over HTTP with stateful sessions.
@@ -47,6 +48,7 @@ app.post("/mcp", async (req: Request, res: Response) => {
         const sid = transport.sessionId;
         if (sid) {
           transports.delete(sid);
+          sessionManager.clearSession(sid);
           console.log(`Session closed: ${sid}`);
         }
       };
@@ -112,9 +114,9 @@ app.listen(PORT, () => {
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  console.log("Shutting down...");
-  for (const transport of transports.values()) {
-    await transport.close();
-  }
-  process.exit(0);
+console.log("Shutting down...");
+for (const transport of transports.values()) {
+  await transport.close();
+}
+process.exit(0);
 });

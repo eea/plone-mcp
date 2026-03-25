@@ -1,6 +1,7 @@
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
 export const ploneTypesResource = {
   config: {
@@ -19,19 +20,23 @@ export const ploneTypesResource = {
     const client = service.getClient();
 
     if (!client) {
-      throw new Error("Plone client not configured.");
+      throw wrapError("plone-types", "Plone client not configured.");
     }
 
-    const types = await client.get("/@types");
+    try {
+      const types = await client.get("/@types");
 
-    return {
-      contents: [
-        {
-          uri: uri.href,
-          mimeType: "application/json",
-          text: JSON.stringify(types, null, 2),
-        },
-      ],
-    };
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/json",
+            text: JSON.stringify(types, null, 2),
+          },
+        ],
+      };
+    } catch (error: unknown) {
+      throw wrapError("plone-types", `Failed to fetch types: ${error instanceof Error ? error.message : String(error)}`);
+    }
   },
 };

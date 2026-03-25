@@ -3,6 +3,7 @@ import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.j
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { Variables } from "@modelcontextprotocol/sdk/shared/uriTemplate.js";
 import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
 export const ploneContentResource = {
   config: {
@@ -38,11 +39,7 @@ export const ploneContentResource = {
         ],
       };
     } catch (error: unknown) {
-      throw new Error(
-        `Failed to fetch content at "${normalizedPath}": ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      throw wrapError("plone-content", `Failed to fetch content at "${normalizedPath}": ${error instanceof Error ? error.message : String(error)}`);
     }
   },
 };

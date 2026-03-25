@@ -1,6 +1,7 @@
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
 export const ploneSiteResource = {
   config: {
@@ -19,19 +20,23 @@ export const ploneSiteResource = {
     const client = service.getClient();
 
     if (!client) {
-      throw new Error("Plone client not configured.");
+      throw wrapError("plone-site", "Plone client not configured.");
     }
 
-    const siteInfo = await client.get("/");
+    try {
+      const siteInfo = await client.get("/");
 
-    return {
-      contents: [
-        {
-          uri: uri.href,
-          mimeType: "application/json",
-          text: JSON.stringify(siteInfo, null, 2),
-        },
-      ],
-    };
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "application/json",
+            text: JSON.stringify(siteInfo, null, 2),
+          },
+        ],
+      };
+    } catch (error: unknown) {
+      throw wrapError("plone-site", `Failed to fetch site info: ${error instanceof Error ? error.message : String(error)}`);
+    }
   },
 };

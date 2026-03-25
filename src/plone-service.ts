@@ -10,7 +10,9 @@ export interface PreparedBlocks {
 export class PloneService {
   public client: PloneClient | null = null;
   private preparedBlocks: PreparedBlocks | null = null;
-  private readonly PREPARED_BLOCKS_TTL = 60000; // 60 seconds TTL
+  private readonly PREPARED_BLOCKS_TTL = process.env.PLONE_PREPARED_BLOCKS_TTL
+    ? parseInt(process.env.PLONE_PREPARED_BLOCKS_TTL, 10)
+    : 60000; // 60 seconds TTL default
 
   constructor(client: PloneClient | null) {
     this.client = client;
