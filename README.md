@@ -54,6 +54,26 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
+**Using a Remote Deployed Server:**
+
+If the MCP server is already deployed (e.g., at `https://plone-mcp.eea.europa.eu/mcp`), you can use `mcp-remote` to connect directly without local installation:
+
+```json
+{
+  "mcpServers": {
+    "plone": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://plone-mcp.eea.europa.eu/mcp"],
+      "env": {
+        "PLONE_BASE_URL": "https://demo.plone.org",
+        "PLONE_USERNAME": "admin",
+        "PLONE_PASSWORD": "admin"
+      }
+    }
+  }
+}
+```
+
 4. **Connect to Plone**
 
 Run `plone_configure` once per session to authenticate:
