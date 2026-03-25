@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import blocksJson from "./blocks.json";
+import blocksJson from "./blocks.json" with { type: "json" };
 
 // Load block specifications from JSON
 export const blocksSpecification = blocksJson;

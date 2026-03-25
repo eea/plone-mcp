@@ -29,9 +29,9 @@ RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
 # Copy the built application from the builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/blocks.json ./src/blocks.json
-COPY --from=builder /app/typescript-sdk ./typescript-sdk
 
 # Expose the port for the HTTP server
+
 EXPOSE 3001
 
 # Command to run the application (HTTP server by default)

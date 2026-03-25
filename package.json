@@ -29,7 +29,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/inspector": "^0.17.2",
-    "@modelcontextprotocol/sdk": "file:./typescript-sdk",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "@hono/node-server": "^1.19.9",
     "axios": "^1.6.0",
     "express": "^4.19.2",

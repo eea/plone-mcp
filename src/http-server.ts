@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
@@ -15,7 +15,7 @@ app.use(express.json());
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
 // POST handler - main MCP endpoint
-app.post("/mcp", async (req, res) => {
+app.post("/mcp", async (req: Request, res: Response) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
   try {
@@ -67,7 +67,7 @@ app.post("/mcp", async (req, res) => {
 });
 
 // GET handler - SSE stream for notifications
-app.get("/mcp", async (req, res) => {
+app.get("/mcp", async (req: Request, res: Response) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (!sessionId || !transports.has(sessionId)) {
     res.status(400).send("Invalid or missing session ID");
@@ -78,7 +78,7 @@ app.get("/mcp", async (req, res) => {
 });
 
 // DELETE handler - session termination
-app.delete("/mcp", async (req, res) => {
+app.delete("/mcp", async (req: Request, res: Response) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (!sessionId || !transports.has(sessionId)) {
     res.status(400).send("Invalid or missing session ID");
