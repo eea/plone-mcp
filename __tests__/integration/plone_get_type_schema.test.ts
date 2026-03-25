@@ -1,24 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock, PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneGetTypeSchema, { schema } from "plone-mcp/tools/plone_get_type_schema";
+import { ploneGetTypeSchema } from "plone-mcp/tools/plone_get_type_schema";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
-import type { InferSchema } from "xmcp";
-
-vi.mock("xmcp/headers", () => ({
-  headers: vi.fn(),
-}));
 
 describe("plone_get_type_schema", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   beforeEach(() => {
-    vi.mocked(headers).mockReturnValue({
-      "mcp-session-id": sessionId,
-    });
     mockServer = new PloneMockServer(testBaseUrl);
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
@@ -42,10 +38,10 @@ describe("plone_get_type_schema", () => {
       .get(`/++api++/@types/${contentType}`)
       .reply(200, typeSchema);
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       contentType,
     };
-    const result = await ploneGetTypeSchema(args);
+    const result = await ploneGetTypeSchema.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(typeSchema);
     expect(Nock.isDone()).toBe(true);
@@ -58,10 +54,10 @@ describe("plone_get_type_schema", () => {
       .get(`/++api++/@types/${contentType}`)
       .reply(404, { message: "Type not found" });
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       contentType,
     };
-    await expect(ploneGetTypeSchema(args)).rejects.toThrow(
+    await expect(ploneGetTypeSchema.handler(args, mockExtra)).rejects.toThrow(
       "[GetTypeSchema] Request failed with status code 404",
     );
     expect(Nock.isDone()).toBe(true);

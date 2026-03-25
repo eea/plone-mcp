@@ -30,10 +30,9 @@ RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/blocks.json ./src/blocks.json
 
-# Expose the port if the application listens on one (e.g., 3000 for a web server)
-# This is a CLI tool, so it might not listen on a port, but it's good practice
-# if it were to evolve into a server.
-# EXPOSE 3000
+# Expose the port for the HTTP server
 
-# Command to run the application
-CMD ["node", "dist/http.js"]
+EXPOSE 3001
+
+# Command to run the application (HTTP server by default)
+CMD ["node", "dist/http-server.js"]

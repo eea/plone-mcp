@@ -1,24 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock, PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneCreateUser, { schema } from "plone-mcp/tools/plone_create_user";
+import { ploneCreateUser } from "plone-mcp/tools/plone_create_user";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
-import type { InferSchema } from "xmcp";
-
-vi.mock("xmcp/headers", () => ({
-  headers: vi.fn(),
-}));
 
 describe("plone_create_user", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   beforeEach(() => {
-    vi.mocked(headers).mockReturnValue({
-      "mcp-session-id": sessionId,
-    });
     mockServer = new PloneMockServer(testBaseUrl);
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
@@ -47,8 +43,8 @@ describe("plone_create_user", () => {
       .post("/++api++/@users", userData)
       .reply(201, responseData);
 
-    const args: InferSchema<typeof schema> = userData;
-    const result = await ploneCreateUser(args);
+    const args = userData;
+    const result = await ploneCreateUser.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(responseData);
     expect(Nock.isDone()).toBe(true);
@@ -64,8 +60,8 @@ describe("plone_create_user", () => {
       .post("/++api++/@users", userData)
       .reply(400, { message: "Username already exists" });
 
-    const args: InferSchema<typeof schema> = userData;
-    await expect(ploneCreateUser(args)).rejects.toThrow(
+    const args = userData;
+    await expect(ploneCreateUser.handler(args, mockExtra)).rejects.toThrow(
       "[CreateUser] Request failed with status code 400",
     );
     expect(Nock.isDone()).toBe(true);

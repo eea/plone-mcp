@@ -1,19 +1,13 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleDocument,
 } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneCreateContent, { schema } from "plone-mcp/tools/plone_create_content";
+import { ploneCreateContent } from "plone-mcp/tools/plone_create_content";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient, PloneContent } from "plone-mcp/plone-client";
 import * as BlockUtils from "plone-mcp/utils/block-utils";
 import { PreparedBlocks } from "plone-mcp/plone-service";
-import type { InferSchema } from "xmcp";
-
-vi.mock("xmcp/headers", () => ({
-  headers: vi.fn(),
-}));
 
 describe("plone_create_content", () => {
   let mockServer: PloneMockServer;
@@ -22,6 +16,11 @@ describe("plone_create_content", () => {
   const newContentId = "my-new-page";
   const newContentPath = `${parentPath}${newContentId}`;
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   const mockCreatedContent = {
     ...sampleDocument,
@@ -33,16 +32,6 @@ describe("plone_create_content", () => {
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
 
-    // Mock headers to return the test session ID
-    const mockedHeaders = {
-      get: vi.fn((name: string) =>
-        name === "mcp-session-id" ? sessionId : undefined,
-      ),
-    };
-
-    vi.mocked(headers).mockReturnValue(
-      mockedHeaders as unknown as ReturnType<typeof headers>,
-    );
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
     service.clearPreparedBlocks(); // Ensure no prepared blocks initially
@@ -87,7 +76,7 @@ describe("plone_create_content", () => {
       mockCreatedContent,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "My New Page",
@@ -98,7 +87,7 @@ describe("plone_create_content", () => {
       additionalFields: undefined, // Explicitly undefined
     };
 
-    const result = await ploneCreateContent(args);
+    const result = await ploneCreateContent.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockCreatedContent);
     expect(Nock.isDone()).toBe(true);
@@ -128,7 +117,7 @@ describe("plone_create_content", () => {
       { ...mockCreatedContent, id: "custom-id" },
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "My New Page",
@@ -139,7 +128,7 @@ describe("plone_create_content", () => {
       additionalFields: undefined, // Explicitly undefined
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent.handler(args, mockExtra);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -178,7 +167,7 @@ describe("plone_create_content", () => {
       mockCreatedContent,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "Page with Prepared Blocks",
@@ -189,7 +178,7 @@ describe("plone_create_content", () => {
       additionalFields: undefined, // Explicitly undefined
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent.handler(args, mockExtra);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
@@ -235,7 +224,7 @@ describe("plone_create_content", () => {
       mockCreatedContent,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "Page with Inline Blocks",
@@ -246,7 +235,7 @@ describe("plone_create_content", () => {
       additionalFields: undefined, // Explicitly undefined
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent.handler(args, mockExtra);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Still cleared
     expect(Nock.isDone()).toBe(true);
@@ -281,7 +270,7 @@ describe("plone_create_content", () => {
       mockCreatedContent,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "Page with Extra Fields",
@@ -292,7 +281,7 @@ describe("plone_create_content", () => {
       blocks_layout: undefined, // Explicitly undefined
     };
 
-    await ploneCreateContent(args);
+    await ploneCreateContent.handler(args, mockExtra);
     expect(Nock.isDone()).toBe(true);
   });
 
@@ -331,7 +320,7 @@ describe("plone_create_content", () => {
       "Server Error" as string,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "Failing Page",
@@ -342,7 +331,7 @@ describe("plone_create_content", () => {
       additionalFields: undefined, // Explicitly undefined
     };
 
-    await expect(ploneCreateContent(args)).rejects.toThrow(
+    await expect(ploneCreateContent.handler(args, mockExtra)).rejects.toThrow(
       "[CreateContent] Request failed with status code 500",
     );
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
@@ -353,7 +342,7 @@ describe("plone_create_content", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       parentPath: parentPath,
       type: "Document",
       title: "My New Page",
@@ -364,7 +353,7 @@ describe("plone_create_content", () => {
       additionalFields: undefined, // Explicitly undefined
     };
 
-    await expect(ploneCreateContent(args)).rejects.toThrow(
+    await expect(ploneCreateContent.handler(args, mockExtra)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

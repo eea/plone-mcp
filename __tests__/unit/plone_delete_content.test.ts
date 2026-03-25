@@ -1,27 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import ploneDeleteContent, {
-  schema,
-  metadata,
-} from "plone-mcp/tools/plone_delete_content";
+import { ploneDeleteContent } from "plone-mcp/tools/plone_delete_content";
 import { sessionManager } from "plone-mcp/session-manager";
-import { headers } from "xmcp/headers";
-import { getSessionId } from "plone-mcp/utils/session";
 import { wrapError } from "plone-mcp/utils/block-utils";
-import { PloneMockServer } from "plone-mcp/__tests__/utils/test-helpers";
 
 // Mock dependencies
-vi.mock("xmcp/headers", () => ({
-  headers: vi.fn(),
-}));
-
 vi.mock("plone-mcp/session-manager", () => ({
   sessionManager: {
     getSession: vi.fn(),
   },
-}));
-
-vi.mock("plone-mcp/utils/session", () => ({
-  getSessionId: vi.fn(),
 }));
 
 vi.mock("plone-mcp/utils/block-utils", () => ({
@@ -29,13 +15,17 @@ vi.mock("plone-mcp/utils/block-utils", () => ({
 }));
 
 describe("plone_delete_content", () => {
-  let mockServer: PloneMockServer;
   let mockClient: any;
   let mockService: any;
+  const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockServer = new PloneMockServer();
 
     mockClient = {
       delete: vi.fn(),
@@ -46,35 +36,28 @@ describe("plone_delete_content", () => {
     };
 
     (sessionManager.getSession as any).mockReturnValue(mockService);
-    (headers as any).mockReturnValue({});
-    (getSessionId as any).mockReturnValue("test-session-id");
   });
 
-  describe("schema", () => {
-    it("should have correct path schema", () => {
-      expect(schema.path).toBeDefined();
-      expect(schema.path.description).toBe("Path to the content to delete");
-    });
-  });
-
-  describe("metadata", () => {
-    it("should have correct metadata", () => {
-      expect(metadata.name).toBe("plone_delete_content");
-      expect(metadata.description).toContain(
+  describe("config", () => {
+    it("should have correct name and description", () => {
+      expect(ploneDeleteContent.config.name).toBe("plone_delete_content");
+      expect(ploneDeleteContent.config.description).toContain(
         "Permanently deletes a content item",
       );
-      expect(metadata.annotations?.destructiveHint).toBe(true);
-      expect(metadata.annotations?.idempotentHint).toBe(true);
-      expect(metadata.annotations?.readOnlyHint).toBe(false);
+    });
+
+    it("should have correct inputSchema", () => {
+      const schema = ploneDeleteContent.config.inputSchema as any;
+      expect(schema.shape.path).toBeDefined();
     });
   });
 
-  describe("functionality", () => {
+  describe("handler", () => {
     it("should delete content successfully", async () => {
       const testPath = "/test-document";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      const result = await ploneDeleteContent({ path: testPath });
+      const result = await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
       expect(mockClient.delete).toHaveBeenCalledWith(testPath);
       expect(result).toEqual({
@@ -89,9 +72,9 @@ describe("plone_delete_content", () => {
 
     it("should handle root path deletion", async () => {
       const testPath = "/";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      const result = await ploneDeleteContent({ path: testPath });
+      const result = await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
       expect(mockClient.delete).toHaveBeenCalledWith(testPath);
       expect(result.content[0].text).toContain(
@@ -101,9 +84,9 @@ describe("plone_delete_content", () => {
 
     it("should handle nested path deletion", async () => {
       const testPath = "/folder/subfolder/document";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      const result = await ploneDeleteContent({ path: testPath });
+      const result = await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
       expect(mockClient.delete).toHaveBeenCalledWith(testPath);
       expect(result.content[0].text).toContain(testPath);
@@ -111,13 +94,11 @@ describe("plone_delete_content", () => {
 
     it("should use correct session management", async () => {
       const testPath = "/test-doc";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      await ploneDeleteContent({ path: testPath });
+      await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
-      expect(headers).toHaveBeenCalled();
-      expect(getSessionId).toHaveBeenCalled();
-      expect(sessionManager.getSession).toHaveBeenCalledWith("test-session-id");
+      expect(sessionManager.getSession).toHaveBeenCalledWith(sessionId);
       expect(mockService.getClient).toHaveBeenCalled();
     });
 
@@ -129,7 +110,7 @@ describe("plone_delete_content", () => {
       const wrappedError = new Error("DeleteContent: Content not found");
       (wrapError as any).mockReturnValue(wrappedError);
 
-      await expect(ploneDeleteContent({ path: testPath })).rejects.toThrow(
+      await expect(ploneDeleteContent.handler({ path: testPath }, mockExtra)).rejects.toThrow(
         wrappedError,
       );
 
@@ -144,7 +125,7 @@ describe("plone_delete_content", () => {
       const wrappedError = new Error("DeleteContent: Network timeout");
       (wrapError as any).mockReturnValue(wrappedError);
 
-      await expect(ploneDeleteContent({ path: testPath })).rejects.toThrow(
+      await expect(ploneDeleteContent.handler({ path: testPath }, mockExtra)).rejects.toThrow(
         wrappedError,
       );
 
@@ -153,9 +134,9 @@ describe("plone_delete_content", () => {
 
     it("should handle empty path gracefully", async () => {
       const testPath = "";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      const result = await ploneDeleteContent({ path: testPath });
+      const result = await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
       expect(mockClient.delete).toHaveBeenCalledWith(testPath);
       expect(result.content[0].text).toContain(
@@ -165,9 +146,9 @@ describe("plone_delete_content", () => {
 
     it("should handle special characters in path", async () => {
       const testPath = "/folder with spaces/document-with-dashes_123";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      const result = await ploneDeleteContent({ path: testPath });
+      const result = await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
       expect(mockClient.delete).toHaveBeenCalledWith(testPath);
       expect(result.content[0].text).toContain(testPath);
@@ -177,9 +158,9 @@ describe("plone_delete_content", () => {
   describe("return value structure", () => {
     it("should return correct structure", async () => {
       const testPath = "/test";
-      mockServer.mockContentDelete(testPath, 204);
+      mockClient.delete.mockResolvedValue(undefined);
 
-      const result = await ploneDeleteContent({ path: testPath });
+      const result = await ploneDeleteContent.handler({ path: testPath }, mockExtra);
 
       expect(result).toHaveProperty("content");
       expect(Array.isArray(result.content)).toBe(true);

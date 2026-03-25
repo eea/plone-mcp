@@ -1,25 +1,24 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleDocument,
 } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneUpdateContent, { schema } from "plone-mcp/tools/plone_update_content";
+import { ploneUpdateContent } from "plone-mcp/tools/plone_update_content";
 import { sessionManager } from "plone-mcp/session-manager";
 import { PloneClient } from "plone-mcp/plone-client";
 import * as BlockUtils from "plone-mcp/utils/block-utils"; // Import for mocking generateBlockId
 import { PreparedBlocks } from "plone-mcp/plone-service";
-import type { InferSchema } from "xmcp";
-
-vi.mock("xmcp/headers", () => ({
-  headers: vi.fn(),
-}));
 
 describe("plone_update_content", () => {
   let mockServer: PloneMockServer;
   const testBaseUrl = "http://localhost:8080/Plone";
   const testPath = "/my-page";
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
   const mockContent = {
     ...sampleDocument,
     "@id": `${testBaseUrl}/++api++${testPath}`,
@@ -31,9 +30,6 @@ describe("plone_update_content", () => {
   };
 
   beforeEach(() => {
-    vi.mocked(headers).mockReturnValue({
-      "mcp-session-id": sessionId,
-    });
     mockServer = new PloneMockServer(testBaseUrl);
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
@@ -65,7 +61,7 @@ describe("plone_update_content", () => {
       mockUpdatedContent,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       title: updatedTitle,
       description: updatedDescription,
@@ -74,7 +70,7 @@ describe("plone_update_content", () => {
       additionalFields: undefined,
     };
 
-    const result = await ploneUpdateContent(args);
+    const result = await ploneUpdateContent.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockUpdatedContent);
     expect(Nock.isDone()).toBe(true);
@@ -117,7 +113,7 @@ describe("plone_update_content", () => {
       mockResponseWithPreparedBlocks,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath, // No inline blocks, should use prepared
       title: undefined,
       description: undefined,
@@ -126,7 +122,7 @@ describe("plone_update_content", () => {
       additionalFields: undefined,
     };
 
-    await ploneUpdateContent(args);
+    await ploneUpdateContent.handler(args, mockExtra);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
     expect(Nock.isDone()).toBe(true);
@@ -174,7 +170,7 @@ describe("plone_update_content", () => {
       mockResponseWithInlineBlocks,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       blocks: inlineBlocks,
       blocks_layout: inlineLayout,
@@ -183,7 +179,7 @@ describe("plone_update_content", () => {
       additionalFields: undefined,
     };
 
-    await ploneUpdateContent(args);
+    await ploneUpdateContent.handler(args, mockExtra);
 
     expect(service.getPreparedBlocks()).toBeNull(); // Prepared should still be cleared
     expect(Nock.isDone()).toBe(true);
@@ -203,7 +199,7 @@ describe("plone_update_content", () => {
       mockUpdatedContent,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       additionalFields: additionalFields,
       title: undefined,
@@ -212,12 +208,12 @@ describe("plone_update_content", () => {
       blocks_layout: undefined,
     };
 
-    await ploneUpdateContent(args);
+    await ploneUpdateContent.handler(args, mockExtra);
     expect(Nock.isDone()).toBe(true);
   });
 
   it("should throw an error if no changes are specified", async () => {
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath, // Only path, no title, description, blocks, or additionalFields
       title: undefined,
       description: undefined,
@@ -226,23 +222,22 @@ describe("plone_update_content", () => {
       additionalFields: undefined,
     };
 
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent.handler(args, mockExtra)).rejects.toThrow(
       "No changes specified for update",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
 
   it("should throw an error if path is missing", async () => {
-    type ArgsWithoutPath = Omit<InferSchema<typeof schema>, "path">;
-    const args: ArgsWithoutPath = {
+    const args = {
       title: "New title",
       description: undefined,
       blocks: undefined,
       blocks_layout: undefined,
       additionalFields: undefined,
-    };
+    } as any;
     await expect(
-      ploneUpdateContent(args as Parameters<typeof ploneUpdateContent>[0]),
+      ploneUpdateContent.handler(args, mockExtra),
     ).rejects.toThrow("Path is required for updating content");
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made
   });
@@ -269,7 +264,7 @@ describe("plone_update_content", () => {
       .patch(`/++api++${testPath}`)
       .reply(500, "Server Error");
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       title: "Failing Update",
       description: undefined,
@@ -278,7 +273,7 @@ describe("plone_update_content", () => {
       additionalFields: undefined,
     };
 
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent.handler(args, mockExtra)).rejects.toThrow(
       "[UpdateContent] Request failed with status code 500",
     );
     expect(service.getPreparedBlocks()).toBeNull(); // Should be cleared
@@ -289,7 +284,7 @@ describe("plone_update_content", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       title: "New Title",
       description: undefined,
@@ -297,7 +292,7 @@ describe("plone_update_content", () => {
       blocks_layout: undefined,
       additionalFields: undefined,
     };
-    await expect(ploneUpdateContent(args)).rejects.toThrow(
+    await expect(ploneUpdateContent.handler(args, mockExtra)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

@@ -1,6 +1,6 @@
 # Plone MCP Server
 
-A Model Context Protocol (MCP) server for integrating MCP clients with Plone CMS via REST API. Built with the `xmcp` framework, it enables content management, advanced search, workflow operations, and sophisticated Volto blocks management.
+A Model Context Protocol (MCP) server for integrating MCP clients with Plone CMS via REST API. Built with the official `@modelcontextprotocol/sdk`, it enables content management, advanced search, workflow operations, and sophisticated Volto blocks management.
 
 ## Prerequisites
 
@@ -21,11 +21,18 @@ pnpm run build
 
 2. **Start the Server**
 
+The server supports two transports: HTTP (default) and STDIO.
+
+**HTTP Transport (Recommended):**
 ```bash
 pnpm start
 ```
-
 The server starts on `http://localhost:3001/mcp` by default.
+
+**STDIO Transport:**
+```bash
+pnpm run stdio
+```
 
 3. **Configure Claude Desktop**
 
@@ -35,8 +42,8 @@ Add to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "plone": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "http://localhost:3001/mcp"],
+      "command": "node",
+      "args": ["/path/to/plone-mcp/dist/stdio-server.js"],
       "env": {
         "PLONE_BASE_URL": "https://demo.plone.org",
         "PLONE_USERNAME": "admin",
@@ -47,7 +54,25 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-*Note: You can also run the server directly via STDIO by pointing to the build output, but HTTP is the recommended transport for this project.*
+**Using a Remote Deployed Server:**
+
+If the MCP server is already deployed (e.g., at `https://plone-mcp.eea.europa.eu/mcp`), you can use `mcp-remote` to connect directly without local installation:
+
+```json
+{
+  "mcpServers": {
+    "plone": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://plone-mcp.eea.europa.eu/mcp"],
+      "env": {
+        "PLONE_BASE_URL": "https://demo.plone.org",
+        "PLONE_USERNAME": "admin",
+        "PLONE_PASSWORD": "admin"
+      }
+    }
+  }
+}
+```
 
 4. **Connect to Plone**
 
@@ -163,9 +188,9 @@ plone_create_content({
 This MCP server provides additional capabilities beyond tools:
 
 ### Resources
-- **`plone-content`**: Direct access to content JSON (`mcp://plone-content/{path}`)
-- **`plone-site`**: Site-level information (`mcp://plone-site`)
-- **`plone-types`**: List of all content types (`mcp://plone-types`)
+- **`plone://content/{path}`**: Direct access to content JSON.
+- **`plone://site`**: Site-level information.
+- **`plone://types`**: List of all content types.
 
 ### Prompts
 - **`create-page-workflow`**: Guided workflow for creating a new page with content.
@@ -179,15 +204,15 @@ This MCP server provides additional capabilities beyond tools:
 | `PLONE_USERNAME` | Username for authentication |
 | `PLONE_PASSWORD` | Password for authentication |
 | `PLONE_TOKEN` | JWT Token (alternative to user/pass) |
-| `ENABLED_TOOLS` | Optional: Comma-separated list of tool names to enable (e.g., `plone_get_content,plone_search`). `plone_configure` is always enabled. Tools not in the list will be completely hidden from the MCP client. |
+| `ENABLED_TOOLS` | Optional: Comma-separated list of tool names to enable (e.g., `plone_configure,plone_get_content,plone_search`). `plone_configure` is always enabled. |
 
 ## Development
 
 The project includes a `Makefile` for common tasks:
 
 - `make build`: Build the project.
-- `make dev`: Start development server with hot reload.
-- `make start`: Start production server.
+- `make dev`: Start development server with hot reload (via `tsx`).
+- `make start`: Start production HTTP server.
 - `make test`: Run all tests.
 - `make type-check`: Run TypeScript validation.
 - `make format`: Format code with Prettier.

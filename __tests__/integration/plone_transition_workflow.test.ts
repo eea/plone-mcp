@@ -1,13 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleWorkflowInfo,
 } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneTransitionWorkflow, { schema } from "plone-mcp/tools/plone_transition_workflow";
+import { ploneTransitionWorkflow } from "plone-mcp/tools/plone_transition_workflow";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import type { InferSchema } from "xmcp";
 
 describe("plone_transition_workflow", () => {
   let mockServer: PloneMockServer;
@@ -16,12 +14,14 @@ describe("plone_transition_workflow", () => {
   const transitionName = "publish";
 
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    vi.mocked(headers).mockReturnValue({
-      "mcp-session-id": sessionId,
-    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
@@ -38,12 +38,12 @@ describe("plone_transition_workflow", () => {
       sampleWorkflowInfo,
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       transition: transitionName,
       comment: undefined,
     };
-    const result = await ploneTransitionWorkflow(args);
+    const result = await ploneTransitionWorkflow.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(sampleWorkflowInfo);
     expect(Nock.isDone()).toBe(true);
@@ -61,12 +61,12 @@ describe("plone_transition_workflow", () => {
       },
     );
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       transition: transitionName,
       comment: comment,
     };
-    await ploneTransitionWorkflow(args);
+    await ploneTransitionWorkflow.handler(args, mockExtra);
 
     expect(Nock.isDone()).toBe(true);
   });
@@ -83,12 +83,12 @@ describe("plone_transition_workflow", () => {
       .post(`/++api++${testPath}/@workflow/${transitionName}`)
       .reply(400, "Bad Request");
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       transition: transitionName,
       comment: undefined,
     };
-    await expect(ploneTransitionWorkflow(args)).rejects.toThrow(
+    await expect(ploneTransitionWorkflow.handler(args, mockExtra)).rejects.toThrow(
       "[TransitionWorkflow] Request failed with status code 400",
     );
     expect(Nock.isDone()).toBe(true);
@@ -98,12 +98,12 @@ describe("plone_transition_workflow", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       path: testPath,
       transition: transitionName,
       comment: undefined,
     };
-    await expect(ploneTransitionWorkflow(args)).rejects.toThrow(
+    await expect(ploneTransitionWorkflow.handler(args, mockExtra)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

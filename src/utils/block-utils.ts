@@ -1,7 +1,7 @@
 import "isomorphic-fetch";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
-import { markdownParse } from "plone-mcp/markdown-parser";
+import { markdownParse } from "../markdown-parser.js";
 
 export interface BlockProcessingContext {
   processBlock: (

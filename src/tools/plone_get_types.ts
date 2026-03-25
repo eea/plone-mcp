@@ -1,46 +1,38 @@
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
+import { z } from "zod";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
+import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
-import { wrapError } from "plone-mcp/utils/block-utils";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
+const inputSchema = z.object({});
 
-export const schema = {
-  // No parameters required
-};
+export const ploneGetTypes = {
+  config: {
+    name: "plone_get_types",
+    description:
+      "Lists all available content types that can be created in the Plone site (e.g., 'Document', 'Event').",
+    inputSchema,
+  },
+  handler: async (
+    _args: z.infer<typeof inputSchema>,
+    extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
+  ) => {
+    try {
+      const sessionId = extra.sessionId || "default";
+      const service = sessionManager.getSession(sessionId);
+      const client = service.getClient();
+      const types = await client.get("/@types");
 
-export const metadata: ToolMetadata = {
-  name: "plone_get_types",
-  description:
-    "Lists all available content types that can be created in the Plone site (e.g., 'Document', 'Event').",
-  annotations: {
-    title: "Get Content Types",
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(types, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw wrapError("GetTypes", error);
+    }
   },
 };
-
-export default async function ploneGetTypes(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _args: InferSchema<typeof schema>,
-): Promise<{ content: { type: "text"; text: string }[] }> {
-  try {
-    const requestHeaders = headers();
-    const sessionId = getSessionId(requestHeaders);
-    const service = sessionManager.getSession(sessionId);
-    const client = service.getClient();
-    const types = await client.get("/@types");
-
-    const textContent = {
-      type: "text" as const,
-      text: JSON.stringify(types, null, 2),
-    };
-
-    return {
-      content: [textContent],
-    };
-  } catch (error) {
-    throw wrapError("GetTypes", error);
-  }
-}

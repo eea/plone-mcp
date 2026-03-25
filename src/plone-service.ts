@@ -1,5 +1,5 @@
-import { PloneClient } from "plone-mcp/plone-client";
-import { generateBlockId, processBlock } from "plone-mcp/utils/block-utils";
+import { PloneClient } from "./plone-client.js";
+import { generateBlockId, processBlock } from "./utils/block-utils.js";
 
 export interface PreparedBlocks {
   blocks: Record<string, unknown>;
