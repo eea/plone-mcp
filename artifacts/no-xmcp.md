@@ -2,694 +2,341 @@
 
 ## Overview
 
-This document outlines the migration path from the current xmcp-based implementation to the official `@modelcontextprotocol/sdk` (typescript-sdk v1.x). The goal is to deploy the plone-mcp server as a standalone HTTP server using the official SDK.
+This document outlines the migration path from the current `xmcp`-based implementation to the official `@modelcontextprotocol/sdk`. The goal is to deploy the `plone-mcp` server as a standalone HTTP and STDIO server using the official SDK, while maintaining **stateful sessions** for authentication persistence.
 
 ### Critical Architecture Decision: Stateful Sessions
 
 **plone-mcp MUST use stateful sessions** because:
 
-1. `PloneClient` stores authentication state (base URL, token/credentials)
-2. This state must persist across multiple tool calls within a session
-3. Each session has its own `PloneService` instance in `sessionManager`
+1.  `PloneClient` stores authentication state (base URL, token/credentials).
+2.  This state must persist across multiple tool calls within a session.
+3.  Each session has its own `PloneService` instance in `sessionManager`.
 
-The SDK pattern we follow is from `simpleStreamableHttp.ts` (not `simpleStatelessStreamableHttp.ts`):
-
-- One `McpServer` instance per session
-- Transport stored in `Map<sessionId, Transport>`
-- `sessionManager` still used for `PloneService` storage
-- Session ID flows: `extra.sessionId` (from SDK) → `sessionManager.getSession(sessionId)` → `PloneService`
+The SDK pattern we follow is from `simpleStreamableHttp.ts` (stateful):
+-   One `McpServer` instance per session.
+-   Transport stored in `Map<sessionId, Transport>`.
+-   `sessionManager` maps `sessionId` to `PloneService`.
 
 ---
 
-## 1. Current Architecture Analysis
+## Phase 1: Project Setup & Dependencies
 
-### 1.1 Current Stack (xmcp-based)
+### 1.1 Update `package.json`
 
-| Component          | Implementation                                                        |
-| ------------------ | --------------------------------------------------------------------- |
-| Framework          | xmcp v0.6.5                                                           |
-| HTTP Transport     | xmcp's built-in HTTP server (`xmcp build` generates `dist/http.js`)   |
-| STDIO Transport    | xmcp's built-in stdio handler                                         |
-| Session Management | Custom `session-manager.ts` + `plone-service.ts`                      |
-| Tool Discovery     | File-based via `xmcp.config.ts` paths                                 |
-| Middleware         | Custom `middleware.ts` for ENABLED_TOOLS filtering                    |
-| Tool Format        | One file per tool with `schema`, `metadata`, `default export` pattern |
+**Action:** Update dependencies and scripts. Remove `xmcp`.
 
-### 1.2 Target Stack (typescript-sdk)
+```json
+{
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/http-server.js",
+    "stdio": "node dist/stdio-server.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "file:./typescript-sdk",
+    "express": "^4.19.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}
+```
 
-| Component          | Implementation                                                   |
-| ------------------ | ---------------------------------------------------------------- |
-| Framework          | @modelcontextprotocol/sdk (v1.x from `./typescript-sdk`)         |
-| HTTP Transport     | `StreamableHTTPServerTransport` from SDK                         |
-| STDIO Transport    | `StdioServerTransport` from SDK                                  |
-| Session Management | Built-in to `StreamableHTTPServerTransport` (sessionIdGenerator) |
-| Tool Registration  | Manual `server.registerTool()` calls                             |
-| Middleware         | Custom Express middleware or SDK middleware                      |
-| Tool Format        | Direct handler functions with Zod schemas                        |
+### 1.2 Update `tsconfig.json`
+
+**Action:** Remove `xmcp` path aliases and ensure ESM compatibility.
+
+```json
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "plone-mcp/*": ["src/*"]
+    }
+  }
+}
+```
 
 ---
 
-## 2. Key Differences to Address
+## Phase 2: Core Server Implementation
 
-### 2.1 Build System
+### 2.1 Create Server Factory (`src/server.ts`)
 
-**Current:**
-
-```json
-"build": "xmcp build"
-```
-
-- xmcp CLI handles TypeScript compilation
-- Generates `dist/http.js`, `dist/stdio.js`, `.xmcp/import-map.js`
-- Path aliases in tsconfig resolve `xmcp/*` and `plone-mcp/*`
-
-**Target:**
-
-```json
-"build": "tsc && node scripts/post-build.js"
-```
-
-- Standard TypeScript compilation
-- No code generation or import-map needed
-- Express app setup manually in entry point
-
-### 2.2 Server Initialization
-
-**Current (xmcp pattern):**
-
-```typescript
-// xmcp handles everything based on xmcp.config.ts
-import { config } from "xmcp";
-```
-
-- Configuration driven by `xmcp.config.ts`
-- Tools auto-discovered from directory structure
-
-**Target (SDK pattern):**
+**Action:** Centralize tool, resource, and prompt registration.
 
 ```typescript
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { registerTools } from "./tools/index.js";
+import { registerResources } from "./resources/index.js";
+import { registerPrompts } from "./prompts/index.js";
 
-const server = new McpServer({ name: "plone-mcp-server", version: "1.0.0" });
-// Register tools, resources, prompts manually
-const transport = new StreamableHTTPServerTransport({
-  sessionIdGenerator: () => randomUUID(),
-});
-await server.connect(transport);
+export function createServer() {
+  const server = new McpServer({
+    name: "plone-mcp-server",
+    version: "1.0.0",
+  });
+
+  registerTools(server);
+  registerResources(server);
+  registerPrompts(server);
+
+  return server;
+}
 ```
 
-### 2.3 Tool Definition Pattern
+### 2.2 Create Registry Indices
 
-**Current:**
+**Action:** Create `index.ts` files in `tools/`, `resources/`, and `prompts/` to handle bulk registration.
 
+Example `src/tools/index.ts`:
 ```typescript
-// src/tools/plone_configure.ts
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ploneConfigure } from "./plone_configure.js";
+// ... other imports
+
+export function registerTools(server: McpServer) {
+  server.registerTool(
+    ploneConfigure.config.name,
+    ploneConfigure.config.description,
+    ploneConfigure.config.inputSchema,
+    ploneConfigure.handler
+  );
+  // ... register others
+}
+```
+
+---
+
+## Phase 3: Tool Migration Template
+
+### 3.1 Migration Pattern (Before vs. After)
+
+**Before (`xmcp` style):**
+```typescript
 import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
-
-export const schema = { baseUrl: z.string().optional()... };
-export const metadata: ToolMetadata = { name: "plone_configure", ... };
-
-export default async function ploneConfigure(args: InferSchema<typeof schema>) {
+export const schema = { baseUrl: z.string()... };
+export const metadata = { name: "plone_configure", ... };
+export default async function ploneConfigure(args) {
   const sessionId = getSessionId(headers());
   const service = sessionManager.getSession(sessionId);
   // ...
 }
 ```
 
-**Target:**
-
+**After (SDK style):**
 ```typescript
-// src/tools/plone_configure.ts
-import { randomUUID } from "node:crypto";
-import * as z from "zod/v4";  // or zod v3
-import { sessionManager } from "../session-manager.js";
-import { getSessionId } from "../utils/session.js";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { z } from "zod";
 
 const inputSchema = z.object({
-  baseUrl: z.string().optional().describe("..."),
-  // ...
+  baseUrl: z.string().describe("..."),
 });
 
-export async function ploneConfigure(args: z.infer<typeof inputSchema>, extra: RequestHandlerExtra) {
-  const sessionId = extra.sessionId;  // Direct from SDK
-  const service = sessionManager.getSession(sessionId);
-  // ...
-}
-
-// Export schema for registration
-export const toolConfig = {
-  name: "plone_configure",
-  description: "...",
-  inputSchema,
-  annotations: { title: "Configure Plone Connection", readOnlyHint: false, ... }
+export const ploneConfigure = {
+  config: {
+    name: "plone_configure",
+    description: "...",
+    inputSchema,
+  },
+  handler: async (args: z.infer<typeof inputSchema>, extra: RequestHandlerExtra) => {
+    const sessionId = extra.sessionId; // Provided by SDK
+    const service = sessionManager.getSession(sessionId);
+    // ... implementation
+  }
 };
 ```
 
-### 2.4 Session Handling
+### 3.2 Key Changes in Tools
+-   **Session ID:** Replace `import { headers } from "xmcp/headers"` with `extra.sessionId`.
+-   **Schema:** Convert schema objects to `z.object({...})`.
+-   **Types:** Remove `xmcp` type imports (`InferSchema`, `ToolMetadata`).
+-   **Zod:** Prefer standard `zod` import.
 
-**Current:**
+---
+
+## Phase 4: HTTP & STDIO Entry Points
+
+### 4.1 Stateful HTTP Server (`src/http-server.ts`)
+
+**Action:** Implement stateful session management using Express. Use `createMcpExpressApp` for security.
 
 ```typescript
-// xmcp provides headers() function globally
-import { headers } from "xmcp/headers";
-const sessionId = getSessionId(headers());
-
-// Custom session storage
-class SessionManager {
-  getSession(sessionId: string): PloneService { ... }
-}
-```
-
-**Target:**
-
-```typescript
-// SDK provides sessionId directly in RequestHandlerExtra
-async (args, extra: RequestHandlerExtra) => {
-  const sessionId = extra.sessionId;
-  // ...
-};
-
-// Transport handles session ID generation
-const transport = new StreamableHTTPServerTransport({
-  sessionIdGenerator: () => randomUUID(),
-});
-```
-
-### 2.5 ENABLED_TOOLS Middleware
-
-**Current:**
-
-```typescript
-// src/middleware.ts
-// HTTP response interception to filter tools list
-export default function toolsFilterMiddleware(req, res, next) {
-  const enabledTools = new Set(process.env.ENABLED_TOOLS.split(","));
-  // Intercept res.end() to filter JSON response
-}
-```
-
-**Target Options:**
-
-Option A: Keep response filtering middleware (same approach)
-Option B: Dynamic tool registration at startup
-Option C: Use SDK's internal filtering mechanism (if available)
-
----
-
-## 3. Migration Steps
-
-### Phase 1: Project Setup
-
-1. **Update package.json dependencies**
-   - Remove: `xmcp`
-   - Add: Link to local typescript-sdk: `"@modelcontextprotocol/sdk": "file:./typescript-sdk"`
-   - Add: Express/Hono for HTTP server: `@hono/node-server` or `express`
-   - Add: Any missing peer dependencies
-
-2. **Update tsconfig.json**
-   - Remove xmcp path aliases
-   - Add SDK path alias if needed
-   - Ensure `module`, `moduleResolution` compatible with SDK
-
-3. **Create new entry points**
-   - `src/http-server.ts` - HTTP transport server
-   - `src/stdio-server.ts` - STDIO transport server
-
-### Phase 2: Core Server Setup
-
-1. **Create main server factory** (`src/server.ts`)
-
-   ```typescript
-   import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-
-   export function createServer() {
-     const server = new McpServer({
-       name: "plone-mcp-server",
-       version: "1.0.0",
-     });
-
-     // Register tools
-     registerTools(server);
-
-     // Register resources
-     registerResources(server);
-
-     // Register prompts
-     registerPrompts(server);
-
-     return server;
-   }
-   ```
-
-2. **Implement session management integration**
-   - Keep `session-manager.ts`, `plone-service.ts` largely intact
-   - Update session ID extraction to use SDK's `extra.sessionId`
-   - Ensure sessions map to PloneService instances correctly
-
-### Phase 3: Tool Migration
-
-1. **Convert each tool file** from xmcp pattern to SDK pattern:
-
-   | Current                               | Target                                         |
-   | ------------------------------------- | ---------------------------------------------- |
-   | `export const schema = { ... }`       | `export const inputSchema = z.object({ ... })` |
-   | `export const metadata: ToolMetadata` | Inline in `registerTool()` call                |
-   | `export default async function`       | Export named function                          |
-   | `headers()` for session               | `extra.sessionId` parameter                    |
-   | `InferSchema<typeof schema>`          | `z.infer<typeof inputSchema>`                  |
-
-2. **Update imports** in each tool file:
-   - Replace `import { headers } from "xmcp/headers"` with SDK's `RequestHandlerExtra`
-   - Replace xmcp types with SDK types
-
-3. **Register tools in server factory**:
-   ```typescript
-   server.registerTool(
-     toolConfig.name,
-     {
-       title: toolConfig.title,
-       description: toolConfig.description,
-       inputSchema: toolConfig.inputSchema,
-       annotations: toolConfig.annotations,
-     },
-     toolHandler,
-   );
-   ```
-
-### Phase 4: HTTP Transport Setup
-
-> **IMPORTANT:** plone-mcp requires **stateful sessions** because PloneClient authentication state must persist per session. Follow the SDK's stateful pattern from `simpleStreamableHttp.ts`.
-
-1. **Create HTTP server entry** (`src/http-server.ts`):
-
-   ```typescript
-   import express from "express";
-   import { randomUUID } from "node:crypto";
-   import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-   import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-   import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
-   import { InMemoryEventStore } from "@modelcontextprotocol/sdk/examples/shared/inMemoryEventStore.js";
-   import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-   import { createServer } from "./server.js";
-
-   const app = createMcpExpressApp(); // Includes DNS rebinding protection
-   app.use(express.json());
-
-   // Stateful session storage: sessionId -> transport
-   const transports: Map<string, StreamableHTTPServerTransport> = new Map();
-
-   // POST handler - main MCP endpoint
-   app.post("/mcp", async (req, res) => {
-     const sessionId = req.headers["mcp-session-id"] as string | undefined;
-
-     try {
-       let transport: StreamableHTTPServerTransport;
-
-       if (sessionId && transports.has(sessionId)) {
-         // Reuse existing transport for session
-         transport = transports.get(sessionId)!;
-       } else if (!sessionId && isInitializeRequest(req.body)) {
-         // New session initialization
-         const eventStore = new InMemoryEventStore();
-         transport = new StreamableHTTPServerTransport({
-           sessionIdGenerator: () => randomUUID(),
-           eventStore, // Enable resumability
-           onsessioninitialized: (sid) => {
-             console.log(`Session initialized: ${sid}`);
-             transports.set(sid, transport);
-           },
-         });
-
-         transport.onclose = () => {
-           const sid = transport.sessionId;
-           if (sid) {
-             transports.delete(sid);
-             console.log(`Session closed: ${sid}`);
-           }
-         };
-
-         const server = createServer();
-         await server.connect(transport);
-       } else {
-         res.status(400).json({
-           jsonrpc: "2.0",
-           error: { code: -32000, message: "Bad Request: No valid session ID" },
-           id: null,
-         });
-         return;
-       }
-
-       await transport.handleRequest(req, res, req.body);
-     } catch (error) {
-       console.error("MCP request error:", error);
-       if (!res.headersSent) {
-         res.status(500).json({
-           jsonrpc: "2.0",
-           error: { code: -32603, message: "Internal server error" },
-           id: null,
-         });
-       }
-     }
-   });
-
-   // GET handler - SSE stream for notifications/resumability
-   app.get("/mcp", async (req, res) => {
-     const sessionId = req.headers["mcp-session-id"] as string | undefined;
-     if (!sessionId || !transports.has(sessionId)) {
-       res.status(400).send("Invalid or missing session ID");
-       return;
-     }
-     const transport = transports.get(sessionId)!;
-     await transport.handleRequest(req, res);
-   });
-
-   // DELETE handler - session termination
-   app.delete("/mcp", async (req, res) => {
-     const sessionId = req.headers["mcp-session-id"] as string | undefined;
-     if (!sessionId || !transports.has(sessionId)) {
-       res.status(400).send("Invalid or missing session ID");
-       return;
-     }
-     const transport = transports.get(sessionId)!;
-     await transport.handleRequest(req, res);
-   });
-
-   app.listen(3001, () => console.log("MCP server listening on port 3001"));
-
-   // Graceful shutdown
-   process.on("SIGINT", async () => {
-     for (const [sid, transport] of transports) {
-       await transport.close();
-     }
-     process.exit(0);
-   });
-   ```
-
-### Phase 5: ENABLED_TOOLS Integration
-
-1. **Option A: Middleware approach** (simplest, preserves current behavior)
-   - Keep `src/middleware.ts` filtering logic
-   - Apply to Express app before route handlers
-
-2. **Option B: Dynamic registration at startup**
-   - Read `ENABLED_TOOLS` env var during server startup
-   - Only register enabled tools
-   - Requires server restart to change enabled tools
-
-3. **Option C: Hybrid**
-   - Startup filtering for initial tool set
-   - Middleware for runtime filtering (if needed)
-
-### Phase 6: Resource and Prompt Migration
-
-> **Stateful Sessions Required:** plone-mcp MUST use stateful sessions because it stores PloneClient authentication state per session. The session ID from the SDK transport maps to `sessionManager.getSession(sessionId)` which provides the `PloneService` containing the authenticated client.
-
-1. **Resources** (`src/resources/(plone)/*.ts`)
-   - Convert xmcp's URI scheme pattern `(plone)/content.ts` → `plone://content`
-   - Use SDK's `ResourceTemplate` for dynamic URIs with parameters:
-
-     ```typescript
-     import { ResourceTemplate } from "@modelcontextprotocol/sdk/shared/uriTemplate.js";
-
-     server.registerResource(
-       "plone-content",
-       new ResourceTemplate("plone://content{?path}", {
-         list: async () => ({ resources: [] }), // Optional: list available resources
-       }),
-       {
-         title: "Plone Content Item",
-         description: "Read-only access to Plone content via path",
-         mimeType: "application/json",
-       },
-       async (uri, variables, extra) => {
-         const sessionId = extra.sessionId;
-         const service = sessionManager.getSession(sessionId);
-         // ...
-         return {
-           contents: [
-             { uri: uri.href, mimeType: "application/json", text: "..." },
-           ],
-         };
-       },
-     );
-     ```
-
-   - For static URIs, use simple string: `server.registerResource("name", "plone://static", {...}, handler)`
-
-2. **Prompts** (`src/prompts/*.ts`)
-   - Convert to SDK `registerPrompt()` pattern
-   - Update argument schema handling
-
-### Phase 7: Testing and Build
-
-1. **Update test setup** if needed
-2. **Update Dockerfile** for new build process
-3. **Update Makefile** commands
-4. **Run type checking and fix errors**
-5. **Test HTTP server startup**
-6. **Test STDIO server**
-7. **Verify ENABLED_TOOLS filtering works**
-
----
-
-## 4. File Changes Summary
-
-### 4.1 Files to Create
-
-| File                              | Purpose                                                            |
-| --------------------------------- | ------------------------------------------------------------------ |
-| `src/server.ts`                   | Server factory creating McpServer with all tools/resources/prompts |
-| `src/http-server.ts`              | HTTP entry point with Express + StreamableHTTPServerTransport      |
-| `src/stdio-server.ts`             | STDIO entry point with StdioServerTransport                        |
-| `src/utils/inMemoryEventStore.ts` | Copy from SDK examples (for resumability)                          |
-| `src/tools/index.ts`              | Export all tools for registration                                  |
-| `src/resources/index.ts`          | Export all resources for registration                              |
-| `src/prompts/index.ts`            | Export all prompts for registration                                |
-
-### 4.2 Files to Modify
-
-| File                     | Changes                                               |
-| ------------------------ | ----------------------------------------------------- |
-| `package.json`           | Update dependencies, scripts, add typescript-sdk link |
-| `tsconfig.json`          | Update path aliases, module settings                  |
-| `src/tools/*.ts`         | Convert tool pattern to SDK                           |
-| `src/resources/**/*.ts`  | Convert resources to SDK (use ResourceTemplate)       |
-| `src/prompts/*.ts`       | Convert prompts to SDK                                |
-| `src/session-manager.ts` | Minor updates for SDK compatibility                   |
-| `src/middleware.ts`      | Keep for ENABLED_TOOLS filtering                      |
-| `Dockerfile`             | Update build steps                                    |
-| `Makefile`               | Update build/test commands                            |
-
-### 4.3 Files to Delete
-
-| File / Folder          | Reason                            |
-| ---------------------- | --------------------------------- |
-| `xmcp.config.ts`       | No longer used                    |
-| `xmcp-env.d.ts`        | No longer used                    |
-| `.xmcp/` directory     | Generated by xmcp, not needed     |
-| `src/utils/session.ts` | Replaced by SDK's extra.sessionId |
-
-### 4.4 Files to Keep (possibly refactor)
-
-| File                       | Reason                                                 |
-| -------------------------- | ------------------------------------------------------ |
-| `src/plone-client.ts`      | Plone REST API client - works as-is                    |
-| `src/plone-service.ts`     | Session-bound service - needs minor session ID updates |
-| `src/block-registry.ts`    | Block type registry - works as-is                      |
-| `src/utils/block-utils.ts` | Block utilities - works as-is                          |
-| `src/markdown-parser.ts`   | Markdown processing - works as-is                      |
-
----
-
-## 5. Zod Version Compatibility
-
-The typescript-sdk supports both Zod v3 and v4:
-
-```typescript
-// SDK handles this internally via zod-compat.ts
-import * as z from "zod/v4"; // v4
-// or
-import { z } from "zod"; // v3
-```
-
-**Current project uses:** Zod v4.0.10
-
-**Action:** Ensure all tool schemas use Zod v4 API. Most existing code should work, but chained `.refine()` on `.optional()` may need adjustment.
-
----
-
-## 6. Session Management Details
-
-### Current Session Flow
-
-```
-Client Request (mcp-session-id header)
-    ↓
-xmcp HTTP Handler (xmcp/http.js)
-    ↓
-headers() function → getSessionId() → sessionManager.getSession()
-    ↓
-PloneService (holds PloneClient + state)
-```
-
-### Target Session Flow
-
-```
-Client Request (mcp-session-id header)
-    ↓
-StreamableHTTPServerTransport (handles session creation/lookup)
-    ↓
-extra.sessionId in tool handler → sessionManager.getSession()
-    ↓
-PloneService (holds PloneClient + state)
-```
-
-### Key Changes
-
-1. **Delete `src/utils/session.ts`** - The `getHeaderValue()` and `getSessionId()` functions are replaced by SDK's `extra.sessionId`
-2. Keep `sessionManager` and `PloneService` largely unchanged
-3. Session ID comes from `extra.sessionId` instead of `headers()`
-4. Transport's `sessionIdGenerator` handles ID creation/lookup
-5. Update all tool handlers to use `(args, extra: RequestHandlerExtra)` signature and get sessionId from `extra.sessionId`
-
----
-
-## 7. ENABLED_TOOLS Implementation Options
-
-> **Note:** Since we create a `new McpServer` per session (stateful pattern), the tools must be filtered at **tool registration time** or via **response filtering**. Middleware filtering works but has overhead per session creation.
-
-### Option A: Response Filtering Middleware (Current Approach - Recommended for Initial Migration)
-
-Keep current `src/middleware.ts` approach with modifications:
-
-```typescript
-// Wrap the Express app with middleware BEFORE /mcp route
-import { toolsFilterMiddleware } from "./middleware.js";
-app.use(toolsFilterMiddleware);
-```
-
-The middleware intercepts `tools/list` responses and filters based on `ENABLED_TOOLS`.
-
-**Pros:** Preserves current behavior, no code changes to tool registration
-**Cons:** Slight overhead from response interception
-
-### Option B: Registration-Time Filtering (Cleaner but Requires Refactor)
-
-```typescript
-// In createServer():
-const enabledTools = process.env.ENABLED_TOOLS
-  ? new Set(process.env.ENABLED_TOOLS.split(",").map((t) => t.trim()))
-  : null;
-
-if (!enabledTools || enabledTools.has("plone_configure")) {
-  server.registerTool(
-    "plone_configure",
-    ploneConfigureConfig,
-    ploneConfigureHandler,
-  );
-}
-// ... for each tool
-```
-
-**Pros:** Cleaner, no runtime overhead
-**Cons:** Requires refactor of tool registration, server restart to change enabled tools
-
-### Recommendation
-
-Use **Option A** for initial migration to minimize changes, then consider **Option B** in a follow-up refactor.
-
----
-
-## 8. Testing Checklist
-
-- [ ] HTTP server starts on correct port
-- [ ] STDIO server works when invoked as CLI
-- [ ] Session ID is properly maintained across requests
-- [ ] `plone_configure` tool works (creates PloneClient, stores in session)
-- [ ] All other tools work with configured PloneClient
-- [ ] ENABLED_TOOLS filtering works (if implemented)
-- [ ] Resources are listed and readable
-- [ ] Prompts are listed and return correct messages
-- [ ] Error handling works correctly
-- [ ] Docker build succeeds
-- [ ] Type checking passes
-
----
-
-## 9. Potential Issues and Mitigations
-
-| Issue                      | Mitigation                                              |
-| -------------------------- | ------------------------------------------------------- |
-| Zod v4 API differences     | Review chained `.refine()` usage, test thoroughly       |
-| xmcp's `headers()` global  | Replace with `extra.sessionId` and direct header access |
-| Import map auto-generation | Manually register tools in server factory               |
-| Build output structure     | Update Dockerfile and Makefile for new structure        |
-| Path aliases in tsconfig   | Update to point to correct source directories           |
-
----
-
-## 10. Implementation Order
-
-1. Update `package.json` with new dependencies
-2. Create `src/server.ts` factory with one test tool
-3. Create `src/http-server.ts` with basic Express setup
-4. Verify HTTP transport works
-5. Migrate `plone_configure` tool (critical for all others)
-6. Migrate remaining tools one by one
-7. Migrate resources
-8. Migrate prompts
-9. Implement ENABLED_TOOLS filtering
-10. Update Dockerfile and Makefile
-11. Full testing
-
----
-
-## Appendix: SDK Key Imports
-
-```typescript
-// Server
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-
-// Transports
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-
-// Express helper with DNS rebinding protection
-import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
-
-// Event store for resumability (create from example or implement own)
-// Note: Copy from typescript-sdk/src/examples/shared/inMemoryEventStore.ts
-import { InMemoryEventStore } from "./inMemoryEventStore.js";
-
-// Types
-import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import type {
-  CallToolResult,
-  ReadResourceResult,
-  GetPromptResult,
-} from "@modelcontextprotocol/sdk/types.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-
-// Resource template
-import { ResourceTemplate } from "@modelcontextprotocol/sdk/shared/uriTemplate.js";
-
-// Utilities
+import express from "express";
 import { randomUUID } from "node:crypto";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
+import { createServer } from "./server.js";
+
+const app = createMcpExpressApp();
+app.use(express.json());
+
+// Session storage: sessionId -> transport
+const transports = new Map<string, StreamableHTTPServerTransport>();
+
+app.post("/mcp", async (req, res) => {
+  const sessionId = req.headers["mcp-session-id"] as string;
+  let transport = transports.get(sessionId);
+
+  // Initialize a new session if not found and it's an initialize request
+  if (!transport && req.body.method === "initialize") {
+    transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: (sid) => {
+        console.log(`Session initialized: ${sid}`);
+        transports.set(sid, transport!);
+      },
+    });
+    
+    transport.onclose = () => {
+      const sid = transport!.sessionId;
+      if (sid) transports.delete(sid);
+    };
+
+    const server = createServer();
+    await server.connect(transport);
+  }
+
+  if (transport) {
+    await transport.handleRequest(req, res, req.body);
+  } else {
+    res.status(400).json({
+      jsonrpc: "2.0",
+      error: { code: -32001, message: "Invalid or missing session ID" },
+      id: null
+    });
+  }
+});
+
+// SSE endpoint for notifications/stream
+app.get("/mcp", async (req, res) => {
+  const sessionId = req.headers["mcp-session-id"] as string;
+  const transport = transports.get(sessionId);
+  if (transport) {
+    await transport.handleRequest(req, res);
+  } else {
+    res.status(400).send("Invalid Session");
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`HTTP MCP Server running on port ${PORT}`));
 ```
 
-### Required SDK Files to Copy
+### 4.2 STDIO Server (`src/stdio-server.ts`)
 
-The `InMemoryEventStore` is not exported from the SDK package. You need to copy it:
+```typescript
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { createServer } from "./server.js";
 
-```bash
-cp typescript-sdk/src/examples/shared/inMemoryEventStore.ts src/utils/inMemoryEventStore.ts
+const server = createServer();
+const transport = new StdioServerTransport();
+await server.connect(transport);
+console.error("STDIO MCP Server started");
 ```
-
-Or implement your own event store using the `EventStore` interface from the SDK.
 
 ---
+
+## Phase 5: Directory Structure After Migration
+
+To help navigate the new architecture:
+
+```text
+plone-mcp/
+├── src/
+│   ├── server.ts          # Server factory (McpServer)
+│   ├── http-server.ts     # HTTP entry point (Express)
+│   ├── stdio-server.ts    # STDIO entry point
+│   ├── tools/
+│   │   ├── index.ts       # Registry for all tools
+│   │   └── plone_*.ts     # Migrated tool implementations
+│   ├── resources/
+│   │   ├── index.ts       # Registry for all resources
+│   │   └── *.ts           # Migrated resource implementations
+│   └── prompts/
+│       ├── index.ts       # Registry for all prompts
+│       └── *.ts           # Migrated prompt implementations
+├── typescript-sdk/        # Local SDK clone
+├── package.json           # Updated scripts/deps
+└── tsconfig.json          # Updated ESM/path settings
+```
+
+---
+
+## Phase 6: ENABLED_TOOLS Filtering
+
+To maintain the current behavior of `ENABLED_TOOLS` environment variable:
+
+1.  **Option A (Registration-time):** In `registerTools(server)`, check `process.env.ENABLED_TOOLS` and only call `server.registerTool` for allowed tools.
+2.  **Option B (Middleware):** Use the existing `src/middleware.ts` logic but adapted for Express.
+
+**Recommendation:** Use Option A for simplicity and performance.
+
+---
+
+## Phase 8: Testing Strategy
+
+The migration requires updating the test suite to match the new SDK-based signatures and remove `xmcp` dependencies.
+
+### 8.1 Update Test Setup (`__tests__/setup.ts`)
+
+**Action:** Remove `xmcp/headers` mock.
+
+```typescript
+// Remove this:
+// vi.mock("xmcp/headers", () => ...)
+```
+
+### 8.2 Tool Integration Tests
+
+**Action:** Update tool calls to include the `extra` argument (mocked).
+
+**Before:**
+```typescript
+const result = await ploneConfigure(args);
+```
+
+**After:**
+```typescript
+const mockExtra = {
+  sessionId: "test-session-id",
+  signal: new AbortController().signal,
+  requestId: "test-request-id",
+} as any;
+
+const result = await ploneConfigure.handler(args, mockExtra);
+```
+
+### 8.3 Key Changes in Tests
+-   **Types:** Replace `InferSchema<typeof schema>` with `z.infer<typeof inputSchema>`.
+-   **Mocks:** Remove all references to `xmcp` mocks.
+-   **Direct Handler Testing:** Import the named export (e.g., `ploneConfigure`) and call its `.handler` directly.
+
+---
+
+## Phase 9: Final Verification & Cleanup
+
+### 9.1 Verification Checklist
+-   [ ] **Type Check:** `pnpm run type-check` passes.
+-   [ ] **Unit Tests:** `pnpm test` (vitest) passes for all migrated tools.
+-   [ ] **Initialize:** `curl -X POST http://localhost:3001/mcp -d '{"jsonrpc":"2.0","method":"initialize","params":{...},"id":1}'`
+-   [ ] **Tool Call:** Call `plone_configure` with session ID header and verify `PloneClient` is stored.
+-   [ ] **Persistence:** Call `plone_get_site_info` and verify it uses the authenticated client from the same session.
+
+### 9.2 Cleanup
+-   [ ] Delete `xmcp.config.ts`, `xmcp-env.d.ts`, and `.xmcp/` directory.
+-   [ ] Delete `src/utils/session.ts` (replaced by `extra.sessionId`).
+-   [ ] Update `README.md` and `Dockerfile`.
+
+---
+
+## Common Gotchas
+
+1.  **ESM Imports:** Ensure all local imports include the `.js` extension (e.g., `import { x } from "./utils.js"`).
+2.  **Zod Versions:** Ensure all tools use the same Zod version as the SDK.
+3.  **Express Headers:** Express lowercases header names automatically; ensure `mcp-session-id` lookup is case-insensitive.
