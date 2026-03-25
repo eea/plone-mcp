@@ -127,6 +127,42 @@ The server uses a specialized workflow for creating rich content with blocks:
 2. **Prepare**: Call `plone_create_blocks_layout` with an array of blocks.
 3. **Commit**: Call `plone_create_content` or `plone_update_content` to apply the layout.
 
+### Supported Block Types
+
+- **`slate` / `text`**: Rich text blocks. Input is **Markdown**, which is automatically converted to Slate JSON.
+- **`teaser`**: Link previews. Use `href` to point to content; set `overwrite: true` to customize title/image.
+- **`image`**: Display images. Supports `url`, `alt`, `align`, and `size`.
+- **`gridBlock`**: Multi-column layouts (up to 4 columns) containing other blocks.
+- **`listing`**: Dynamic lists of content based on queries (variations: `default`, `summary`, `grid`, `imageGallery`).
+- **`__button`**: Call-to-action buttons.
+- **`separator`**: Visual horizontal dividers.
+
+### Example: Creating a Page with Grid and Teasers
+
+```javascript
+plone_create_blocks_layout({
+  blocks: [
+    { type: "slate", data: { text: "## Welcome to our Grid Layout" } },
+    { 
+      type: "gridBlock", 
+      data: {
+        blocks: {
+          "col1": { "@type": "teaser", href: "/news/item-1" },
+          "col2": { "@type": "teaser", href: "/news/item-2" }
+        },
+        blocks_layout: { items: ["col1", "col2"] }
+      }
+    }
+  ]
+});
+
+plone_create_content({
+  parentPath: "/",
+  type: "Document",
+  title: "Modern Landing Page"
+});
+```
+
 ## Resources and Prompts
 
 This MCP server provides additional capabilities beyond tools:
@@ -185,16 +221,6 @@ curl -X POST http://localhost:3001/mcp \
   -H "mcp-session-id: my-test-session" \
   -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}'
 ```
-
-## License
-
-MIT
-`).
-- `make start`: Start production HTTP server.
-- `make test`: Run all tests.
-- `make type-check`: Run TypeScript validation.
-- `make format`: Format code with Prettier.
-- `make inspector`: Open MCP Inspector.
 
 ## License
 
