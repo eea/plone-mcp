@@ -1,18 +1,73 @@
 import { PloneService } from "./plone-service.js";
 
+/**
+ * Internal interface for session tracking
+ */
+interface SessionRecord {
+  service: PloneService;
+  lastAccessed: number;
+}
+
 class SessionManager {
-  private sessions: Map<string, PloneService> = new Map<string, PloneService>();
+  private sessions: Map<string, SessionRecord> = new Map<string, SessionRecord>();
+
+  // Default session TTL: 1 hour (3,600,000 ms)
+  private readonly SESSION_TTL = process.env.PLONE_SESSION_TTL
+    ? parseInt(process.env.PLONE_SESSION_TTL, 10)
+    : 3600000;
+
+  // Cleanup interval: 5 minutes (300,000 ms)
+  private readonly CLEANUP_INTERVAL = 300000;
+
+  private cleanupTimer?: NodeJS.Timeout;
+
+  constructor() {
+    this.startCleanupInterval();
+  }
+
+  private startCleanupInterval(): void {
+    if (this.cleanupTimer) return;
+
+    this.cleanupTimer = setInterval(() => {
+      const now = Date.now();
+      let cleanedCount = 0;
+
+      for (const [sessionId, session] of this.sessions.entries()) {
+        if (now - session.lastAccessed > this.SESSION_TTL) {
+          this.clearSession(sessionId);
+          cleanedCount++;
+        }
+      }
+
+      if (cleanedCount > 0) {
+        console.log(
+          `[SessionManager] Cleaned up ${cleanedCount} expired sessions.`,
+        );
+      }
+    }, this.CLEANUP_INTERVAL);
+
+    // Ensure the process can exit if this is the only thing running
+    if (this.cleanupTimer.unref) {
+      this.cleanupTimer.unref();
+    }
+  }
 
   public getSession(sessionId: string): PloneService {
-    if (!this.sessions.has(sessionId)) {
-      // Initialize with a dummy client; it will be configured later by plone_configure
-      this.sessions.set(sessionId, new PloneService(null));
+    const existing = this.sessions.get(sessionId);
+
+    if (existing) {
+      existing.lastAccessed = Date.now();
+      return existing.service;
     }
-    const session = this.sessions.get(sessionId);
-    if (!session) {
-      throw new Error(`Session ${sessionId} not found after initialization.`);
-    }
-    return session;
+
+    // Initialize with a dummy client; it will be configured later by plone_configure
+    const service = new PloneService(null);
+    this.sessions.set(sessionId, {
+      service,
+      lastAccessed: Date.now(),
+    });
+
+    return service;
   }
 
   public clearSession(sessionId: string): void {
