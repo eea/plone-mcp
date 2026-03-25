@@ -109,6 +109,7 @@ app.delete("/mcp", async (req: Request, res: Response) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
+  sessionManager.startCleanup();
   console.log(`Plone MCP Server (HTTP) listening on port ${PORT}`);
 });
 

@@ -22,10 +22,14 @@ class SessionManager {
   private cleanupTimer?: NodeJS.Timeout;
 
   constructor() {
-    this.startCleanupInterval();
+    // Cleanup is now explicit. Call startCleanup() to enable it.
   }
 
-  private startCleanupInterval(): void {
+  /**
+   * Starts a background interval to purge sessions that have been inactive
+   * for more than the configured TTL. Recommended for HTTP servers.
+   */
+  public startCleanup(): void {
     if (this.cleanupTimer) return;
 
     this.cleanupTimer = setInterval(() => {
@@ -49,6 +53,16 @@ class SessionManager {
     // Ensure the process can exit if this is the only thing running
     if (this.cleanupTimer.unref) {
       this.cleanupTimer.unref();
+    }
+  }
+
+  /**
+   * Stops the background cleanup interval.
+   */
+  public stopCleanup(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
     }
   }
 
