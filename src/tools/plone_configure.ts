@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { sessionManager } from "../session-manager.js";
 import {
   ENV_BASE_URL,
   ENV_USERNAME,
@@ -8,16 +8,10 @@ import {
   ENV_TOKEN,
   PloneClient,
   Config,
-} from "plone-mcp/plone-client";
+} from "../plone-client.js";
+import { wrapError } from "../utils/block-utils.js";
 
-import { wrapError } from "plone-mcp/utils/block-utils";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
-
-// Define the schema for tool parameters
-// Using simple z.string().optional() to avoid Zod version compatibility issues
-// with xmcp's bundled Zod when using chained .refine() on .optional()
-export const schema = {
+const inputSchema = z.object({
   baseUrl: z
     .string()
     .optional()
@@ -42,51 +36,46 @@ export const schema = {
     .describe(
       "JWT token for authentication (alternative to username/password). Can be set via PLONE_TOKEN environment variable.",
     ),
-};
+});
 
-export const metadata: ToolMetadata = {
-  name: "plone_configure",
-  description:
-    "Establishes and authenticates the connection to a Plone CMS. **Must be called once per session** before other tools can be used. Configuration can be provided via arguments or environment variables (PLONE_BASE_URL, PLONE_USERNAME, PLONE_PASSWORD, PLONE_TOKEN). Arguments take precedence over environment variables. To use environment variables only, call with an empty object: plone_configure({}). Example with arguments: plone_configure({baseUrl: 'https://demo.plone.org', username: 'admin', password: 'secret'}).",
-  annotations: {
-    title: "Configure Plone Connection",
-    readOnlyHint: false,
-    destructiveHint: false,
-    idempotentHint: true,
+export const ploneConfigure = {
+  config: {
+    name: "plone_configure",
+    description:
+      "Establishes and authenticates the connection to a Plone CMS. **Must be called once per session** before other tools can be used. Configuration can be provided via arguments or environment variables (PLONE_BASE_URL, PLONE_USERNAME, PLONE_PASSWORD, PLONE_TOKEN). Arguments take precedence over environment variables. To use environment variables only, call with an empty object: plone_configure({}). Example with arguments: plone_configure({baseUrl: 'https://demo.plone.org', username: 'admin', password: 'secret'}).",
+    inputSchema,
+  },
+  handler: async (
+    args: z.infer<typeof inputSchema>,
+    extra: RequestHandlerExtra<any, any>,
+  ) => {
+    const sessionId = extra.sessionId || "default";
+    const service = sessionManager.getSession(sessionId);
+
+    // Build config from args and environment variables
+    const config: Config = {
+      baseUrl: args.baseUrl || process.env[ENV_BASE_URL],
+      username: args.username || process.env[ENV_USERNAME],
+      password: args.password || process.env[ENV_PASSWORD],
+      token: args.token || process.env[ENV_TOKEN],
+    };
+
+    try {
+      const client = new PloneClient(config);
+      await client.get("/");
+      service.client = client;
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
+          },
+        ],
+      };
+    } catch (error) {
+      service.client = null;
+      throw wrapError("Configure", error);
+    }
   },
 };
-
-// Tool implementation
-export default async function ploneConfigure(
-  args: InferSchema<typeof schema>,
-): Promise<{ content: { type: "text"; text: string }[] }> {
-  const requestHeaders = headers();
-  const sessionId = getSessionId(requestHeaders);
-  const service = sessionManager.getSession(sessionId);
-
-  // Build config from args and environment variables
-  const config: Config = {
-    baseUrl: args.baseUrl || process.env[ENV_BASE_URL],
-    username: args.username || process.env[ENV_USERNAME],
-    password: args.password || process.env[ENV_PASSWORD],
-    token: args.token || process.env[ENV_TOKEN],
-  };
-
-  try {
-    const client = new PloneClient(config);
-    await client.get("/");
-    service.client = client;
-
-    const textContent = {
-      type: "text" as const,
-      text: `Successfully configured connection to Plone site: ${client.baseUrl}`,
-    };
-    return { content: [textContent] };
-  } catch (error) {
-    // If configuration fails, we might want to clear the client from the session
-    // But since we get the service from the session, we can just set client to null
-    service.client = null;
-
-    throw wrapError("Configure", error);
-  }
-}

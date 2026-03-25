@@ -1,4 +1,4 @@
-import { PloneService } from "plone-mcp/plone-service";
+import { PloneService } from "./plone-service.js";
 
 class SessionManager {
   private sessions: Map<string, PloneService> = new Map<string, PloneService>();

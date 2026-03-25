@@ -19,11 +19,7 @@
     "types": ["vitest/globals", "vitest", "node"],
     "baseUrl": ".",
     "paths": {
-      "plone-mcp/*": ["./src/*"],
-      "xmcp/*": [
-        "./node_modules/xmcp/dist/runtime/*",
-        "./node_modules/xmcp/dist/*"
-      ]
+      "plone-mcp/*": ["./src/*"]
     }
   },
   "include": ["src/**/*.ts", "xmcp-env.d.ts"],

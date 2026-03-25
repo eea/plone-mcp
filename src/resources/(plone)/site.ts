@@ -1,35 +1,37 @@
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { ResourceMetadata } from "xmcp";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
+import { sessionManager } from "../../session-manager.js";
 
-export const metadata: ResourceMetadata = {
-  name: "plone-site",
-  title: "Plone Site Information",
-  description:
-    "Provides direct read-only access to the Plone site's root information object.",
+export const ploneSiteResource = {
+  config: {
+    uri: "plone://site",
+    name: "plone-site",
+    description:
+      "Provides direct read-only access to the Plone site's root information object.",
+    mimeType: "application/json",
+  },
+  handler: async (
+    uri: URL,
+    extra: RequestHandlerExtra<ServerRequest, ServerNotification>
+  ) => {
+    const sessionId = extra.sessionId || "default";
+    const service = sessionManager.getSession(sessionId);
+    const client = service.getClient();
+
+    if (!client) {
+      throw new Error("Plone client not configured.");
+    }
+
+    const siteInfo = await client.get("/");
+
+    return {
+      contents: [
+        {
+          uri: uri.href,
+          mimeType: "application/json",
+          text: JSON.stringify(siteInfo, null, 2),
+        },
+      ],
+    };
+  },
 };
-
-export default async function read() {
-  const sessionId = getSessionId(headers());
-  const service = sessionManager.getSession(sessionId);
-  const client = service.getClient();
-
-  if (!client) {
-    throw new Error(
-      "Plone client not configured. (Resource handler needs access to the main server's configured PloneToolHandlers instance.)",
-    );
-  }
-
-  const siteInfo = await client.get("/");
-
-  return {
-    contents: [
-      {
-        uri: "plone://site",
-        mimeType: "application/json",
-        text: JSON.stringify(siteInfo, null, 2),
-      },
-    ],
-  };
-}

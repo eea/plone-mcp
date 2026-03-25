@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock ,
   PloneMockServer,
   sampleDocument,
 } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneUpdateSingleBlock from "plone-mcp/tools/plone_update_single_block";
+import { ploneUpdateSingleBlock } from "plone-mcp/tools/plone_update_single_block";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
 
@@ -45,12 +44,14 @@ describe("plone_update_single_block", () => {
   };
 
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   beforeEach(() => {
     mockServer = new PloneMockServer(testBaseUrl);
-    vi.mocked(headers).mockReturnValue({
-      "mcp-session-id": sessionId,
-    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
@@ -78,7 +79,7 @@ describe("plone_update_single_block", () => {
       blockId: blockToUpdateId,
       blockData: updatedBlockData,
     };
-    const result = await ploneUpdateSingleBlock(args);
+    const result = await ploneUpdateSingleBlock.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockContentAfterUpdate);
     expect(Nock.isDone()).toBe(true);
@@ -95,7 +96,7 @@ describe("plone_update_single_block", () => {
       blockData: updatedBlockData,
     };
 
-    await expect(ploneUpdateSingleBlock(args)).rejects.toThrow(
+    await expect(ploneUpdateSingleBlock.handler(args, mockExtra)).rejects.toThrow(
       `[UpdateBlock] Block with ID '${nonExistentBlockId}' not found. Available block IDs: ${blockToUpdateId}`,
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No patch request should have been made
@@ -111,7 +112,7 @@ describe("plone_update_single_block", () => {
       blockId: blockToUpdateId,
       blockData: updatedBlockData,
     };
-    await expect(ploneUpdateSingleBlock(args)).rejects.toThrow(
+    await expect(ploneUpdateSingleBlock.handler(args, mockExtra)).rejects.toThrow(
       `[UpdateBlock] Request failed with status code 404`,
     );
     expect(Nock.isDone()).toBe(true);
@@ -128,7 +129,7 @@ describe("plone_update_single_block", () => {
       blockId: blockToUpdateId,
       blockData: updatedBlockData,
     };
-    await expect(ploneUpdateSingleBlock(args)).rejects.toThrow(
+    await expect(ploneUpdateSingleBlock.handler(args, mockExtra)).rejects.toThrow(
       `[UpdateBlock] Request failed with status code 500`,
     );
     expect(Nock.isDone()).toBe(true);
@@ -143,7 +144,7 @@ describe("plone_update_single_block", () => {
       blockId: blockToUpdateId,
       blockData: updatedBlockData,
     };
-    await expect(ploneUpdateSingleBlock(args)).rejects.toThrow(
+    await expect(ploneUpdateSingleBlock.handler(args, mockExtra)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

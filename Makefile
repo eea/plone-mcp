@@ -49,16 +49,16 @@ gen-agents-md: ## Generate AGENTS.md from a source markdown file.
 	@python3 scripts/gen-agentsmd.py --input $(INPUT_FILE)$(if $(OUTPUT_FILE), --output $(OUTPUT_FILE))
 
 build: ## Build for production.
-	$(PNPM_BIN)/xmcp build
+	pnpm run build
 
 start: ## Start the HTTP server.
-	node dist/http.js
+	node dist/http-server.js
 
 dev: ## Start in development mode with hot reload.
-	$(PNPM_BIN)/xmcp dev
+	$(PNPM_BIN)/tsx watch src/http-server.ts
 
 dev-filtered: ## Start in development mode with only basic tools enabled (configure, get, search).
-	export ENABLED_TOOLS=plone_configure,plone_get_content,plone_search; $(PNPM_BIN)/xmcp dev
+	export ENABLED_TOOLS=plone_configure,plone_get_content,plone_search; $(PNPM_BIN)/tsx watch src/http-server.ts
 
 sanity-check-dev-server: ## Test if dev server is running on localhost:3001/mcp.
 	@echo "Testing dev server at http://localhost:3001/mcp..."
@@ -69,7 +69,7 @@ sanity-check-dev-server: ## Test if dev server is running on localhost:3001/mcp.
 		-w "\nHTTP Status: %{http_code}\n" | grep -E '"jsonrpc":"2.0"|HTTP Status: 200' && echo "✓ Dev server is responding correctly" || echo "✗ Dev server is not responding"
 
 inspector: ## Run with MCP Inspector on ports 4000/4001.
-	DANGEROUSLY_OMIT_AUTH=true CLIENT_PORT=4000 SERVER_PORT=4001 npx @modelcontextprotocol/inspector node dist/http.js
+	DANGEROUSLY_OMIT_AUTH=true CLIENT_PORT=4000 SERVER_PORT=4001 npx @modelcontextprotocol/inspector node dist/http-server.js
 
 ci:	## teste, type-check, lint and format
 	make test

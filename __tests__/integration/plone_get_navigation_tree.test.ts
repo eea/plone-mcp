@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { headers } from "xmcp/headers";
 import { Nock } from "plone-mcp/__tests__/utils/test-helpers";
-import ploneGetNavigationTree, { schema } from "plone-mcp/tools/plone_get_navigation_tree";
+import { ploneGetNavigationTree } from "plone-mcp/tools/plone_get_navigation_tree";
 import { PloneClient } from "plone-mcp/plone-client";
 import { sessionManager } from "plone-mcp/session-manager";
-import type { InferSchema } from "xmcp";
 
 describe("plone_get_navigation_tree", () => {
   const testBaseUrl = "http://localhost:8080/Plone";
@@ -28,11 +26,13 @@ describe("plone_get_navigation_tree", () => {
   ];
 
   const sessionId = "test-session-id";
+  const mockExtra = {
+    sessionId,
+    signal: new AbortController().signal,
+    requestId: "test-request-id",
+  } as any;
 
   beforeEach(() => {
-    vi.mocked(headers).mockReturnValue({
-      "mcp-session-id": sessionId,
-    });
     const service = sessionManager.getSession(sessionId);
     service.client = new PloneClient({ baseUrl: testBaseUrl });
   });
@@ -48,8 +48,8 @@ describe("plone_get_navigation_tree", () => {
       .query({ depth: 2 })
       .reply(200, mockNavigationTree);
 
-    const args: InferSchema<typeof schema> = { root_path: undefined, depth: 2 }; // Explicitly set depth to its default
-    const result = await ploneGetNavigationTree(args);
+    const args = { root_path: undefined, depth: 2 }; // Explicitly set depth to its default
+    const result = await ploneGetNavigationTree.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockNavigationTree);
     expect(Nock.isDone()).toBe(true);
@@ -63,11 +63,11 @@ describe("plone_get_navigation_tree", () => {
       .query({ depth: customDepth })
       .reply(200, mockNavigationTree);
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       root_path: customPath,
       depth: customDepth,
     };
-    const result = await ploneGetNavigationTree(args);
+    const result = await ploneGetNavigationTree.handler(args, mockExtra);
 
     expect(JSON.parse(result.content[0].text)).toEqual(mockNavigationTree);
     expect(Nock.isDone()).toBe(true);
@@ -80,11 +80,11 @@ describe("plone_get_navigation_tree", () => {
       .query({ depth: 2 })
       .reply(500, "Server Error");
 
-    const args: InferSchema<typeof schema> = {
+    const args = {
       root_path: customPath,
       depth: 2,
     }; // Explicitly set depth to its default
-    await expect(ploneGetNavigationTree(args)).rejects.toThrow(
+    await expect(ploneGetNavigationTree.handler(args, mockExtra)).rejects.toThrow(
       "[GetNavigationTree] Request failed with status code 500",
     );
     expect(Nock.isDone()).toBe(true);
@@ -94,8 +94,8 @@ describe("plone_get_navigation_tree", () => {
     const service = sessionManager.getSession(sessionId);
     service.client = null;
 
-    const args: InferSchema<typeof schema> = { root_path: undefined, depth: 2 }; // Explicitly set depth to its default
-    await expect(ploneGetNavigationTree(args)).rejects.toThrow(
+    const args = { root_path: undefined, depth: 2 }; // Explicitly set depth to its default
+    await expect(ploneGetNavigationTree.handler(args, mockExtra)).rejects.toThrow(
       "Plone client not configured. Please run plone_configure first.",
     );
     expect(Nock.pendingMocks()).toHaveLength(0); // No API call should be made

@@ -1,46 +1,37 @@
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
+import { z } from "zod";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
-import { wrapError } from "plone-mcp/utils/block-utils";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
+const inputSchema = z.object({});
 
-export const schema = {
-  // No parameters required
-};
+export const ploneGetSiteInfo = {
+  config: {
+    name: "plone_get_site_info",
+    description:
+      "Retrieves top-level information and metadata about the connected Plone site, such as available languages and Plone version.",
+    inputSchema,
+  },
+  handler: async (
+    _args: z.infer<typeof inputSchema>,
+    extra: RequestHandlerExtra<any, any>,
+  ) => {
+    try {
+      const sessionId = extra.sessionId || "default";
+      const service = sessionManager.getSession(sessionId);
+      const client = service.getClient();
+      const siteInfo = await client.get("/");
 
-export const metadata: ToolMetadata = {
-  name: "plone_get_site_info",
-  description:
-    "Retrieves top-level information and metadata about the connected Plone site, such as available languages and Plone version.",
-  annotations: {
-    title: "Get Site Information",
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(siteInfo, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw wrapError("GetSiteInfo", error);
+    }
   },
 };
-
-export default async function ploneGetSiteInfo(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _args: InferSchema<typeof schema>,
-): Promise<{ content: { type: "text"; text: string }[] }> {
-  try {
-    const requestHeaders = headers();
-    const sessionId = getSessionId(requestHeaders);
-    const service = sessionManager.getSession(sessionId);
-    const client = service.getClient();
-    const siteInfo = await client.get("/");
-
-    const textContent = {
-      type: "text" as const,
-      text: JSON.stringify(siteInfo, null, 2),
-    };
-
-    return {
-      content: [textContent],
-    };
-  } catch (error) {
-    throw wrapError("GetSiteInfo", error);
-  }
-}

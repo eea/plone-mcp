@@ -1,18 +1,16 @@
 import { z } from "zod";
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
-import { blockRegistry } from "plone-mcp/block-registry";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { sessionManager } from "../session-manager.js";
+import { blockRegistry } from "../block-registry.js";
 import {
   wrapError,
   generateBlockId,
   processBlock,
   validateImageURL,
-} from "plone-mcp/utils/block-utils";
-import { PloneContent } from "plone-mcp/plone-client";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
+} from "../utils/block-utils.js";
+import { PloneContent } from "../plone-client.js";
 
-export const schema = {
+const inputSchema = z.object({
   path: z.string().describe("Path to the content"),
   blockType: z
     .enum(blockRegistry.getBlockTypesEnum())
@@ -22,91 +20,89 @@ export const schema = {
     .number()
     .optional()
     .describe("Position to insert the block (optional, defaults to end)"),
-};
+});
 
-export const metadata: ToolMetadata = {
-  name: "plone_add_single_block",
-  description:
-    "Adds a single new block to an existing content item without replacing other blocks. Specify the block type, data, and optional position. Example: plone_add_single_block({path: '/my-page', blockType: 'text', blockData: {text: 'New paragraph'}})",
-  annotations: {
-    title: "Add Single Block",
-    readOnlyHint: false,
-    destructiveHint: false,
-    idempotentHint: false,
+export const ploneAddSingleBlock = {
+  config: {
+    name: "plone_add_single_block",
+    description:
+      "Adds a single new block to an existing content item without replacing other blocks. Specify the block type, data, and optional position. Example: plone_add_single_block({path: '/my-page', blockType: 'text', blockData: {text: 'New paragraph'}})",
+    inputSchema,
   },
-};
+  handler: async (
+    args: z.infer<typeof inputSchema>,
+    extra: RequestHandlerExtra<any, any>,
+  ) => {
+    try {
+      const sessionId = extra.sessionId || "default";
+      const service = sessionManager.getSession(sessionId);
+      const { path, blockType, position, blockData } = args;
+      const client = service.getClient();
 
-export default async function ploneAddSingleBlock(
-  args: InferSchema<typeof schema>,
-) {
-  try {
-    const requestHeaders = headers();
-    const sessionId = getSessionId(requestHeaders);
-    const service = sessionManager.getSession(sessionId);
-    const { path, blockType, position, blockData } = args;
-    const client = service.getClient();
+      // First get the current content
+      const content = (await client.get(path)) as PloneContent;
 
-    // First get the current content
-    const content = (await client.get(path)) as PloneContent;
+      const blocks = content.blocks || {};
+      const blocks_layout = (content.blocks_layout as { items: string[] }) || {
+        items: [],
+      };
 
-    const blocks = content.blocks || {};
-    const blocks_layout = content.blocks_layout || { items: [] };
+      // Generate new block ID
+      const blockId = generateBlockId();
 
-    // Generate new block ID
-    const blockId = generateBlockId();
+      // Validate image URLs asynchronously before processing
+      if (
+        blockType === "image" &&
+        typeof blockData.url === "string" &&
+        blockData.url
+      ) {
+        const isValid = await validateImageURL(blockData.url);
+        if (!isValid) {
+          throw wrapError(
+            "AddBlock",
+            `Invalid or inaccessible image URL: ${blockData.url} `,
+          );
+        }
+      }
 
-    // Validate image URLs asynchronously before processing
-    if (
-      blockType === "image" &&
-      typeof blockData.url === "string" &&
-      blockData.url
-    ) {
-      const isValid = await validateImageURL(blockData.url);
-      if (!isValid) {
-        throw wrapError(
-          "AddBlock",
-          `Invalid or inaccessible image URL: ${blockData.url} `,
+      // Process block using centralized logic
+      try {
+        blocks[blockId] = processBlock(blockType, blockData);
+      } catch (error) {
+        throw new Error(
+          `Error processing block data: ${
+            error instanceof Error ? error.message : String(error)
+          } `,
         );
       }
-    }
 
-    // Process block using centralized logic
-    try {
-      blocks[blockId] = processBlock(blockType, blockData);
+      // Insert at specified position or at the end
+      if (
+        position !== undefined &&
+        position >= 0 &&
+        position <= blocks_layout.items.length
+      ) {
+        blocks_layout.items.splice(position, 0, blockId);
+      } else {
+        blocks_layout.items.push(blockId);
+      }
+
+      // Update the content
+      const updatedContent = await client.patch(path, {
+        blocks,
+        blocks_layout,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(updatedContent, null, 2),
+          },
+        ],
+      };
     } catch (error) {
-      throw new Error(
-        `Error processing block data: ${
-          error instanceof Error ? error.message : String(error)
-        } `,
-      );
+      throw wrapError("AddBlock", error);
     }
-
-    // Insert at specified position or at the end
-    if (
-      position !== undefined &&
-      position >= 0 &&
-      position <= blocks_layout.items.length
-    ) {
-      blocks_layout.items.splice(position, 0, blockId);
-    } else {
-      blocks_layout.items.push(blockId);
-    }
-
-    // Update the content
-    const updatedContent = await client.patch(path, {
-      blocks,
-      blocks_layout,
-    });
-
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(updatedContent, null, 2),
-        },
-      ],
-    };
-  } catch (error) {
-    throw wrapError("AddBlock", error);
-  }
-}
+  },
+};

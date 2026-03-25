@@ -13,12 +13,6 @@ afterAll(() => {
   Nock.enableNetConnect();
 });
 
-vi.mock("xmcp/headers", () => {
-  return {
-    headers: vi.fn().mockReturnValue({}),
-  };
-});
-
 // Clean up after each test
 afterEach(() => {
   cleanupNock();

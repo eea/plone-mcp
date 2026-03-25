@@ -1,30 +1,42 @@
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import type { InferSchema, PromptMetadata } from "xmcp";
 
-export const schema = {
-  contentType: z
-    .string()
-    .describe("Type of content to create (e.g., 'Document', 'News Item')"),
-  purpose: z.string().describe("The purpose or topic of the page"),
-  audience: z.string().optional().describe("The target audience for the page"),
-};
+export const ploneCreatePageWorkflow = {
+  config: {
+    name: "create-page-workflow",
+    description:
+      "A guided workflow to create a single web page with specific content and structure.",
+    argsSchema: {
+      contentType: z
+        .string()
+        .describe("Type of content to create (e.g., 'Document', 'News Item')"),
+      purpose: z.string().describe("The purpose or topic of the page"),
+      audience: z
+        .string()
+        .optional()
+        .describe("The target audience for the page"),
+    },
+  },
+  handler: async (
+    args: {
+      contentType: string;
+      purpose: string;
+      audience?: string;
+    },
+    _extra: RequestHandlerExtra<ServerRequest, ServerNotification>
+  ) => {
+    const { contentType, purpose, audience } = args;
 
-export const metadata: PromptMetadata = {
-  name: "create-page-workflow",
-  title: "Create a Single Web Page",
-  description:
-    "A guided workflow to create a single web page with specific content and structure.",
-  role: "user",
-};
-
-export default function createPageWorkflow({
-  contentType,
-  purpose,
-  audience,
-}: InferSchema<typeof schema>) {
-  return `My goal is to create a new ${contentType} page about "${purpose}"${
-    audience ? ` for an audience of ${audience}` : ""
-  }. Perform the following steps:
+    return {
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `My goal is to create a new ${contentType} page about "${purpose}"${
+              audience ? ` for an audience of ${audience}` : ""
+            }. Perform the following steps:
 
 1.  Ensure the Plone connection is configured.
 2.  Determine the best parent path for this new content.
@@ -32,5 +44,10 @@ export default function createPageWorkflow({
 4.  Add relevant content blocks (like text and images) to build out the page.
 5.  Finally, publish the page by transitioning its workflow state.
 
-Begin with the first step.`;
-}
+Begin with the first step.`,
+          },
+        },
+      ],
+    };
+  },
+};

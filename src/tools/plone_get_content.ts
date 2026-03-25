@@ -1,12 +1,9 @@
 import { z } from "zod";
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
-import { wrapError } from "plone-mcp/utils/block-utils";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
-
-export const schema = {
+const inputSchema = z.object({
   path: z
     .string()
     .describe(
@@ -18,51 +15,42 @@ export const schema = {
     .describe(
       "Components to expand (e.g., ['breadcrumbs', 'actions', 'workflow'])",
     ),
-};
+});
 
-export const metadata: ToolMetadata = {
-  name: "plone_get_content",
-  description:
-    "Retrieves the full JSON data for a single content item from Plone using its path. Example: plone_get_content({path: '/news/latest-update'})",
-  annotations: {
-    title: "Get Plone Content",
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
+export const ploneGetContent = {
+  config: {
+    name: "plone_get_content",
+    description:
+      "Retrieves the full JSON data for a single content item from Plone using its path. Example: plone_get_content({path: '/news/latest-update'})",
+    inputSchema,
+  },
+  handler: async (
+    args: z.infer<typeof inputSchema>,
+    extra: RequestHandlerExtra<any, any>,
+  ) => {
+    try {
+      const { path, expand } = args;
+      const sessionId = extra.sessionId || "default";
+      const service = sessionManager.getSession(sessionId);
+      const client = service.getClient();
+
+      const params: Record<string, unknown> = {};
+      if (expand && expand.length > 0) {
+        params.expand = expand.join(",");
+      }
+
+      const content = await client.get(path, params);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(content, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw wrapError("GetContent", error);
+    }
   },
 };
-
-interface PloneGetContentArgs {
-  path: string;
-  expand?: string[];
-}
-
-export default async function ploneGetContent(
-  args: InferSchema<typeof schema> & PloneGetContentArgs,
-): Promise<{ content: { type: "text"; text: string }[] }> {
-  try {
-    const { path, expand } = args;
-    const requestHeaders = headers();
-    const sessionId = getSessionId(requestHeaders);
-    const service = sessionManager.getSession(sessionId);
-    const client = service.getClient();
-
-    const params: Record<string, unknown> = {};
-    if (expand && expand.length > 0) {
-      params.expand = expand.join(",");
-    }
-
-    const content = await client.get(path, params);
-
-    const textContent = {
-      type: "text" as const,
-      text: JSON.stringify(content, null, 2),
-    };
-
-    return {
-      content: [textContent],
-    };
-  } catch (error) {
-    throw wrapError("GetContent", error);
-  }
-}

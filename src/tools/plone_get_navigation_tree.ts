@@ -1,12 +1,9 @@
 import { z } from "zod";
-import { headers } from "xmcp/headers";
-import { sessionManager } from "plone-mcp/session-manager";
+import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { sessionManager } from "../session-manager.js";
+import { wrapError } from "../utils/block-utils.js";
 
-import { wrapError } from "plone-mcp/utils/block-utils";
-import { getSessionId } from "plone-mcp/utils/session";
-import type { InferSchema, ToolMetadata } from "xmcp";
-
-export const schema = {
+const inputSchema = z.object({
   root_path: z
     .string()
     .optional()
@@ -16,59 +13,50 @@ export const schema = {
     .optional()
     .default(2)
     .describe("How deep to traverse in the navigation tree"),
-};
+});
 
-export const metadata: ToolMetadata = {
-  name: "plone_get_navigation_tree",
-  description:
-    "Get hierarchical navigation tree from any point in the site. Essential for understanding content organization and relationships. Example: plone_get_navigation_tree({root_path: '/documentation', depth: 3})",
-  annotations: {
-    title: "Get Navigation Tree",
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
+export const ploneGetNavigationTree = {
+  config: {
+    name: "plone_get_navigation_tree",
+    description:
+      "Get hierarchical navigation tree from any point in the site. Essential for understanding content organization and relationships. Example: plone_get_navigation_tree({root_path: '/documentation', depth: 3})",
+    inputSchema,
+  },
+  handler: async (
+    args: z.infer<typeof inputSchema>,
+    extra: RequestHandlerExtra<any, any>,
+  ) => {
+    try {
+      const { root_path, depth } = args;
+      const sessionId = extra.sessionId || "default";
+      const service = sessionManager.getSession(sessionId);
+      const client = service.getClient();
+
+      const normalizedRootPath =
+        typeof root_path === "string" ? client.normalizePath(root_path) : "";
+
+      const navigationPath = normalizedRootPath
+        ? `${normalizedRootPath}/@navigation`
+        : "/@navigation";
+
+      // Build query parameters for navigation
+      const params: Record<string, unknown> = {
+        depth: typeof depth === "number" ? depth : 2,
+      };
+
+      // Use the @navigation endpoint
+      const navigation = await client.get(navigationPath, params);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(navigation, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw wrapError("GetNavigationTree", error);
+    }
   },
 };
-
-interface PloneGetNavigationTreeArgs {
-  root_path?: string;
-  depth?: number;
-}
-
-export default async function ploneGetNavigationTree(
-  args: InferSchema<typeof schema> & PloneGetNavigationTreeArgs,
-): Promise<{ content: { type: "text"; text: string }[] }> {
-  try {
-    const { root_path, depth } = args;
-    const requestHeaders = headers();
-    const sessionId = getSessionId(requestHeaders);
-    const service = sessionManager.getSession(sessionId);
-    const client = service.getClient();
-
-    const normalizedRootPath =
-      typeof root_path === "string" ? client.normalizePath(root_path) : "";
-
-    const navigationPath = normalizedRootPath
-      ? `${normalizedRootPath}/@navigation`
-      : "/@navigation";
-
-    // Build query parameters for navigation
-    const params: Record<string, unknown> = {
-      depth: typeof depth === "number" ? depth : 2,
-    };
-
-    // Use the @navigation endpoint
-    const navigation = await client.get(navigationPath, params);
-
-    const textContent = {
-      type: "text" as const,
-      text: JSON.stringify(navigation, null, 2),
-    };
-
-    return {
-      content: [textContent],
-    };
-  } catch (error) {
-    throw wrapError("GetNavigationTree", error);
-  }
-}
