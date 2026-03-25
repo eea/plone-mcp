@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ploneContentResource } from "./(plone)/content.js";
-import { ploneSiteResource } from "./(plone)/site.js";
-import { ploneTypesResource } from "./(plone)/types.js";
+import { ploneContentResource } from "./content.js";
+import { ploneSiteResource } from "./site.js";
+import { ploneTypesResource } from "./types.js";
 
 /**
  * Registers all resources with the provided McpServer instance.

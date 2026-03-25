@@ -1,13 +1,13 @@
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
-import { sessionManager } from "../../session-manager.js";
+import { sessionManager } from "../session-manager.js";
 
-export const ploneSiteResource = {
+export const ploneTypesResource = {
   config: {
-    uri: "plone://site",
-    name: "plone-site",
+    uri: "plone://types",
+    name: "plone-types",
     description:
-      "Provides direct read-only access to the Plone site's root information object.",
+      "Provides direct read-only access to the list of available content types.",
     mimeType: "application/json",
   },
   handler: async (
@@ -22,14 +22,14 @@ export const ploneSiteResource = {
       throw new Error("Plone client not configured.");
     }
 
-    const siteInfo = await client.get("/");
+    const types = await client.get("/@types");
 
     return {
       contents: [
         {
           uri: uri.href,
           mimeType: "application/json",
-          text: JSON.stringify(siteInfo, null, 2),
+          text: JSON.stringify(types, null, 2),
         },
       ],
     };

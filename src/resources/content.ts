@@ -2,7 +2,7 @@ import { ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { Variables } from "@modelcontextprotocol/sdk/shared/uriTemplate.js";
-import { sessionManager } from "../../session-manager.js";
+import { sessionManager } from "../session-manager.js";
 
 export const ploneContentResource = {
   config: {
