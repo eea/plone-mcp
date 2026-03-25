@@ -1,5 +1,3 @@
-import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 export const ploneCreateExampleSiteWorkflow = {
@@ -22,15 +20,12 @@ export const ploneCreateExampleSiteWorkflow = {
         .describe("The number of pages to create (default is 3)"),
     },
   },
-  handler: async (
-    args: {
-      contentTypes: string;
-      purpose: string;
-      numberOfPages?: string;
-      audience?: string;
-    },
-    _extra: RequestHandlerExtra<ServerRequest, ServerNotification>
-  ) => {
+  handler: async (args: {
+    contentTypes: string;
+    purpose: string;
+    numberOfPages?: string;
+    audience?: string;
+  }) => {
     const { contentTypes, purpose, numberOfPages = "3", audience } = args;
 
     return {

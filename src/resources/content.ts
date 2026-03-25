@@ -37,9 +37,11 @@ export const ploneContentResource = {
           },
         ],
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(
-        `Failed to fetch content at "${normalizedPath}": ${error.message}`
+        `Failed to fetch content at "${normalizedPath}": ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   },

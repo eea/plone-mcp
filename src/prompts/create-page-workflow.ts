@@ -1,5 +1,3 @@
-import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 export const ploneCreatePageWorkflow = {
@@ -18,14 +16,11 @@ export const ploneCreatePageWorkflow = {
         .describe("The target audience for the page"),
     },
   },
-  handler: async (
-    args: {
-      contentType: string;
-      purpose: string;
-      audience?: string;
-    },
-    _extra: RequestHandlerExtra<ServerRequest, ServerNotification>
-  ) => {
+  handler: async (args: {
+    contentType: string;
+    purpose: string;
+    audience?: string;
+  }) => {
     const { contentType, purpose, audience } = args;
 
     return {

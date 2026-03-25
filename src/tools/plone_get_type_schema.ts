@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
 import { sessionManager } from "../session-manager.js";
 import { wrapError } from "../utils/block-utils.js";
 
@@ -18,7 +19,7 @@ export const ploneGetTypeSchema = {
   },
   handler: async (
     args: z.infer<typeof inputSchema>,
-    extra: RequestHandlerExtra<any, any>,
+    extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
   ) => {
     try {
       const sessionId = extra.sessionId || "default";

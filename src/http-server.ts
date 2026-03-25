@@ -1,5 +1,5 @@
-import express, { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
+import express, { Request, Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { createServer } from "./server.js";
@@ -23,7 +23,16 @@ app.post("/mcp", async (req: Request, res: Response) => {
 
     if (sessionId && transports.has(sessionId)) {
       // Reuse existing transport for session
-      transport = transports.get(sessionId)!;
+      const existingTransport = transports.get(sessionId);
+      if (!existingTransport) {
+        res.status(400).json({
+          jsonrpc: "2.0",
+          error: { code: -32001, message: "Invalid session ID" },
+          id: null,
+        });
+        return;
+      }
+      transport = existingTransport;
     } else if (!sessionId && req.body.method === "initialize") {
       // New session initialization
       transport = new StreamableHTTPServerTransport({
@@ -73,7 +82,11 @@ app.get("/mcp", async (req: Request, res: Response) => {
     res.status(400).send("Invalid or missing session ID");
     return;
   }
-  const transport = transports.get(sessionId)!;
+  const transport = transports.get(sessionId);
+  if (!transport) {
+    res.status(400).send("Session not found");
+    return;
+  }
   await transport.handleRequest(req, res);
 });
 
@@ -84,7 +97,11 @@ app.delete("/mcp", async (req: Request, res: Response) => {
     res.status(400).send("Invalid or missing session ID");
     return;
   }
-  const transport = transports.get(sessionId)!;
+  const transport = transports.get(sessionId);
+  if (!transport) {
+    res.status(400).send("Session not found");
+    return;
+  }
   await transport.handleRequest(req, res);
 });
 

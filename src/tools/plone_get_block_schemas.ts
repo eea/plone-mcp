@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { blockRegistry } from "../block-registry.js";
 import { wrapError, getBlockExample } from "../utils/block-utils.js";
 
@@ -19,10 +18,7 @@ export const ploneGetBlockSchemas = {
       "Lists all available Volto block types (e.g., 'slate', 'teaser', 'button') and their required data schemas. **Essential for understanding how to construct blocks.** Example: plone_get_block_schemas({blockType: 'teaser'})",
     inputSchema,
   },
-  handler: async (
-    args: z.infer<typeof inputSchema>,
-    _extra: RequestHandlerExtra<any, any>,
-  ) => {
+  handler: async (args: z.infer<typeof inputSchema>) => {
     try {
       const { blockType } = args;
 

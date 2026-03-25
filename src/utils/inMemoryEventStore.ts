@@ -1,14 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { EventStore, StreamId, EventId } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import { randomUUID } from "node:crypto";
 
 /**
  * In-memory implementation of the EventStore interface.
  * Useful for testing and simple use cases.
  */
 export class InMemoryEventStore implements EventStore {
-  private events: Map<EventId, { streamId: StreamId; message: JSONRPCMessage }> = new Map();
-  private streamEvents: Map<StreamId, EventId[]> = new Map();
+  private events = new Map<EventId, { streamId: StreamId; message: JSONRPCMessage }>();
+  private streamEvents = new Map<StreamId, EventId[]>();
 
   async storeEvent(streamId: StreamId, message: JSONRPCMessage): Promise<EventId> {
     const eventId = randomUUID();
